@@ -9,7 +9,7 @@ namespace AmplePack
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            // Add services to the container - MVC only
             builder.Services.AddControllersWithViews();
 
             // Register AppDbContext with SQL Server connection string
@@ -40,6 +40,7 @@ namespace AmplePack
             app.UseAuthorization();
 
             app.MapStaticAssets();
+            // MVC default route
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}")

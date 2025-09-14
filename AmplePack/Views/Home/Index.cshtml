@@ -1,12 +1,173 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "AmplePack Dashboard";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <div class="mt-4">
-        <a href="/Orders/Index" class="btn btn-primary m-2">Go to Orders</a>
-        <a href="/Customers/Index" class="btn btn-secondary m-2">Go to Customers</a>
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Dashboard</h1>
+            </div>
+        </div>
     </div>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
 </div>
+
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid">
+        <!-- Statistics Cards -->
+        <div class="row">
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-info">
+                    <div class="inner">
+                        <h3>@ViewBag.TotalOrders</h3>
+                        <p>Total Orders</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                    <a asp-controller="Orders" asp-action="Index" class="small-box-footer">
+                        More info <i class="fas fa-arrow-circle-right"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-success">
+                    <div class="inner">
+                        <h3>@ViewBag.TotalCustomers</h3>
+                        <p>Total Customers</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <a asp-controller="Customers" asp-action="Index" class="small-box-footer">
+                        More info <i class="fas fa-arrow-circle-right"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-warning">
+                    <div class="inner">
+                        <h3>@ViewBag.TotalInventoryItems</h3>
+                        <p>Inventory Items</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-boxes"></i>
+                    </div>
+                    <a asp-controller="Inventory" asp-action="Index" class="small-box-footer">
+                        More info <i class="fas fa-arrow-circle-right"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-danger">
+                    <div class="inner">
+                        <h3>${{ViewBag.MonthlyRevenue.ToString("N2")}}</h3>
+                        <p>Monthly Revenue</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <a asp-controller="Reports" asp-action="Index" class="small-box-footer">
+                        More info <i class="fas fa-arrow-circle-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-rocket mr-2"></i>
+                            Quick Actions
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 col-sm-6 col-12">
+                                <a asp-controller="Orders" asp-action="CreateWorkflow" class="btn btn-primary btn-lg btn-block mb-3">
+                                    <i class="fas fa-plus-circle"></i><br>
+                                    Create Order
+                                </a>
+                            </div>
+                            <div class="col-md-3 col-sm-6 col-12">
+                                <a asp-controller="Customers" asp-action="Create" class="btn btn-success btn-lg btn-block mb-3">
+                                    <i class="fas fa-user-plus"></i><br>
+                                    Add Customer
+                                </a>
+                            </div>
+                            <div class="col-md-3 col-sm-6 col-12">
+                                <a asp-controller="Inventory" asp-action="Create" class="btn btn-warning btn-lg btn-block mb-3">
+                                    <i class="fas fa-box"></i><br>
+                                    Add Inventory
+                                </a>
+                            </div>
+                            <div class="col-md-3 col-sm-6 col-12">
+                                <a asp-controller="Reports" asp-action="Index" class="btn btn-info btn-lg btn-block mb-3">
+                                    <i class="fas fa-chart-bar"></i><br>
+                                    View Reports
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Welcome Section -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="card-title">Welcome to AmplePack</h3>
+                    </div>
+                    <div class="card-body">
+                        <h4>Your Complete Order Management Solution</h4>
+                        <p class="lead">
+                            Manage your customers, inventory, and orders all in one place. 
+                            AmplePack helps you streamline your business operations with powerful tools and intuitive design.
+                        </p>
+                        
+                        <div class="row mt-4">
+                            <div class="col-md-4">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-info"><i class="fas fa-shopping-cart"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Order Management</span>
+                                        <span class="info-box-number">Track & Process Orders</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-success"><i class="fas fa-users"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Customer Management</span>
+                                        <span class="info-box-number">Maintain Customer Base</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-warning"><i class="fas fa-boxes"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Inventory Control</span>
+                                        <span class="info-box-number">Stock Management</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
