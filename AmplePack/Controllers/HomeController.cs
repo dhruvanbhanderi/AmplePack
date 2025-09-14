@@ -1,31 +1,49 @@
 using System.Diagnostics;
-using AmplePack.Models;
-using AmplePack.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using AmplePack.Models;
+using AmplePack.Data;
 
 namespace AmplePack.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
         private readonly AppDbContext _context;
 
-        public HomeController(ILogger<HomeController> logger, AppDbContext context)
+        public HomeController(AppDbContext context)
         {
-            _logger = logger;
             _context = context;
         }
 
         public async Task<IActionResult> Index()
         {
-            // Dashboard statistics
+            // Get dashboard statistics
             ViewBag.TotalOrders = await _context.Orders.CountAsync();
             ViewBag.TotalCustomers = await _context.Customers.CountAsync();
-            ViewBag.TotalInventoryItems = await _context.Inventories.CountAsync();
-            ViewBag.MonthlyRevenue = await _context.Orders
-                .Where(o => o.Status == "Completed" && o.Date.Month == DateTime.Now.Month)
+            ViewBag.TotalRevenue = await _context.Orders
+                .Where(o => o.Status == "Completed")
                 .SumAsync(o => o.TotalAmount);
+            ViewBag.LowStockCount = await _context.Inventories
+                .CountAsync(i => i.AvailableQuantity <= i.ReorderLevel);
+
+            // Order status counts
+            ViewBag.PendingOrders = await _context.Orders.CountAsync(o => o.Status == "Pending");
+            ViewBag.ProcessingOrders = await _context.Orders.CountAsync(o => o.Status == "Processing");
+            ViewBag.CompletedOrders = await _context.Orders.CountAsync(o => o.Status == "Completed");
+            ViewBag.CancelledOrders = await _context.Orders.CountAsync(o => o.Status == "Cancelled");
+
+            // Recent orders (last 5)
+            ViewBag.RecentOrders = await _context.Orders
+                .Include(o => o.Customer)
+                .OrderByDescending(o => o.Date)
+                .Take(5)
+                .ToListAsync();
+
+            // Low stock items
+            ViewBag.LowStockItems = await _context.Inventories
+                .Where(i => i.AvailableQuantity <= i.ReorderLevel)
+                .OrderBy(i => i.AvailableQuantity)
+                .ToListAsync();
 
             return View();
         }

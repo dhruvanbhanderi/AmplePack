@@ -50,13 +50,17 @@ namespace AmplePack.Controllers
 
             // Inventory Reports
             viewModel.TotalInventoryItems = await _context.Inventories.CountAsync();
-            viewModel.LowStockCount = await _context.Inventories.CountAsync(i => i.Quantity <= i.ReorderLevel);
+            viewModel.LowStockCount = await _context.Inventories.CountAsync(i => i.AvailableQuantity <= i.ReorderLevel);
             
             viewModel.CriticalStockItems = await _context.Inventories
-                .Where(i => i.Quantity <= i.ReorderLevel)
-                .OrderBy(i => i.Quantity)
+                .Where(i => i.AvailableQuantity <= i.ReorderLevel)
+                .OrderBy(i => i.AvailableQuantity)
                 .Take(5)
                 .ToListAsync();
+
+            // Calculate total inventory value
+            viewModel.TotalInventoryValue = await _context.Inventories
+                .SumAsync(i => i.AvailableQuantity * i.UnitPrice);
 
             // Order Status Reports
             viewModel.PendingOrders = await _context.Orders.CountAsync(o => o.Status == "Pending");

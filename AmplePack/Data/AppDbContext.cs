@@ -43,13 +43,22 @@ namespace AmplePack.Data
                 .Property(bp => bp.H)
                 .HasColumnType("decimal(10,2)");
 
+            // Configure Inventory properties
+            modelBuilder.Entity<Inventory>()
+                .Property(i => i.AvailableQuantity)
+                .HasColumnType("decimal(10,2)");
+
             modelBuilder.Entity<Inventory>()
                 .Property(i => i.Quantity)
-                .HasColumnType("decimal(10,2)");
+                .HasColumnType("decimal(18,2)");
 
             modelBuilder.Entity<Inventory>()
                 .Property(i => i.ReorderLevel)
                 .HasColumnType("decimal(10,2)");
+
+            modelBuilder.Entity<Inventory>()
+                .Property(i => i.UnitPrice)
+                .HasColumnType("decimal(18,2)");
 
             // Configure CustomerProduct decimal properties
             modelBuilder.Entity<CustomerProduct>()

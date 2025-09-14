@@ -1,5 +1,5 @@
 ﻿@{
-    ViewData["Title"] = "AmplePack Dashboard";
+    ViewData["Title"] = "Dashboard";
 }
 
 <div class="content-header">
@@ -12,10 +12,9 @@
     </div>
 </div>
 
-<!-- Main content -->
 <section class="content">
     <div class="container-fluid">
-        <!-- Statistics Cards -->
+        <!-- Main Stats Cards -->
         <div class="row">
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-info">
@@ -26,12 +25,11 @@
                     <div class="icon">
                         <i class="fas fa-shopping-cart"></i>
                     </div>
-                    <a asp-controller="Orders" asp-action="Index" class="small-box-footer">
+                    <a href="@Url.Action("Index", "Orders")" class="small-box-footer">
                         More info <i class="fas fa-arrow-circle-right"></i>
                     </a>
                 </div>
             </div>
-            
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-success">
                     <div class="inner">
@@ -41,78 +39,139 @@
                     <div class="icon">
                         <i class="fas fa-users"></i>
                     </div>
-                    <a asp-controller="Customers" asp-action="Index" class="small-box-footer">
+                    <a href="@Url.Action("Index", "Customers")" class="small-box-footer">
                         More info <i class="fas fa-arrow-circle-right"></i>
                     </a>
                 </div>
             </div>
-            
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-warning">
                     <div class="inner">
-                        <h3>@ViewBag.TotalInventoryItems</h3>
-                        <p>Inventory Items</p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fa-boxes"></i>
-                    </div>
-                    <a asp-controller="Inventory" asp-action="Index" class="small-box-footer">
-                        More info <i class="fas fa-arrow-circle-right"></i>
-                    </a>
-                </div>
-            </div>
-            
-            <div class="col-lg-3 col-6">
-                <div class="small-box bg-danger">
-                    <div class="inner">
-                        <h3>${{ViewBag.MonthlyRevenue.ToString("N2")}}</h3>
-                        <p>Monthly Revenue</p>
+                        <h3>$@ViewBag.TotalRevenue.ToString("N0")</h3>
+                        <p>Total Revenue</p>
                     </div>
                     <div class="icon">
                         <i class="fas fa-dollar-sign"></i>
                     </div>
-                    <a asp-controller="Reports" asp-action="Index" class="small-box-footer">
+                    <a href="@Url.Action("Index", "Reports")" class="small-box-footer">
+                        More info <i class="fas fa-arrow-circle-right"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-danger">
+                    <div class="inner">
+                        <h3>@ViewBag.LowStockCount</h3>
+                        <p>Low Stock Items</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <a href="@Url.Action("Index", "Inventory")" class="small-box-footer">
                         More info <i class="fas fa-arrow-circle-right"></i>
                     </a>
                 </div>
             </div>
         </div>
 
-        <!-- Quick Actions -->
+        <!-- Quick Actions & Recent Activity -->
         <div class="row">
-            <div class="col-md-12">
+            <!-- Quick Actions -->
+            <div class="col-lg-6">
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <i class="fas fa-rocket mr-2"></i>
+                            <i class="fas fa-bolt mr-2"></i>
                             Quick Actions
                         </h3>
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-3 col-sm-6 col-12">
-                                <a asp-controller="Orders" asp-action="CreateWorkflow" class="btn btn-primary btn-lg btn-block mb-3">
-                                    <i class="fas fa-plus-circle"></i><br>
-                                    Create Order
+                            <div class="col-md-6 mb-3">
+                                <a href="@Url.Action("CreateWorkflow", "Orders")" class="btn btn-primary btn-block">
+                                    <i class="fas fa-plus mr-2"></i>
+                                    Create New Order
                                 </a>
                             </div>
-                            <div class="col-md-3 col-sm-6 col-12">
-                                <a asp-controller="Customers" asp-action="Create" class="btn btn-success btn-lg btn-block mb-3">
-                                    <i class="fas fa-user-plus"></i><br>
+                            <div class="col-md-6 mb-3">
+                                <a href="@Url.Action("Create", "Customers")" class="btn btn-success btn-block">
+                                    <i class="fas fa-user-plus mr-2"></i>
                                     Add Customer
                                 </a>
                             </div>
-                            <div class="col-md-3 col-sm-6 col-12">
-                                <a asp-controller="Inventory" asp-action="Create" class="btn btn-warning btn-lg btn-block mb-3">
-                                    <i class="fas fa-box"></i><br>
+                            <div class="col-md-6 mb-3">
+                                <a href="@Url.Action("Create", "Inventory")" class="btn btn-info btn-block">
+                                    <i class="fas fa-boxes mr-2"></i>
                                     Add Inventory
                                 </a>
                             </div>
-                            <div class="col-md-3 col-sm-6 col-12">
-                                <a asp-controller="Reports" asp-action="Index" class="btn btn-info btn-lg btn-block mb-3">
-                                    <i class="fas fa-chart-bar"></i><br>
-                                    View Reports
+                            <div class="col-md-6 mb-3">
+                                <a href="@Url.Action("Create", "CustomerProducts")" class="btn btn-warning btn-block">
+                                    <i class="fas fa-cube mr-2"></i>
+                                    Create Product
                                 </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Status Overview -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-chart-pie mr-2"></i>
+                            Order Status Overview
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-warning">
+                                        <i class="fas fa-clock"></i>
+                                    </span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Pending</span>
+                                        <span class="info-box-number">@ViewBag.PendingOrders</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-info">
+                                        <i class="fas fa-cog"></i>
+                                    </span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Processing</span>
+                                        <span class="info-box-number">@ViewBag.ProcessingOrders</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-success">
+                                        <i class="fas fa-check"></i>
+                                    </span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Completed</span>
+                                        <span class="info-box-number">@ViewBag.CompletedOrders</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-secondary">
+                                        <i class="fas fa-ban"></i>
+                                    </span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Cancelled</span>
+                                        <span class="info-box-number">@ViewBag.CancelledOrders</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -120,49 +179,143 @@
             </div>
         </div>
 
-        <!-- Welcome Section -->
+        <!-- Recent Activity & Alerts -->
         <div class="row">
-            <div class="col-md-12">
+            <!-- Recent Orders -->
+            <div class="col-lg-8">
                 <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        <h3 class="card-title">Welcome to AmplePack</h3>
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-history mr-2"></i>
+                            Recent Orders
+                        </h3>
+                        <div class="card-tools">
+                            <a href="@Url.Action("Index", "Orders")" class="btn btn-tool">
+                                <i class="fas fa-eye"></i> View All
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (ViewBag.RecentOrders != null && ((List<AmplePack.Models.Order>)ViewBag.RecentOrders).Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Order #</th>
+                                            <th>Customer</th>
+                                            <th>Date</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var order in (List<AmplePack.Models.Order>)ViewBag.RecentOrders)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <a href="@Url.Action("Details", "Orders", new { id = order.Id })">
+                                                        #@order.Id
+                                                    </a>
+                                                </td>
+                                                <td>@order.Customer?.Name</td>
+                                                <td>@order.Date.ToString("MMM dd, yyyy")</td>
+                                                <td>$@order.TotalAmount.ToString("N2")</td>
+                                                <td>
+                                                    @if (order.Status == "Pending")
+                                                    {
+                                                        <span class="badge badge-warning">@order.Status</span>
+                                                    }
+                                                    else if (order.Status == "Processing")
+                                                    {
+                                                        <span class="badge badge-info">@order.Status</span>
+                                                    }
+                                                    else if (order.Status == "Completed")
+                                                    {
+                                                        <span class="badge badge-success">@order.Status</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge badge-secondary">@order.Status</span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4">
+                                <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                                <h5>No Recent Orders</h5>
+                                <p class="text-muted">Start by creating your first order.</p>
+                                <a href="@Url.Action("CreateWorkflow", "Orders")" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Create Order
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerts & Notifications -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-bell mr-2"></i>
+                            Alerts & Notifications
+                        </h3>
                     </div>
                     <div class="card-body">
-                        <h4>Your Complete Order Management Solution</h4>
-                        <p class="lead">
-                            Manage your customers, inventory, and orders all in one place. 
-                            AmplePack helps you streamline your business operations with powerful tools and intuitive design.
-                        </p>
-                        
-                        <div class="row mt-4">
-                            <div class="col-md-4">
-                                <div class="info-box">
-                                    <span class="info-box-icon bg-info"><i class="fas fa-shopping-cart"></i></span>
-                                    <div class="info-box-content">
-                                        <span class="info-box-text">Order Management</span>
-                                        <span class="info-box-number">Track & Process Orders</span>
-                                    </div>
-                                </div>
+                        @if (ViewBag.LowStockItems != null && ((List<AmplePack.Models.Inventory>)ViewBag.LowStockItems).Any())
+                        {
+                            <div class="alert alert-warning">
+                                <h6><i class="fas fa-exclamation-triangle"></i> Low Stock Alert</h6>
+                                <p class="mb-0">@ViewBag.LowStockCount items are running low on stock.</p>
                             </div>
                             
-                            <div class="col-md-4">
-                                <div class="info-box">
-                                    <span class="info-box-icon bg-success"><i class="fas fa-users"></i></span>
-                                    <div class="info-box-content">
-                                        <span class="info-box-text">Customer Management</span>
-                                        <span class="info-box-number">Maintain Customer Base</span>
-                                    </div>
+                            @foreach (var item in ((List<AmplePack.Models.Inventory>)ViewBag.LowStockItems).Take(3))
+                            {
+                                <div class="alert alert-warning alert-dismissible">
+                                    <h6 class="mb-1">@item.ProductName</h6>
+                                    <small>Only @item.AvailableQuantity @item.Unit remaining (Reorder at @item.ReorderLevel)</small>
                                 </div>
+                            }
+
+                            @if (((List<AmplePack.Models.Inventory>)ViewBag.LowStockItems).Count > 3)
+                            {
+                                <div class="text-center">
+                                    <a href="@Url.Action("Index", "Inventory")" class="btn btn-warning btn-sm">
+                                        View All Low Stock Items
+                                    </a>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="alert alert-success">
+                                <h6><i class="fas fa-check-circle"></i> All Good!</h6>
+                                <p class="mb-0">No critical alerts at this time. All inventory levels are adequate.</p>
                             </div>
-                            
-                            <div class="col-md-4">
-                                <div class="info-box">
-                                    <span class="info-box-icon bg-warning"><i class="fas fa-boxes"></i></span>
-                                    <div class="info-box-content">
-                                        <span class="info-box-text">Inventory Control</span>
-                                        <span class="info-box-number">Stock Management</span>
-                                    </div>
-                                </div>
+                        }
+
+                        <!-- System Status -->
+                        <div class="mt-3">
+                            <h6>System Status</h6>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Database</span>
+                                <span class="badge badge-success">Online</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Application</span>
+                                <span class="badge badge-success">Running</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Last Updated</span>
+                                <small class="text-muted">@DateTime.Now.ToString("MMM dd, yyyy HH:mm")</small>
                             </div>
                         </div>
                     </div>

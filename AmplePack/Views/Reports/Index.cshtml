@@ -269,22 +269,22 @@
                             <div class="col-lg-3 col-6">
                                 <div class="info-box">
                                     <span class="info-box-icon bg-success">
-                                        <i class="fas fa-users"></i>
+                                        <i class="fas fa-dollar-sign"></i>
                                     </span>
                                     <div class="info-box-content">
-                                        <span class="info-box-text">New Customers</span>
-                                        <span class="info-box-number">@Model.NewCustomersThisMonth</span>
+                                        <span class="info-box-text">Inventory Value</span>
+                                        <span class="info-box-number">$@Model.TotalInventoryValue.ToString("N0")</span>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-lg-3 col-6">
                                 <div class="info-box">
-                                    <span class="info-box-icon bg-danger">
-                                        <i class="fas fa-cog"></i>
+                                    <span class="info-box-icon bg-primary">
+                                        <i class="fas fa-users"></i>
                                     </span>
                                     <div class="info-box-content">
-                                        <span class="info-box-text">Processing</span>
-                                        <span class="info-box-number">@Model.ProcessingOrders</span>
+                                        <span class="info-box-text">New Customers</span>
+                                        <span class="info-box-number">@Model.NewCustomersThisMonth</span>
                                     </div>
                                 </div>
                             </div>
@@ -350,8 +350,10 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                legend: {
-                    position: 'bottom'
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
                 }
             }
         });
