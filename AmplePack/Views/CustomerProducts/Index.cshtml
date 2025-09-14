@@ -1,4 +1,4 @@
-@model List<AmplePack.Models.CustomerProduct>
+@model List<AmplePack.Models.Customer>
 @{
     ViewData["Title"] = "Customer Products";
 }
@@ -22,144 +22,99 @@
 
 <section class="content">
     <div class="container-fluid">
-        <!-- Search and Filter -->
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <form method="get" asp-action="Index">
-                    <div class="input-group">
-                        <input type="text" name="searchTerm" class="form-control" placeholder="Search products..." value="@ViewBag.SearchTerm">
-                        <div class="input-group-append">
-                            <button class="btn btn-outline-secondary" type="submit">
-                                <i class="fas fa-search"></i>
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="col-md-6">
-                <form method="get" asp-action="Index">
-                    <div class="input-group">
-                        <select name="selectedCustomerId" class="form-control">
-                            <option value="">-- All Customers --</option>
-                            @if (ViewBag.CustomerNames != null)
-                            {
-                                @foreach (var customer in (Dictionary<int, string>)ViewBag.CustomerNames)
+        @if (Model.Any())
+        {
+            <div class="row">
+                @foreach (var customer in Model)
+                {
+                    <div class="col-lg-6 col-md-6 mb-4">
+                        <div class="card card-outline card-primary">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-user mr-2"></i>
+                                    @customer.Name
+                                </h5>
+                                <div class="card-tools">
+                                    <span class="badge badge-primary">
+                                        @customer.CustomerProducts.Count() products
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <p class="mb-1"><strong>Email:</strong> @customer.Email</p>
+                                        <p class="mb-1"><strong>Contact:</strong> @customer.Contact</p>
+                                        <p class="mb-3"><strong>Products:</strong> @customer.CustomerProducts.Count() items</p>
+                                    </div>
+                                    <div class="col-md-4 text-right">
+                                        @if (customer.CustomerProducts.Any())
+                                        {
+                                            <div class="small text-muted">
+                                                Active: @customer.CustomerProducts.Count(p => p.IsActive)<br>
+                                                Total: @customer.CustomerProducts.Count()
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                                
+                                @if (customer.CustomerProducts.Any())
                                 {
-                                    var isSelected = ViewBag.SelectedCustomerId != null && ViewBag.SelectedCustomerId.ToString() == customer.Key.ToString();
-                                    <option value="@customer.Key" selected="@isSelected">
-                                        @customer.Value
-                                    </option>
-                                }
-                            }
-                        </select>
-                        <div class="input-group-append">
-                            <button class="btn btn-outline-secondary" type="submit">
-                                <i class="fas fa-filter"></i> Filter
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-cube mr-2"></i>
-                            Customer Products Directory
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        @if (Model.Any())
-                        {
-                            <div class="row">
-                                @foreach (var product in Model)
-                                {
-                                    <div class="col-lg-4 col-md-6 mb-4">
-                                        <div class="card card-outline card-primary h-100">
-                                            <div class="card-header">
-                                                <h5 class="card-title mb-0">@product.ProductName</h5>
-                                                <div class="card-tools">
-                                                    <span class="badge badge-@(product.IsActive ? "success" : "secondary")">
-                                                        @(product.IsActive ? "Active" : "Inactive")
-                                                    </span>
-                                                </div>
+                                    <div class="mb-3">
+                                        <h6>Recent Products:</h6>
+                                        @foreach (var product in customer.CustomerProducts.Take(3))
+                                        {
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span class="small">@product.ProductName</span>
+                                                <span class="badge badge-@(product.IsActive ? "success" : "secondary") badge-sm">
+                                                    @(product.IsActive ? "Active" : "Inactive")
+                                                </span>
                                             </div>
-                                            <div class="card-body">
-                                                <div class="row">
-                                                    <div class="col-12">
-                                                        <p><strong>Customer:</strong> @product.Customer?.Name</p>
-                                                        <p><strong>Size:</strong> @product.SizeDisplay</p>
-                                                        <p><strong>Price:</strong> <span class="text-success font-weight-bold">$@product.PricePerBox.ToString("N2")</span></p>
-                                                        <p><strong>Specifications:</strong><br>
-                                                           <small class="text-muted">@product.SpecificationDisplay</small>
-                                                        </p>
-                                                        @if (!string.IsNullOrEmpty(product.Description))
-                                                        {
-                                                            <p><strong>Description:</strong><br>
-                                                               <small>@product.Description</small>
-                                                            </p>
-                                                        }
-                                                    </div>
-                                                </div>
-                                                
-                                                <div class="row mt-2">
-                                                    <div class="col-6">
-                                                        <small class="text-muted">
-                                                            <i class="fas fa-tag"></i> @product.Category
-                                                        </small>
-                                                    </div>
-                                                    <div class="col-6 text-right">
-                                                        <small class="text-muted">
-                                                            <i class="fas fa-shopping-cart"></i> @product.TotalOrdersCount orders
-                                                        </small>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="card-footer">
-                                                <div class="btn-group w-100">
-                                                    <a asp-action="Details" asp-route-id="@product.Id" class="btn btn-sm btn-outline-info">
-                                                        <i class="fas fa-eye"></i> Details
-                                                    </a>
-                                                    <a asp-action="Edit" asp-route-id="@product.Id" class="btn btn-sm btn-outline-warning">
-                                                        <i class="fas fa-edit"></i> Edit
-                                                    </a>
-                                                    <a asp-controller="Orders" asp-action="CreateWorkflow" asp-route-customerId="@product.CustomerId" asp-route-productId="@product.Id" class="btn btn-sm btn-outline-success">
-                                                        <i class="fas fa-plus"></i> Order
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        }
+                                        @if (customer.CustomerProducts.Count() > 3)
+                                        {
+                                            <small class="text-muted">... and @(customer.CustomerProducts.Count() - 3) more</small>
+                                        }
                                     </div>
                                 }
                             </div>
-                        }
-                        else
-                        {
-                            <div class="text-center py-5">
-                                <i class="fas fa-cube fa-3x text-muted mb-3"></i>
-                                <h4>No Customer Products Found</h4>
-                                @if (!string.IsNullOrEmpty(ViewBag.SearchTerm) || ViewBag.SelectedCustomerId != null)
-                                {
-                                    <p class="text-muted">No products match your search criteria.</p>
-                                    <a asp-action="Index" class="btn btn-secondary">
-                                        <i class="fas fa-times"></i> Clear Filters
-                                    </a>
-                                }
-                                else
-                                {
-                                    <p class="text-muted">Get started by creating your first customer product.</p>
-                                    <a asp-action="Create" class="btn btn-primary">
-                                        <i class="fas fa-plus"></i> Create First Product
-                                    </a>
-                                }
+                            <div class="card-footer">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <a href="@Url.Action("Index", new { customerId = customer.Id })" class="btn btn-info btn-sm btn-block">
+                                            <i class="fas fa-eye"></i> View Products
+                                        </a>
+                                    </div>
+                                    <div class="col-6">
+                                        <a href="@Url.Action("Create", new { customerId = customer.Id })" class="btn btn-success btn-sm btn-block">
+                                            <i class="fas fa-plus"></i> Add Product
+                                        </a>
+                                    </div>
+                                </div>
                             </div>
-                        }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="text-center py-5">
+                                <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                                <h4>No Customers Found</h4>
+                                <p class="text-muted">You need to add customers first before creating products.</p>
+                                <a asp-controller="Customers" asp-action="Create" class="btn btn-primary">
+                                    <i class="fas fa-user-plus"></i> Add First Customer
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        }
     </div>
 </section>

@@ -40,13 +40,13 @@
                                         <tr>
                                             <th>Product Name</th>
                                             <th>Item Name</th>
-                                            <th>Available Quantity</th>
+                                            <th>Category</th>
+                                            <th>Available Qty</th>
                                             <th>Unit</th>
                                             <th>Unit Price</th>
                                             <th>Total Value</th>
-                                            <th>Category</th>
                                             <th>Status</th>
-                                            <th>Actions</th>
+                                            <th width="120px">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -54,9 +54,19 @@
                                         {
                                             <tr class="@(item.IsLowStock ? "table-warning" : "")">
                                                 <td>
-                                                    <strong>@item.ProductName</strong>
+                                                    <strong>@(string.IsNullOrEmpty(item.ProductName) ? "N/A" : item.ProductName)</strong>
                                                 </td>
                                                 <td>@item.ItemName</td>
+                                                <td>
+                                                    @if (!string.IsNullOrEmpty(item.Category))
+                                                    {
+                                                        <span class="badge badge-info">@item.Category</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge badge-secondary">Uncategorized</span>
+                                                    }
+                                                </td>
                                                 <td>
                                                     <span class="badge @(item.IsLowStock ? "badge-warning" : "badge-success")">
                                                         @item.AvailableQuantity.ToString("N2")
@@ -66,9 +76,6 @@
                                                 <td>$@item.UnitPrice.ToString("N2")</td>
                                                 <td>
                                                     <strong class="text-success">$@item.TotalValue.ToString("N2")</strong>
-                                                </td>
-                                                <td>
-                                                    <span class="badge badge-info">@item.Category</span>
                                                 </td>
                                                 <td>
                                                     @if (item.IsLowStock)
@@ -85,22 +92,16 @@
                                                     }
                                                 </td>
                                                 <td>
-                                                    <div class="btn-group">
-                                                        <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-toggle="dropdown">
-                                                            Actions
-                                                        </button>
-                                                        <div class="dropdown-menu">
-                                                            <a class="dropdown-item" asp-action="Details" asp-route-id="@item.Id">
-                                                                <i class="fas fa-eye mr-2"></i>View Details
-                                                            </a>
-                                                            <a class="dropdown-item" asp-action="Edit" asp-route-id="@item.Id">
-                                                                <i class="fas fa-edit mr-2"></i>Edit
-                                                            </a>
-                                                            <div class="dropdown-divider"></div>
-                                                            <a class="dropdown-item text-danger" asp-action="Delete" asp-route-id="@item.Id">
-                                                                <i class="fas fa-trash mr-2"></i>Delete
-                                                            </a>
-                                                        </div>
+                                                    <div class="btn-group" role="group">
+                                                        <a href="@Url.Action("Details", new { id = item.Id })" class="btn btn-sm btn-outline-info" title="View Details">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-sm btn-outline-warning" title="Edit">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                        <a href="@Url.Action("Delete", new { id = item.Id })" class="btn btn-sm btn-outline-danger" title="Delete">
+                                                            <i class="fas fa-trash"></i>
+                                                        </a>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -151,4 +152,18 @@
             });
         });
     </script>
+
+    <style>
+        .btn-group .btn {
+            margin: 0 1px;
+        }
+        
+        .table td {
+            vertical-align: middle;
+        }
+        
+        .badge {
+            font-size: 0.75em;
+        }
+    </style>
 }

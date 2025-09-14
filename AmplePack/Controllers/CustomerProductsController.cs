@@ -20,39 +20,41 @@ namespace AmplePack.Controllers
         }
 
         // GET: CustomerProducts
-        public async Task<IActionResult> Index(int? selectedCustomerId, string searchTerm)
+        public async Task<IActionResult> Index(int? customerId, string searchTerm)
         {
-            var query = _context.CustomerProducts
-                .Include(cp => cp.Customer)
-                .AsQueryable();
-
-            // Filter by customer if selected
-            if (selectedCustomerId.HasValue)
-            {
-                query = query.Where(cp => cp.CustomerId == selectedCustomerId.Value);
-            }
-
-            // Search functionality
-            if (!string.IsNullOrEmpty(searchTerm))
-            {
-                query = query.Where(cp => 
-                    cp.ProductName.Contains(searchTerm) ||
-                    cp.Description.Contains(searchTerm) ||
-                    cp.Customer!.Name.Contains(searchTerm));
-            }
-
-            var customerProducts = await query
-                .OrderBy(cp => cp.Customer!.Name)
-                .ThenBy(cp => cp.ProductName)
+            // Get all customers with their product counts
+            var customers = await _context.Customers
+                .Include(c => c.CustomerProducts)
+                .OrderBy(c => c.Name)
                 .ToListAsync();
 
-            // Get customer names for dropdown
-            ViewBag.CustomerNames = await _context.Customers
-                .ToDictionaryAsync(c => c.Id, c => c.Name);
-            ViewBag.SelectedCustomerId = selectedCustomerId;
+            ViewBag.Customers = customers;
+            ViewBag.SelectedCustomerId = customerId;
             ViewBag.SearchTerm = searchTerm;
 
-            return View(customerProducts);
+            // If a specific customer is selected, show their products
+            if (customerId.HasValue)
+            {
+                var customerProducts = await _context.CustomerProducts
+                    .Include(cp => cp.Customer)
+                    .Where(cp => cp.CustomerId == customerId.Value)
+                    .ToListAsync();
+
+                // Filter by search term if provided
+                if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    customerProducts = customerProducts.Where(cp => 
+                        cp.ProductName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                        cp.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
+                }
+
+                ViewBag.CustomerProducts = customerProducts;
+                ViewBag.SelectedCustomer = customers.FirstOrDefault(c => c.Id == customerId.Value);
+                return View("CustomerProducts");
+            }
+
+            // Default view showing customers
+            return View(customers);
         }
 
         // GET: CustomerProducts/Details/5
@@ -75,10 +77,19 @@ namespace AmplePack.Controllers
         }
 
         // GET: CustomerProducts/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create(int? customerId)
         {
-            ViewData["CustomerId"] = new SelectList(_context.Customers, "Id", "Name");
-            return View();
+            ViewData["CustomerId"] = new SelectList(_context.Customers, "Id", "Name", customerId);
+            
+            var model = new CustomerProduct();
+            if (customerId.HasValue)
+            {
+                model.CustomerId = customerId.Value;
+                var customer = await _context.Customers.FindAsync(customerId.Value);
+                ViewBag.CustomerName = customer?.Name;
+            }
+            
+            return View(model);
         }
 
         // POST: CustomerProducts/Create
@@ -89,9 +100,10 @@ namespace AmplePack.Controllers
             if (ModelState.IsValid)
             {
                 customerProduct.CreatedDate = DateTime.Now;
+                customerProduct.IsActive = true;
                 _context.Add(customerProduct);
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Index), new { customerId = customerProduct.CustomerId });
             }
             ViewData["CustomerId"] = new SelectList(_context.Customers, "Id", "Name", customerProduct.CustomerId);
             return View(customerProduct);
@@ -149,7 +161,7 @@ namespace AmplePack.Controllers
                         throw;
                     }
                 }
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Index), new { customerId = customerProduct.CustomerId });
             }
             ViewData["CustomerId"] = new SelectList(_context.Customers, "Id", "Name", customerProduct.CustomerId);
             return View(customerProduct);
@@ -182,10 +194,11 @@ namespace AmplePack.Controllers
             var customerProduct = await _context.CustomerProducts.FindAsync(id);
             if (customerProduct != null)
             {
+                var customerId = customerProduct.CustomerId;
                 _context.CustomerProducts.Remove(customerProduct);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index), new { customerId = customerId });
             }
-
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 

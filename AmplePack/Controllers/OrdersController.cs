@@ -22,7 +22,6 @@ namespace AmplePack.Controllers
         // GET: Orders
         public async Task<IActionResult> Index()
         {
-            // Load orders with customer and order details
             var orders = await _context.Orders
                 .Include(o => o.Customer)
                 .Include(o => o.OrderDetails)
@@ -30,12 +29,12 @@ namespace AmplePack.Controllers
                 .OrderByDescending(o => o.Date)
                 .ToListAsync();
 
-            // Calculate statistics
+            // Get statistics for dashboard
             ViewBag.TotalOrders = orders.Count;
             ViewBag.PendingOrders = orders.Count(o => o.Status == "Pending");
             ViewBag.ProcessingOrders = orders.Count(o => o.Status == "Processing");
             ViewBag.CompletedOrders = orders.Count(o => o.Status == "Completed");
-            ViewBag.TotalRevenue = orders.Where(o => o.Status == "Completed").Sum(o => o.TotalAmount);
+            ViewBag.CancelledOrders = orders.Count(o => o.Status == "Cancelled");
             
             var currentMonth = DateTime.Now.Month;
             var currentYear = DateTime.Now.Year;
@@ -59,7 +58,7 @@ namespace AmplePack.Controllers
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.CustomerProduct)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            
+
             if (order == null)
             {
                 return NotFound();
@@ -71,94 +70,204 @@ namespace AmplePack.Controllers
         // GET: Orders/Create
         public IActionResult Create()
         {
-            return RedirectToAction("CreateWorkflow");
+            ViewData["CustomerId"] = new SelectList(_context.Customers, "Id", "Name");
+            return View();
+        }
+
+        // POST: Orders/Create
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create([Bind("Id,CustomerId,Date,Status,TotalAmount")] Order order)
+        {
+            if (ModelState.IsValid)
+            {
+                _context.Add(order);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
+            ViewData["CustomerId"] = new SelectList(_context.Customers, "Id", "Name", order.CustomerId);
+            return View(order);
         }
 
         // GET: Orders/CreateWorkflow
-        public async Task<IActionResult> CreateWorkflow()
+        public async Task<IActionResult> CreateWorkflow(int? customerId, int? productId)
         {
-            ViewBag.Customers = await _context.Customers.ToListAsync();
-            return View();
+            var model = new OrderDetailInput();
+
+            // Pre-fill customer if provided
+            if (customerId.HasValue)
+            {
+                model.CustomerId = customerId.Value;
+                
+                // Pre-fill product if provided
+                if (productId.HasValue)
+                {
+                    var product = await _context.CustomerProducts.FindAsync(productId.Value);
+                    if (product != null)
+                    {
+                        model.CustomerProductId = productId.Value;
+                        model.Quantity = product.DefaultQuantity;
+                        model.PricePerBox = product.PricePerBox;
+                    }
+                }
+            }
+
+            // Get customers for dropdown
+            ViewBag.Customers = new SelectList(_context.Customers, "Id", "Name", customerId);
+
+            return View(model);
         }
 
         // POST: Orders/CreateWorkflow
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateWorkflow(int customerId, string orderDetails)
+        public async Task<IActionResult> CreateWorkflow(OrderDetailInput input)
         {
-            if (customerId == 0 || string.IsNullOrEmpty(orderDetails))
+            if (ModelState.IsValid)
             {
-                ViewBag.Customers = await _context.Customers.ToListAsync();
-                ViewBag.ErrorMessage = "Please select a customer and add at least one product.";
-                return View();
-            }
-
-            try
-            {
-                var orderDetailsList = System.Text.Json.JsonSerializer.Deserialize<List<OrderDetailInput>>(orderDetails);
-                
-                if (orderDetailsList == null || !orderDetailsList.Any())
+                try
                 {
-                    ViewBag.Customers = await _context.Customers.ToListAsync();
-                    ViewBag.ErrorMessage = "Please add at least one product to the order.";
-                    return View();
-                }
-
-                var order = new Order
-                {
-                    CustomerId = customerId,
-                    Date = DateTime.Now,
-                    Status = "Pending",
-                    OrderDetails = new List<OrderDetail>()
-                };
-
-                decimal totalAmount = 0;
-
-                foreach (var detail in orderDetailsList)
-                {
-                    if (detail.Quantity > 0)
+                    // Create the order
+                    var order = new Order
                     {
-                        var orderDetail = new OrderDetail
-                        {
-                            CustomerProductId = detail.CustomerProductId,
-                            BoxType = "Custom Box",
-                            Size = "Custom",
-                            Quantity = detail.Quantity,
-                            PricePerBox = detail.PricePerBox
-                        };
+                        CustomerId = input.CustomerId,
+                        Date = DateTime.Now,
+                        Status = "Pending",
+                        TotalAmount = input.Quantity * input.PricePerBox
+                    };
 
-                        // If CustomerProductId is provided, get the product details
-                        if (detail.CustomerProductId.HasValue)
-                        {
-                            var customerProduct = await _context.CustomerProducts
-                                .FirstOrDefaultAsync(cp => cp.Id == detail.CustomerProductId.Value);
+                    _context.Orders.Add(order);
+                    await _context.SaveChangesAsync();
 
-                            if (customerProduct != null)
-                            {
-                                orderDetail.BoxType = customerProduct.ProductName;
-                                orderDetail.Size = customerProduct.SizeDisplay;
-                                orderDetail.PricePerBox = customerProduct.PricePerBox;
-                            }
+                    // Create order detail
+                    var orderDetail = new OrderDetail
+                    {
+                        OrderId = order.Id,
+                        CustomerProductId = input.CustomerProductId,
+                        Quantity = input.Quantity,
+                        PricePerBox = input.PricePerBox,
+                        DeliveryDate = input.DeliveryDate,
+                        Notes = input.Notes ?? string.Empty
+                    };
+
+                    // Set box details based on source
+                    if (input.CustomerProductId.HasValue)
+                    {
+                        var product = await _context.CustomerProducts.FindAsync(input.CustomerProductId.Value);
+                        if (product != null)
+                        {
+                            orderDetail.BoxType = product.ProductName;
+                            orderDetail.Size = $"{product.Length}×{product.Width}×{product.Height}";
                         }
-
-                        order.OrderDetails.Add(orderDetail);
-                        totalAmount += orderDetail.Quantity * orderDetail.PricePerBox;
                     }
+                    else
+                    {
+                        // Manual entry
+                        orderDetail.BoxType = input.BoxType ?? "Custom Box";
+                        orderDetail.Size = $"{input.Length}×{input.Width}×{input.Height}";
+                    }
+
+                    _context.OrderDetails.Add(orderDetail);
+                    await _context.SaveChangesAsync();
+
+                    TempData["SuccessMessage"] = "Order created successfully!";
+                    return RedirectToAction(nameof(Details), new { id = order.Id });
                 }
-
-                order.TotalAmount = totalAmount;
-
-                _context.Orders.Add(order);
-                await _context.SaveChangesAsync();
-
-                return RedirectToAction(nameof(Index));
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError("", "An error occurred while creating the order: " + ex.Message);
+                }
             }
-            catch (Exception)
+
+            // If we got this far, something failed, redisplay form
+            ViewBag.Customers = new SelectList(_context.Customers, "Id", "Name", input.CustomerId);
+            return View(input);
+        }
+
+        // API endpoint for getting customer details
+        [HttpGet]
+        public async Task<IActionResult> GetCustomerDetails(int id)
+        {
+            var customer = await _context.Customers.FindAsync(id);
+            if (customer == null)
             {
-                ViewBag.Customers = await _context.Customers.ToListAsync();
-                ViewBag.ErrorMessage = "An error occurred while creating the order.";
-                return View();
+                return Json(new { success = false });
             }
+
+            return Json(new 
+            { 
+                success = true, 
+                customer = new 
+                { 
+                    id = customer.Id,
+                    name = customer.Name,
+                    email = customer.Email,
+                    contact = customer.Contact
+                }
+            });
+        }
+
+        // API endpoint for getting customer products
+        [HttpGet]
+        public async Task<IActionResult> GetCustomerProducts(int customerId)
+        {
+            var products = await _context.CustomerProducts
+                .Where(cp => cp.CustomerId == customerId && cp.IsActive)
+                .Select(cp => new 
+                {
+                    id = cp.Id,
+                    productName = cp.ProductName,
+                    pricePerBox = cp.PricePerBox,
+                    defaultQuantity = cp.DefaultQuantity
+                })
+                .ToListAsync();
+
+            return Json(products);
+        }
+
+        // API endpoint for getting product details
+        [HttpGet]
+        public async Task<IActionResult> GetProductDetails(int id)
+        {
+            var product = await _context.CustomerProducts.FindAsync(id);
+            if (product == null)
+            {
+                return Json(new { success = false });
+            }
+
+            return Json(new 
+            { 
+                success = true, 
+                product = new 
+                { 
+                    id = product.Id,
+                    productName = product.ProductName,
+                    length = product.Length,
+                    width = product.Width,
+                    height = product.Height,
+                    pricePerBox = product.PricePerBox,
+                    defaultQuantity = product.DefaultQuantity
+                }
+            });
+        }
+
+        // POST: Orders/UpdateStatus
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateStatus(int id, string status)
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            order.Status = status;
+            _context.Update(order);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Order #{id} status updated to {status}";
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Orders/Edit/5
@@ -169,17 +278,12 @@ namespace AmplePack.Controllers
                 return NotFound();
             }
 
-            var order = await _context.Orders
-                .Include(o => o.Customer)
-                .Include(o => o.OrderDetails)
-                    .ThenInclude(od => od.CustomerProduct)
-                .FirstOrDefaultAsync(o => o.Id == id);
-
+            var order = await _context.Orders.FindAsync(id);
             if (order == null)
             {
                 return NotFound();
             }
-
+            
             ViewBag.Customers = new SelectList(_context.Customers, "Id", "Name", order.CustomerId);
             return View(order);
         }
@@ -187,7 +291,7 @@ namespace AmplePack.Controllers
         // POST: Orders/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Order order)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,CustomerId,Date,Status,TotalAmount")] Order order)
         {
             if (id != order.Id)
             {
@@ -214,7 +318,7 @@ namespace AmplePack.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-
+            
             ViewBag.Customers = new SelectList(_context.Customers, "Id", "Name", order.CustomerId);
             return View(order);
         }
@@ -229,8 +333,8 @@ namespace AmplePack.Controllers
 
             var order = await _context.Orders
                 .Include(o => o.Customer)
+                .Include(o => o.OrderDetails)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            
             if (order == null)
             {
                 return NotFound();
@@ -251,43 +355,6 @@ namespace AmplePack.Controllers
             }
 
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
-
-        // GET: Orders/UpdateStatus/5
-        public async Task<IActionResult> UpdateStatus(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var order = await _context.Orders
-                .Include(o => o.Customer)
-                .FirstOrDefaultAsync(o => o.Id == id);
-
-            if (order == null)
-            {
-                return NotFound();
-            }
-
-            return View(order);
-        }
-
-        // POST: Orders/UpdateStatus/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateStatus(int id, string status)
-        {
-            var order = await _context.Orders.FindAsync(id);
-            if (order == null)
-            {
-                return NotFound();
-            }
-
-            order.Status = status;
-            await _context.SaveChangesAsync();
-
             return RedirectToAction(nameof(Index));
         }
 

@@ -89,146 +89,135 @@
               <div class="card-body">
                 @if (Model.Any())
                 {
-                  <table id="ordersTable" class="table table-bordered table-hover table-striped">
-                    <thead class="thead-dark">
-                    <tr>
-                      <th>Order #</th>
-                      <th>Customer</th>
-                      <th>Date</th>
-                      <th>Items</th>
-                      <th>Total Amount</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    @foreach (var order in Model) 
-                    {
+                  <div class="table-responsive">
+                    <table id="ordersTable" class="table table-bordered table-hover table-striped">
+                      <thead class="thead-dark">
                         <tr>
-                            <td>
-                              <strong>#@order.Id</strong>
-                            </td>
-                            <td>
-                              <div>
-                                <strong>@order.Customer?.Name</strong><br>
-                                <small class="text-muted">@order.Customer?.Email</small>
-                              </div>
-                            </td>
-                            <td>
-                              <div>
-                                @order.Date.ToString("MMM dd, yyyy")<br>
-                                <small class="text-muted">@order.Date.ToString("dddd")</small>
-                              </div>
-                            </td>
-                            <td>
-                              @if (order.OrderDetails?.Any() == true)
-                              {
-                                <div class="order-items-summary">
-                                  @foreach (var detail in order.OrderDetails.Take(2))
-                                  {
-                                    <div class="item-line">
-                                      @if (detail.CustomerProduct != null)
-                                      {
-                                        <span class="badge badge-success">@detail.CustomerProduct.ProductName</span>
-                                        <small class="text-muted">@detail.Size (×@detail.Quantity)</small>
-                                      }
-                                      else
-                                      {
-                                        <span class="badge badge-light">@detail.BoxType</span>
-                                        <small class="text-muted">@detail.Size (×@detail.Quantity)</small>
-                                      }
-                                    </div>
-                                  }
-                                  @if (order.OrderDetails.Count() > 2)
-                                  {
-                                    <div class="item-line">
-                                      <small class="text-muted">... and @(order.OrderDetails.Count() - 2) more</small>
-                                    </div>
-                                  }
+                          <th>Order #</th>
+                          <th>Customer</th>
+                          <th>Date</th>
+                          <th>Items</th>
+                          <th>Total Amount</th>
+                          <th>Status</th>
+                          <th width="140px">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                      @foreach (var order in Model) 
+                      {
+                          <tr>
+                              <td>
+                                <strong>#@order.Id</strong>
+                              </td>
+                              <td>
+                                <div>
+                                  <strong>@order.Customer?.Name</strong><br>
+                                  <small class="text-muted">@order.Customer?.Email</small>
                                 </div>
-                              }
-                              else
-                              {
-                                <span class="badge badge-secondary">
-                                  0 items
-                                </span>
-                              }
-                            </td>
-                            <td>
-                              <strong class="text-success">$@order.TotalAmount.ToString("N2")</strong>
-                            </td>
-                            <td>
-                              @if (order.Status == "Pending")
-                              {
-                                <span class="badge badge-warning">
-                                  <i class="fas fa-clock mr-1"></i>@order.Status
-                                </span>
-                              }
-                              else if (order.Status == "Processing")
-                              {
-                                <span class="badge badge-info">
-                                  <i class="fas fa-cog mr-1"></i>@order.Status
-                                </span>
-                              }
-                              else if (order.Status == "Completed")
-                              {
-                                <span class="badge badge-success">
-                                  <i class="fas fa-check mr-1"></i>@order.Status
-                                </span>
-                              }
-                              else if (order.Status == "Cancelled")
-                              {
-                                <span class="badge badge-danger">
-                                  <i class="fas fa-times mr-1"></i>@order.Status
-                                </span>
-                              }
-                              else
-                              {
-                                <span class="badge badge-secondary">@order.Status</span>
-                              }
-                            </td>
-                            <td>
-                              <div class="btn-group">
-                                <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-toggle="dropdown">
-                                  Actions
-                                </button>
-                                <div class="dropdown-menu">
-                                  <a class="dropdown-item" asp-action="Details" asp-route-id="@order.Id">
-                                    <i class="fas fa-eye mr-2"></i>View Details
+                              </td>
+                              <td>
+                                <div>
+                                  @order.Date.ToString("MMM dd, yyyy")<br>
+                                  <small class="text-muted">@order.Date.ToString("dddd")</small>
+                                </div>
+                              </td>
+                              <td>
+                                @if (order.OrderDetails?.Any() == true)
+                                {
+                                  <div class="order-items-summary">
+                                    @foreach (var detail in order.OrderDetails.Take(2))
+                                    {
+                                      <div class="item-line">
+                                        @if (detail.CustomerProduct != null)
+                                        {
+                                          <span class="badge badge-success">@detail.CustomerProduct.ProductName</span>
+                                          <small class="text-muted">@detail.Size (×@detail.Quantity)</small>
+                                        }
+                                        else
+                                        {
+                                          <span class="badge badge-light">@detail.BoxType</span>
+                                          <small class="text-muted">@detail.Size (×@detail.Quantity)</small>
+                                        }
+                                      </div>
+                                    }
+                                    @if (order.OrderDetails.Count() > 2)
+                                    {
+                                      <div class="item-line">
+                                        <small class="text-muted">... and @(order.OrderDetails.Count() - 2) more</small>
+                                      </div>
+                                    }
+                                  </div>
+                                }
+                                else
+                                {
+                                  <span class="badge badge-secondary">
+                                    0 items
+                                  </span>
+                                }
+                              </td>
+                              <td>
+                                <strong class="text-success">$@order.TotalAmount.ToString("N2")</strong>
+                              </td>
+                              <td>
+                                @if (order.Status == "Pending")
+                                {
+                                  <span class="badge badge-warning">
+                                    <i class="fas fa-clock mr-1"></i>@order.Status
+                                  </span>
+                                }
+                                else if (order.Status == "Processing")
+                                {
+                                  <span class="badge badge-info">
+                                    <i class="fas fa-cog mr-1"></i>@order.Status
+                                  </span>
+                                }
+                                else if (order.Status == "Completed")
+                                {
+                                  <span class="badge badge-success">
+                                    <i class="fas fa-check mr-1"></i>@order.Status
+                                  </span>
+                                }
+                                else if (order.Status == "Cancelled")
+                                {
+                                  <span class="badge badge-danger">
+                                    <i class="fas fa-times mr-1"></i>@order.Status
+                                  </span>
+                                }
+                                else
+                                {
+                                  <span class="badge badge-secondary">@order.Status</span>
+                                }
+                              </td>
+                              <td>
+                                <div class="btn-group d-flex" role="group">
+                                  <a href="@Url.Action("Details", new { id = order.Id })" class="btn btn-sm btn-outline-info" title="View Details">
+                                    <i class="fas fa-eye"></i>
                                   </a>
-                                  <a class="dropdown-item" asp-action="Edit" asp-route-id="@order.Id">
-                                    <i class="fas fa-edit mr-2"></i>Edit Order
+                                  <a href="@Url.Action("Edit", new { id = order.Id })" class="btn btn-sm btn-outline-warning" title="Edit">
+                                    <i class="fas fa-edit"></i>
                                   </a>
-                                  <div class="dropdown-divider"></div>
                                   @if (order.Status == "Pending")
                                   {
-                                    <a class="dropdown-item text-info" href="#" onclick="updateStatus(@order.Id, 'Processing')">
-                                      <i class="fas fa-play mr-2"></i>Start Processing
-                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-success" onclick="updateStatus(@order.Id, 'Processing')" title="Start Processing">
+                                      <i class="fas fa-play"></i>
+                                    </button>
                                   }
                                   @if (order.Status == "Processing")
                                   {
-                                    <a class="dropdown-item text-success" href="#" onclick="updateStatus(@order.Id, 'Completed')">
-                                      <i class="fas fa-check mr-2"></i>Mark Completed
-                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-success" onclick="updateStatus(@order.Id, 'Completed')" title="Mark Completed">
+                                      <i class="fas fa-check"></i>
+                                    </button>
                                   }
-                                  @if (order.Status != "Cancelled" && order.Status != "Completed")
-                                  {
-                                    <a class="dropdown-item text-warning" href="#" onclick="updateStatus(@order.Id, 'Cancelled')">
-                                      <i class="fas fa-ban mr-2"></i>Cancel Order
-                                    </a>
-                                  }
-                                  <div class="dropdown-divider"></div>
-                                  <a class="dropdown-item text-danger" asp-action="Delete" asp-route-id="@order.Id">
-                                    <i class="fas fa-trash mr-2"></i>Delete Order
+                                  <a href="@Url.Action("Delete", new { id = order.Id })" class="btn btn-sm btn-outline-danger" title="Delete">
+                                    <i class="fas fa-trash"></i>
                                   </a>
                                 </div>
-                              </div>
-                            </td>
-                        </tr>
-                    }
-                    </tbody>
-                  </table>
+                              </td>
+                          </tr>
+                      }
+                      </tbody>
+                    </table>
+                  </div>
                 }
                 else
                 {
@@ -251,6 +240,13 @@
         <!-- /.row -->
     </div>
 </section>
+
+<!-- Hidden form for status updates -->
+<form id="statusUpdateForm" method="post" action="@Url.Action("UpdateStatus")" style="display: none;">
+    <input type="hidden" name="id" id="statusOrderId" />
+    <input type="hidden" name="status" id="statusNewStatus" />
+    @Html.AntiForgeryToken()
+</form>
 
 @section Scripts {
   <!-- DataTables CSS -->
@@ -284,46 +280,45 @@
 
     function updateStatus(orderId, newStatus) {
       if (confirm(`Are you sure you want to change the order status to ${newStatus}?`)) {
-        // AJAX call to update status
-        $.post('/Orders/UpdateStatus', {
-          id: orderId,
-          status: newStatus,
-          __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-        })
-        .done(function() {
-          location.reload();
-        })
-        .fail(function() {
-          alert('Failed to update order status. Please try again.');
-        });
+        document.getElementById('statusOrderId').value = orderId;
+        document.getElementById('statusNewStatus').value = newStatus;
+        document.getElementById('statusUpdateForm').submit();
       }
     }
   </script>
-}
 
-<style>
-  .order-items-summary {
-    max-width: 200px;
-  }
-  
-  .item-line {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    margin-bottom: 2px;
-  }
-  
-  .item-line:last-child {
-    margin-bottom: 0;
-  }
-  
-  .badge-light {
-    color: #495057;
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
-  }
-  
-  .order-items-summary small {
-    font-size: 0.75rem;
-  }
+  <style>
+    .order-items-summary {
+      max-width: 200px;
+    }
+    
+    .item-line {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 2px;
+    }
+    
+    .item-line:last-child {
+      margin-bottom: 0;
+    }
+    
+    .badge-light {
+      color: #495057;
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+    }
+    
+    .order-items-summary small {
+      font-size: 0.75rem;
+    }
+
+    .btn-group .btn {
+      margin: 0 1px;
+    }
+    
+    .table td {
+      vertical-align: middle;
+    }
+  </style>
 }
