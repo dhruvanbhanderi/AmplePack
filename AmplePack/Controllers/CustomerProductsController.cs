@@ -84,10 +84,11 @@ namespace AmplePack.Controllers
         // POST: CustomerProducts/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,CustomerId,ProductName,Description,Price,BoxSize")] CustomerProduct customerProduct)
+        public async Task<IActionResult> Create([Bind("Id,CustomerId,ProductName,Description,Length,Width,Height,GSM,PaperType,PrintingType,PricePerBox,DefaultQuantity,Category")] CustomerProduct customerProduct)
         {
             if (ModelState.IsValid)
             {
+                customerProduct.CreatedDate = DateTime.Now;
                 _context.Add(customerProduct);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -116,7 +117,7 @@ namespace AmplePack.Controllers
         // POST: CustomerProducts/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,CustomerId,ProductName,Description,Price,BoxSize")] CustomerProduct customerProduct)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,CustomerId,ProductName,Description,Length,Width,Height,GSM,PaperType,PrintingType,PricePerBox,DefaultQuantity,Category,IsActive")] CustomerProduct customerProduct)
         {
             if (id != customerProduct.Id)
             {
@@ -127,6 +128,13 @@ namespace AmplePack.Controllers
             {
                 try
                 {
+                    // Preserve original created date
+                    var originalProduct = await _context.CustomerProducts.AsNoTracking().FirstOrDefaultAsync(cp => cp.Id == id);
+                    if (originalProduct != null)
+                    {
+                        customerProduct.CreatedDate = originalProduct.CreatedDate;
+                    }
+                    
                     _context.Update(customerProduct);
                     await _context.SaveChangesAsync();
                 }

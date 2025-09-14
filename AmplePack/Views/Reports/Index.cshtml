@@ -1,0 +1,359 @@
+@model AmplePack.Controllers.ReportsViewModel
+@{
+    ViewData["Title"] = "Reports Dashboard";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Reports Dashboard</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <!-- Sales Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-info">
+                    <div class="inner">
+                        <h3>$@Model.TotalRevenue.ToString("N0")</h3>
+                        <p>Total Revenue</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-success">
+                    <div class="inner">
+                        <h3>$@Model.MonthlyRevenue.ToString("N0")</h3>
+                        <p>Monthly Revenue</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-warning">
+                    <div class="inner">
+                        <h3>@Model.TotalOrdersThisMonth</h3>
+                        <p>Orders This Month</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-danger">
+                    <div class="inner">
+                        <h3>@Model.TotalCustomers</h3>
+                        <p>Total Customers</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts and Analytics Row -->
+        <div class="row">
+            <!-- Monthly Revenue Chart -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-chart-area mr-2"></i>
+                            Monthly Revenue Trend (Last 12 Months)
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="monthlyRevenueChart" style="height: 400px;"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Status Distribution -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-chart-pie mr-2"></i>
+                            Order Status Distribution
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="orderStatusChart" style="height: 300px;"></canvas>
+                        <div class="mt-3">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <div class="border-right">
+                                        <div class="h5 font-weight-bold text-warning">@Model.PendingOrders</div>
+                                        <div class="small text-muted">Pending</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="h5 font-weight-bold text-success">@Model.CompletedOrders</div>
+                                    <div class="small text-muted">Completed</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Reports Row -->
+        <div class="row mt-4">
+            <!-- Top Customers -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-trophy mr-2"></i>
+                            Top 5 Customers by Revenue
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.TopCustomers.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Rank</th>
+                                            <th>Customer</th>
+                                            <th>Orders</th>
+                                            <th>Revenue</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @{int rank = 1;}
+                                        @foreach (var customer in Model.TopCustomers)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <span class="badge @(rank == 1 ? "badge-warning" : rank == 2 ? "badge-secondary" : rank == 3 ? "badge-info" : "badge-light")">
+                                                        #@rank
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div>
+                                                        <strong>@customer.Name</strong>
+                                                        <br><small class="text-muted">@customer.Email</small>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="badge badge-primary">@customer.Orders.Count()</span>
+                                                </td>
+                                                <td>
+                                                    <strong class="text-success">$@customer.Orders.Where(o => o.Status == "Completed").Sum(o => o.TotalAmount).ToString("N2")</strong>
+                                                </td>
+                                            </tr>
+                                            rank++;
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted text-center py-3">No customer data available</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Critical Stock Items -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-exclamation-triangle mr-2 text-warning"></i>
+                            Critical Stock Items
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.CriticalStockItems.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Item</th>
+                                            <th>Current Stock</th>
+                                            <th>Reorder Level</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in Model.CriticalStockItems)
+                                        {
+                                            <tr class="table-warning">
+                                                <td>
+                                                    <div>
+                                                        <strong>@item.ProductName</strong>
+                                                        <br><small class="text-muted">@item.ItemName</small>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="badge badge-warning">
+                                                        @item.AvailableQuantity.ToString("N2") @item.Unit
+                                                    </span>
+                                                </td>
+                                                <td>@item.ReorderLevel.ToString("N2") @item.Unit</td>
+                                                <td>
+                                                    <span class="badge badge-danger">
+                                                        <i class="fas fa-exclamation-triangle"></i> Low Stock
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-3">
+                                <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                                <p class="text-success mb-0">All inventory items are well stocked!</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory Summary -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-boxes mr-2"></i>
+                            Inventory Summary
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-lg-3 col-6">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-info">
+                                        <i class="fas fa-cubes"></i>
+                                    </span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Total Items</span>
+                                        <span class="info-box-number">@Model.TotalInventoryItems</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-6">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-warning">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Low Stock Items</span>
+                                        <span class="info-box-number">@Model.LowStockCount</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-6">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-success">
+                                        <i class="fas fa-users"></i>
+                                    </span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">New Customers</span>
+                                        <span class="info-box-number">@Model.NewCustomersThisMonth</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-6">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-danger">
+                                        <i class="fas fa-cog"></i>
+                                    </span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Processing</span>
+                                        <span class="info-box-number">@Model.ProcessingOrders</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        // Monthly Revenue Chart
+        const monthlyCtx = document.getElementById('monthlyRevenueChart').getContext('2d');
+        const monthlyRevenueChart = new Chart(monthlyCtx, {
+            type: 'line',
+            data: {
+                labels: [@Html.Raw(string.Join(",", Model.MonthlyRevenueChart.Select(x => "'" + x.Month + "'")))],
+                datasets: [{
+                    label: 'Revenue ($)',
+                    data: [@Html.Raw(string.Join(",", Model.MonthlyRevenueChart.Select(x => x.Revenue.ToString())))],
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value, index, values) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Order Status Pie Chart
+        const statusCtx = document.getElementById('orderStatusChart').getContext('2d');
+        const orderStatusChart = new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Pending', 'Processing', 'Completed', 'Cancelled'],
+                datasets: [{
+                    data: [@Model.PendingOrders, @Model.ProcessingOrders, @Model.CompletedOrders, @Model.CancelledOrders],
+                    backgroundColor: [
+                        '#ffc107',
+                        '#17a2b8',
+                        '#28a745',
+                        '#dc3545'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        });
+    </script>
+}

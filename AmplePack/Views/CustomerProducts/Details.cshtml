@@ -1,0 +1,132 @@
+@model AmplePack.Models.CustomerProduct
+@{
+    ViewData["Title"] = "Customer Product Details";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Product Details</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-cube mr-2"></i>
+                            @Model.ProductName
+                        </h3>
+                        <div class="card-tools">
+                            <span class="badge badge-@(Model.IsActive ? "success" : "secondary")">
+                                @(Model.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body">
+                        <dl class="row">
+                            <dt class="col-sm-3">Customer:</dt>
+                            <dd class="col-sm-9">
+                                <a asp-controller="Customers" asp-action="Details" asp-route-id="@Model.CustomerId">
+                                    @Model.Customer?.Name
+                                </a>
+                            </dd>
+                            
+                            <dt class="col-sm-3">Product Name:</dt>
+                            <dd class="col-sm-9">@Model.ProductName</dd>
+                            
+                            @if (!string.IsNullOrEmpty(Model.Description))
+                            {
+                                <dt class="col-sm-3">Description:</dt>
+                                <dd class="col-sm-9">@Model.Description</dd>
+                            }
+                            
+                            <dt class="col-sm-3">Dimensions:</dt>
+                            <dd class="col-sm-9">
+                                <strong>@Model.SizeDisplay</strong>
+                                <small class="text-muted">(Length × Width × Height in cm)</small>
+                            </dd>
+                            
+                            <dt class="col-sm-3">Specifications:</dt>
+                            <dd class="col-sm-9">@Model.SpecificationDisplay</dd>
+                            
+                            <dt class="col-sm-3">Price per Box:</dt>
+                            <dd class="col-sm-9">
+                                <strong class="text-success h5">$@Model.PricePerBox.ToString("N2")</strong>
+                            </dd>
+                            
+                            <dt class="col-sm-3">Default Quantity:</dt>
+                            <dd class="col-sm-9">@Model.DefaultQuantity boxes</dd>
+                            
+                            <dt class="col-sm-3">Category:</dt>
+                            <dd class="col-sm-9">
+                                <span class="badge badge-info">@Model.Category</span>
+                            </dd>
+                            
+                            <dt class="col-sm-3">Created Date:</dt>
+                            <dd class="col-sm-9">@Model.CreatedDate.ToString("MMM dd, yyyy")</dd>
+                            
+                            <dt class="col-sm-3">Total Orders:</dt>
+                            <dd class="col-sm-9">
+                                <span class="badge badge-primary">@Model.TotalOrdersCount orders</span>
+                            </dd>
+                            
+                            @if (Model.LastOrderDate.HasValue)
+                            {
+                                <dt class="col-sm-3">Last Order:</dt>
+                                <dd class="col-sm-9">@Model.LastOrderDate.Value.ToString("MMM dd, yyyy")</dd>
+                            }
+                        </dl>
+                        
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-info">
+                                        <i class="fas fa-cube"></i>
+                                    </span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Box Volume</span>
+                                        <span class="info-box-number">@((Model.Length * Model.Width * Model.Height).ToString("N0")) cm³</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-success">
+                                        <i class="fas fa-dollar-sign"></i>
+                                    </span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Default Order Value</span>
+                                        <span class="info-box-number">$@((Model.DefaultQuantity * Model.PricePerBox).ToString("N2"))</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer">
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger ml-2">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
+                        <a asp-controller="Orders" asp-action="CreateWorkflow" asp-route-customerId="@Model.CustomerId" asp-route-productId="@Model.Id" class="btn btn-success ml-2">
+                            <i class="fas fa-plus"></i> Create Order
+                        </a>
+                        <a asp-action="Index" class="btn btn-secondary ml-2">
+                            <i class="fas fa-arrow-left"></i> Back to List
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

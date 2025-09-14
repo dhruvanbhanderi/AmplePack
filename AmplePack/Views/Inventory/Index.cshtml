@@ -1,0 +1,154 @@
+@model List<AmplePack.Models.Inventory>
+@{
+    ViewData["Title"] = "Inventory Management";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Inventory Management</h1>
+            </div>
+            <div class="col-sm-6">
+                <div class="float-sm-right">
+                    <a asp-action="Create" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add New Item
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-boxes mr-2"></i>
+                            Inventory Items
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.Any())
+                        {
+                            <div class="table-responsive">
+                                <table id="inventoryTable" class="table table-bordered table-hover table-striped">
+                                    <thead class="thead-dark">
+                                        <tr>
+                                            <th>Product Name</th>
+                                            <th>Item Name</th>
+                                            <th>Available Quantity</th>
+                                            <th>Unit</th>
+                                            <th>Unit Price</th>
+                                            <th>Total Value</th>
+                                            <th>Category</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in Model)
+                                        {
+                                            <tr class="@(item.IsLowStock ? "table-warning" : "")">
+                                                <td>
+                                                    <strong>@item.ProductName</strong>
+                                                </td>
+                                                <td>@item.ItemName</td>
+                                                <td>
+                                                    <span class="badge @(item.IsLowStock ? "badge-warning" : "badge-success")">
+                                                        @item.AvailableQuantity.ToString("N2")
+                                                    </span>
+                                                </td>
+                                                <td>@item.Unit</td>
+                                                <td>$@item.UnitPrice.ToString("N2")</td>
+                                                <td>
+                                                    <strong class="text-success">$@item.TotalValue.ToString("N2")</strong>
+                                                </td>
+                                                <td>
+                                                    <span class="badge badge-info">@item.Category</span>
+                                                </td>
+                                                <td>
+                                                    @if (item.IsLowStock)
+                                                    {
+                                                        <span class="badge badge-warning">
+                                                            <i class="fas fa-exclamation-triangle"></i> Low Stock
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge badge-success">
+                                                            <i class="fas fa-check"></i> In Stock
+                                                        </span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group">
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-toggle="dropdown">
+                                                            Actions
+                                                        </button>
+                                                        <div class="dropdown-menu">
+                                                            <a class="dropdown-item" asp-action="Details" asp-route-id="@item.Id">
+                                                                <i class="fas fa-eye mr-2"></i>View Details
+                                                            </a>
+                                                            <a class="dropdown-item" asp-action="Edit" asp-route-id="@item.Id">
+                                                                <i class="fas fa-edit mr-2"></i>Edit
+                                                            </a>
+                                                            <div class="dropdown-divider"></div>
+                                                            <a class="dropdown-item text-danger" asp-action="Delete" asp-route-id="@item.Id">
+                                                                <i class="fas fa-trash mr-2"></i>Delete
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-5">
+                                <i class="fas fa-boxes fa-3x text-muted mb-3"></i>
+                                <h4>No Inventory Items Found</h4>
+                                <p class="text-muted">Get started by adding your first inventory item.</p>
+                                <a asp-action="Create" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Add First Item
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.4/css/dataTables.bootstrap4.min.css">
+    <script src="https://cdn.datatables.net/1.11.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.4/js/dataTables.bootstrap4.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            $('#inventoryTable').DataTable({
+                "responsive": true,
+                "lengthChange": true,
+                "autoWidth": false,
+                "pageLength": 25,
+                "order": [[ 0, "asc" ]],
+                "columnDefs": [
+                    { "orderable": false, "targets": 8 }
+                ],
+                "language": {
+                    "search": "Search inventory:",
+                    "lengthMenu": "Show _MENU_ items per page",
+                    "info": "Showing _START_ to _END_ of _TOTAL_ items"
+                }
+            });
+        });
+    </script>
+}
