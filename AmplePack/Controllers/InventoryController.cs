@@ -51,7 +51,7 @@ namespace AmplePack.Controllers
         // POST: Inventory/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,ProductName,AvailableQuantity,UnitPrice,Category")] Inventory inventory)
+        public async Task<IActionResult> Create([Bind("Id,ProductName,ItemName,AvailableQuantity,UnitPrice,Unit,Category,ReorderLevel")] Inventory inventory)
         {
             if (ModelState.IsValid)
             {
@@ -81,7 +81,7 @@ namespace AmplePack.Controllers
         // POST: Inventory/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,ProductName,AvailableQuantity,UnitPrice,Category")] Inventory inventory)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,ProductName,ItemName,AvailableQuantity,UnitPrice,Unit,Category,ReorderLevel")] Inventory inventory)
         {
             if (id != inventory.Id)
             {

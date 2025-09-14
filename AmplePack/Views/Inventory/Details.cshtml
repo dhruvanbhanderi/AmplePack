@@ -1,0 +1,137 @@
+@model AmplePack.Models.Inventory
+@{
+    ViewData["Title"] = "Inventory Details";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Inventory Details</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-box mr-2"></i>
+                            @Model.ProductName
+                        </h3>
+                        <div class="card-tools">
+                            @if (Model.IsLowStock)
+                            {
+                                <span class="badge badge-warning">
+                                    <i class="fas fa-exclamation-triangle"></i> Low Stock Alert
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-success">
+                                    <i class="fas fa-check"></i> In Stock
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    
+                    <div class="card-body">
+                        <dl class="row">
+                            <dt class="col-sm-3">Product Name:</dt>
+                            <dd class="col-sm-9">@Model.ProductName</dd>
+                            
+                            <dt class="col-sm-3">Item Name:</dt>
+                            <dd class="col-sm-9">@Model.ItemName</dd>
+                            
+                            <dt class="col-sm-3">Available Quantity:</dt>
+                            <dd class="col-sm-9">
+                                <span class="badge @(Model.IsLowStock ? "badge-warning" : "badge-success") badge-lg">
+                                    @Model.AvailableQuantity.ToString("N2") @Model.Unit
+                                </span>
+                            </dd>
+                            
+                            <dt class="col-sm-3">Unit Price:</dt>
+                            <dd class="col-sm-9">
+                                <strong class="text-success">$@Model.UnitPrice.ToString("N2")</strong>
+                            </dd>
+                            
+                            <dt class="col-sm-3">Total Value:</dt>
+                            <dd class="col-sm-9">
+                                <strong class="text-primary h5">$@Model.TotalValue.ToString("N2")</strong>
+                            </dd>
+                            
+                            <dt class="col-sm-3">Category:</dt>
+                            <dd class="col-sm-9">
+                                <span class="badge badge-info">@Model.Category</span>
+                            </dd>
+                            
+                            <dt class="col-sm-3">Reorder Level:</dt>
+                            <dd class="col-sm-9">
+                                @Model.ReorderLevel.ToString("N2") @Model.Unit
+                                @if (Model.IsLowStock)
+                                {
+                                    <span class="text-warning ml-2">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        Current stock is below reorder level!
+                                    </span>
+                                }
+                            </dd>
+                        </dl>
+                        
+                        @if (Model.IsLowStock)
+                        {
+                            <div class="alert alert-warning">
+                                <h6><i class="fas fa-exclamation-triangle"></i> Low Stock Warning</h6>
+                                <p class="mb-0">
+                                    Current stock (@Model.AvailableQuantity.ToString("N2") @Model.Unit) is below the reorder level 
+                                    (@Model.ReorderLevel.ToString("N2") @Model.Unit). Consider restocking this item.
+                                </p>
+                            </div>
+                        }
+                        
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-info">
+                                        <i class="fas fa-calculator"></i>
+                                    </span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Inventory Value</span>
+                                        <span class="info-box-number">$@Model.TotalValue.ToString("N2")</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-box">
+                                    <span class="info-box-icon @(Model.IsLowStock ? "bg-warning" : "bg-success")">
+                                        <i class="fas @(Model.IsLowStock ? "fa-exclamation-triangle" : "fa-check")"></i>
+                                    </span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Stock Status</span>
+                                        <span class="info-box-number">@(Model.IsLowStock ? "Low" : "Good")</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer">
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger ml-2">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
+                        <a asp-action="Index" class="btn btn-secondary ml-2">
+                            <i class="fas fa-arrow-left"></i> Back to List
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

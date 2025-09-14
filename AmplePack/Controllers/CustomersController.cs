@@ -33,6 +33,8 @@ namespace AmplePack.Controllers
             }
 
             var customer = await _context.Customers
+                .Include(c => c.Orders)
+                .Include(c => c.CustomerProducts)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (customer == null)
             {
@@ -51,7 +53,7 @@ namespace AmplePack.Controllers
         // POST: Customers/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name,Email,Phone,Address")] Customer customer)
+        public async Task<IActionResult> Create([Bind("Id,Name,Contact,Email,Address")] Customer customer)
         {
             if (ModelState.IsValid)
             {
@@ -81,7 +83,7 @@ namespace AmplePack.Controllers
         // POST: Customers/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Email,Phone,Address")] Customer customer)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Contact,Email,Address")] Customer customer)
         {
             if (id != customer.Id)
             {

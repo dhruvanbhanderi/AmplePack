@@ -1,0 +1,131 @@
+@model AmplePack.Models.Inventory
+@{
+    ViewData["Title"] = "Create Inventory Item";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Create Inventory Item</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="card card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-plus mr-2"></i>
+                            Add New Inventory Item
+                        </h3>
+                    </div>
+                    
+                    <form asp-action="Create" method="post">
+                        <div class="card-body">
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="ProductName" class="control-label">Product Name</label>
+                                        <input asp-for="ProductName" class="form-control" placeholder="Enter product name" />
+                                        <span asp-validation-for="ProductName" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="ItemName" class="control-label">Item Name</label>
+                                        <input asp-for="ItemName" class="form-control" placeholder="Enter item name" />
+                                        <span asp-validation-for="ItemName" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label asp-for="AvailableQuantity" class="control-label">Available Quantity</label>
+                                        <input asp-for="AvailableQuantity" class="form-control" type="number" step="0.01" min="0" />
+                                        <span asp-validation-for="AvailableQuantity" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label asp-for="Unit" class="control-label">Unit of Measurement</label>
+                                        <select asp-for="Unit" class="form-control">
+                                            <option value="">-- Select Unit --</option>
+                                            <option value="pieces">Pieces</option>
+                                            <option value="boxes">Boxes</option>
+                                            <option value="rolls">Rolls</option>
+                                            <option value="sheets">Sheets</option>
+                                            <option value="meters">Meters</option>
+                                            <option value="kg">Kilograms</option>
+                                            <option value="liters">Liters</option>
+                                        </select>
+                                        <span asp-validation-for="Unit" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label asp-for="UnitPrice" class="control-label">Unit Price ($)</label>
+                                        <input asp-for="UnitPrice" class="form-control" type="number" step="0.01" min="0.01" />
+                                        <span asp-validation-for="UnitPrice" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="Category" class="control-label">Category</label>
+                                        <select asp-for="Category" class="form-control">
+                                            <option value="">-- Select Category --</option>
+                                            <option value="Packaging">Packaging</option>
+                                            <option value="Raw Materials">Raw Materials</option>
+                                            <option value="Tools">Tools</option>
+                                            <option value="Supplies">Supplies</option>
+                                            <option value="Equipment">Equipment</option>
+                                        </select>
+                                        <span asp-validation-for="Category" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="ReorderLevel" class="control-label">Reorder Level</label>
+                                        <input asp-for="ReorderLevel" class="form-control" type="number" step="0.01" min="0" />
+                                        <span asp-validation-for="ReorderLevel" class="text-danger"></span>
+                                        <small class="form-text text-muted">Alert when quantity falls below this level</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-info-circle"></i> Total Value Calculation</h6>
+                                <p class="mb-0">Total Value = Available Quantity × Unit Price</p>
+                                <p class="mb-0">This will be calculated automatically when you save the item.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Create Item
+                            </button>
+                            <a asp-action="Index" class="btn btn-secondary ml-2">
+                                <i class="fas fa-arrow-left"></i> Back to List
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

@@ -1,0 +1,177 @@
+@model List<AmplePack.Models.Customer>
+@{
+    ViewData["Title"] = "Customer Management";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Customer Management</h1>
+            </div>
+            <div class="col-sm-6">
+                <div class="float-sm-right">
+                    <a asp-action="Create" class="btn btn-success">
+                        <i class="fas fa-user-plus"></i> Add New Customer
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-users mr-2"></i>
+                            Customer Directory
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.Any())
+                        {
+                            <div class="table-responsive">
+                                <table id="customersTable" class="table table-bordered table-hover table-striped">
+                                    <thead class="thead-dark">
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Contact</th>
+                                            <th>Email</th>
+                                            <th>Address</th>
+                                            <th>Orders</th>
+                                            <th>Products</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var customer in Model)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <div>
+                                                        <strong>@customer.Name</strong>
+                                                        <br>
+                                                        <small class="text-muted">ID: #@customer.Id</small>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    @if (!string.IsNullOrEmpty(customer.Contact))
+                                                    {
+                                                        <span class="badge badge-info">@customer.Contact</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">No contact</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    @if (!string.IsNullOrEmpty(customer.Email))
+                                                    {
+                                                        <a href="mailto:@customer.Email" class="text-primary">
+                                                            <i class="fas fa-envelope mr-1"></i>@customer.Email
+                                                        </a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">No email</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    @if (!string.IsNullOrEmpty(customer.Address))
+                                                    {
+                                                        <small>@customer.Address</small>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">No address</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <span class="badge badge-primary">
+                                                        @customer.Orders.Count orders
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge badge-secondary">
+                                                        @customer.CustomerProducts.Count products
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group">
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-toggle="dropdown">
+                                                            Actions
+                                                        </button>
+                                                        <div class="dropdown-menu">
+                                                            <a class="dropdown-item" asp-action="Details" asp-route-id="@customer.Id">
+                                                                <i class="fas fa-eye mr-2"></i>View Details
+                                                            </a>
+                                                            <a class="dropdown-item" asp-action="Edit" asp-route-id="@customer.Id">
+                                                                <i class="fas fa-edit mr-2"></i>Edit Customer
+                                                            </a>
+                                                            <div class="dropdown-divider"></div>
+                                                            <a class="dropdown-item" asp-controller="Orders" asp-action="CreateWorkflow" asp-route-customerId="@customer.Id">
+                                                                <i class="fas fa-plus mr-2"></i>Create Order
+                                                            </a>
+                                                            <a class="dropdown-item" asp-controller="CustomerProducts" asp-action="Create" asp-route-customerId="@customer.Id">
+                                                                <i class="fas fa-cube mr-2"></i>Add Product
+                                                            </a>
+                                                            <div class="dropdown-divider"></div>
+                                                            <a class="dropdown-item text-danger" asp-action="Delete" asp-route-id="@customer.Id">
+                                                                <i class="fas fa-trash mr-2"></i>Delete Customer
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-5">
+                                <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                                <h4>No Customers Found</h4>
+                                <p class="text-muted">Get started by adding your first customer.</p>
+                                <a asp-action="Create" class="btn btn-success">
+                                    <i class="fas fa-user-plus"></i> Add First Customer
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.4/css/dataTables.bootstrap4.min.css">
+    <script src="https://cdn.datatables.net/1.11.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.4/js/dataTables.bootstrap4.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            $('#customersTable').DataTable({
+                "responsive": true,
+                "lengthChange": true,
+                "autoWidth": false,
+                "pageLength": 25,
+                "order": [[ 0, "asc" ]],
+                "columnDefs": [
+                    { "orderable": false, "targets": 6 }
+                ],
+                "language": {
+                    "search": "Search customers:",
+                    "lengthMenu": "Show _MENU_ customers per page",
+                    "info": "Showing _START_ to _END_ of _TOTAL_ customers"
+                }
+            });
+        });
+    </script>
+}
