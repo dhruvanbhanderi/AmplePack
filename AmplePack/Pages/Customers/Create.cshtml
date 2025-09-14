@@ -1,0 +1,97 @@
+@page
+@model AmplePack.Pages_Customers.CreateModel
+@{
+    ViewData["Title"] = "New Customer";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="row">
+  <div class="col-md-12">
+    <div class="card card-primary">
+      <div class="card-header">
+        <h3 class="card-title">Add New Customer</h3>
+      </div>
+      <!-- /.card-header -->
+      <!-- form start -->
+      <form method="post">
+        <div class="card-body">
+          <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+          
+          <div class="form-group">
+            <label asp-for="Customer.Name" class="control-label">Customer Name *</label>
+            <input asp-for="Customer.Name" class="form-control" placeholder="Enter customer name" required />
+            <span asp-validation-for="Customer.Name" class="text-danger"></span>
+          </div>
+          
+          <div class="form-group">
+            <label asp-for="Customer.Email" class="control-label">Email Address</label>
+            <input asp-for="Customer.Email" class="form-control" type="email" placeholder="Enter email address" />
+            <span asp-validation-for="Customer.Email" class="text-danger"></span>
+          </div>
+          
+          <div class="form-group">
+            <label asp-for="Customer.Contact" class="control-label">Phone Number</label>
+            <input asp-for="Customer.Contact" class="form-control" placeholder="Enter phone number" />
+            <span asp-validation-for="Customer.Contact" class="text-danger"></span>
+          </div>
+          
+          <div class="form-group">
+            <label asp-for="Customer.Address" class="control-label">Address</label>
+            <textarea asp-for="Customer.Address" class="form-control" rows="3" placeholder="Enter full address"></textarea>
+            <span asp-validation-for="Customer.Address" class="text-danger"></span>
+          </div>
+
+          <!-- Debug Information -->
+          <div class="form-group">
+            <small class="text-muted">* Required fields</small>
+          </div>
+        </div>
+        <!-- /.card-body -->
+
+        <div class="card-footer">
+          <button type="submit" class="btn btn-primary" id="submitBtn">
+            <i class="fas fa-save"></i> Create Customer
+          </button>
+          <a asp-page="./Index" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+          </a>
+        </div>
+      </form>
+    </div>
+    <!-- /.card -->
+  </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function() {
+            // Add form validation feedback
+            $('form').on('submit', function(e) {
+                var isValid = true;
+                var name = $('#Customer_Name').val().trim();
+                
+                if (!name) {
+                    isValid = false;
+                    $('#Customer_Name').addClass('is-invalid');
+                } else {
+                    $('#Customer_Name').removeClass('is-invalid').addClass('is-valid');
+                }
+                
+                if (!isValid) {
+                    e.preventDefault();
+                    alert('Please fill in all required fields.');
+                    return false;
+                }
+                
+                // Disable submit button to prevent double submission
+                $('#submitBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creating Customer...');
+            });
+            
+            // Remove validation classes on input
+            $('input, textarea').on('input', function() {
+                $(this).removeClass('is-invalid is-valid');
+            });
+        });
+    </script>
+}

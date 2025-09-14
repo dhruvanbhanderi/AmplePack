@@ -1,0 +1,210 @@
+@page
+@model AmplePack.Pages_CustomerProducts.CreateModel
+@{
+    ViewData["Title"] = "Create Product Pattern";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="row">
+  <div class="col-md-12">
+    <div class="card card-primary">
+      <div class="card-header">
+        <h3 class="card-title">Create New Product Pattern</h3>
+      </div>
+      <!-- /.card-header -->
+      <!-- form start -->
+      <form method="post">
+        <div class="card-body">
+          <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+          
+          <!-- Basic Information -->
+          <h5 class="mb-3">Basic Information</h5>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label asp-for="CustomerProduct.CustomerId" class="control-label">Customer *</label>
+                <select asp-for="CustomerProduct.CustomerId" class="form-control select2" asp-items="ViewBag.CustomerId">
+                  <option value="">-- Select Customer --</option>
+                </select>
+                <span asp-validation-for="CustomerProduct.CustomerId" class="text-danger"></span>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label asp-for="CustomerProduct.ProductName" class="control-label">Product Name *</label>
+                <input asp-for="CustomerProduct.ProductName" class="form-control" placeholder="e.g., Avengers Box A" />
+                <span asp-validation-for="CustomerProduct.ProductName" class="text-danger"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label asp-for="CustomerProduct.Description" class="control-label">Description</label>
+            <textarea asp-for="CustomerProduct.Description" class="form-control" rows="2" placeholder="Optional description of the product..."></textarea>
+            <span asp-validation-for="CustomerProduct.Description" class="text-danger"></span>
+          </div>
+
+          <!-- Box Dimensions -->
+          <h5 class="mb-3 mt-4">Box Dimensions</h5>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label asp-for="CustomerProduct.Length" class="control-label">Length (cm) *</label>
+                <input asp-for="CustomerProduct.Length" class="form-control" type="number" step="0.1" min="0.1" />
+                <span asp-validation-for="CustomerProduct.Length" class="text-danger"></span>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label asp-for="CustomerProduct.Width" class="control-label">Width (cm) *</label>
+                <input asp-for="CustomerProduct.Width" class="form-control" type="number" step="0.1" min="0.1" />
+                <span asp-validation-for="CustomerProduct.Width" class="text-danger"></span>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label asp-for="CustomerProduct.Height" class="control-label">Height (cm) *</label>
+                <input asp-for="CustomerProduct.Height" class="form-control" type="number" step="0.1" min="0.1" />
+                <span asp-validation-for="CustomerProduct.Height" class="text-danger"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Preview Box -->
+          <div class="alert alert-info">
+            <i class="fas fa-cube"></i> 
+            <strong>Box Size Preview:</strong> <span id="sizePreview">-- × -- × --</span> cm
+          </div>
+
+          <!-- Specifications -->
+          <h5 class="mb-3 mt-4">Specifications</h5>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label asp-for="CustomerProduct.GSM" class="control-label">GSM *</label>
+                <select asp-for="CustomerProduct.GSM" class="form-control">
+                  <option value="">-- Select GSM --</option>
+                  <option value="120">120 GSM (Light)</option>
+                  <option value="150">150 GSM (Standard)</option>
+                  <option value="180">180 GSM (Medium)</option>
+                  <option value="200">200 GSM (Heavy)</option>
+                  <option value="250">250 GSM (Extra Heavy)</option>
+                  <option value="300">300 GSM (Premium)</option>
+                </select>
+                <span asp-validation-for="CustomerProduct.GSM" class="text-danger"></span>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label asp-for="CustomerProduct.PaperType" class="control-label">Paper Type *</label>
+                <select asp-for="CustomerProduct.PaperType" class="form-control">
+                  <option value="">-- Select Paper Type --</option>
+                  <option value="Kraft">Kraft Paper</option>
+                  <option value="Corrugated">Corrugated</option>
+                  <option value="Art Paper">Art Paper</option>
+                  <option value="Duplex">Duplex Board</option>
+                  <option value="Ivory">Ivory Board</option>
+                </select>
+                <span asp-validation-for="CustomerProduct.PaperType" class="text-danger"></span>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label asp-for="CustomerProduct.PrintingType" class="control-label">Printing Type *</label>
+                <select asp-for="CustomerProduct.PrintingType" class="form-control">
+                  <option value="">-- Select Printing --</option>
+                  <option value="No Printing">No Printing</option>
+                  <option value="1 Color">1 Color</option>
+                  <option value="2 Color">2 Color</option>
+                  <option value="4 Color">4 Color (CMYK)</option>
+                  <option value="Spot Color">Spot Color</option>
+                  <option value="Digital">Digital Printing</option>
+                </select>
+                <span asp-validation-for="CustomerProduct.PrintingType" class="text-danger"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pricing and Defaults -->
+          <h5 class="mb-3 mt-4">Pricing & Defaults</h5>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label asp-for="CustomerProduct.PricePerBox" class="control-label">Price per Box ($) *</label>
+                <input asp-for="CustomerProduct.PricePerBox" class="form-control" type="number" step="0.01" min="0.01" />
+                <span asp-validation-for="CustomerProduct.PricePerBox" class="text-danger"></span>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label asp-for="CustomerProduct.DefaultQuantity" class="control-label">Default Quantity</label>
+                <input asp-for="CustomerProduct.DefaultQuantity" class="form-control" type="number" min="1" value="1" />
+                <span asp-validation-for="CustomerProduct.DefaultQuantity" class="text-danger"></span>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label asp-for="CustomerProduct.Category" class="control-label">Category</label>
+                <select asp-for="CustomerProduct.Category" class="form-control">
+                  <option value="">-- Select Category --</option>
+                  <option value="Standard">Standard</option>
+                  <option value="Premium">Premium</option>
+                  <option value="Economy">Economy</option>
+                  <option value="Custom">Custom</option>
+                  <option value="Seasonal">Seasonal</option>
+                </select>
+                <span asp-validation-for="CustomerProduct.Category" class="text-danger"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /.card-body -->
+
+        <div class="card-footer">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> Create Product Pattern
+          </button>
+          <a asp-page="./Index" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+          </a>
+        </div>
+      </form>
+    </div>
+    <!-- /.card -->
+  </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function() {
+            // Initialize Select2
+            $('.select2').select2({
+                theme: 'bootstrap4',
+                placeholder: '-- Select Customer --'
+            });
+
+            // Update size preview
+            function updateSizePreview() {
+                var length = $('#CustomerProduct_Length').val() || '--';
+                var width = $('#CustomerProduct_Width').val() || '--';
+                var height = $('#CustomerProduct_Height').val() || '--';
+                $('#sizePreview').text(length + ' × ' + width + ' × ' + height);
+            }
+
+            // Update preview when dimensions change
+            $('#CustomerProduct_Length, #CustomerProduct_Width, #CustomerProduct_Height').on('input', updateSizePreview);
+
+            // Initial preview update
+            updateSizePreview();
+
+            // Auto-suggest product name based on customer selection
+            $('#CustomerProduct_CustomerId').on('change', function() {
+                var customerText = $(this).find('option:selected').text();
+                if (customerText !== '-- Select Customer --' && !$('#CustomerProduct_ProductName').val()) {
+                    $('#CustomerProduct_ProductName').attr('placeholder', 'e.g., ' + customerText + ' Box A');
+                }
+            });
+        });
+    </script>
+}

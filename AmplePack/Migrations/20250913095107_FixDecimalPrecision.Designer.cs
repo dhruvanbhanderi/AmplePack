@@ -4,6 +4,7 @@ using AmplePack.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AmplePack.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250913095107_FixDecimalPrecision")]
+    partial class FixDecimalPrecision
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -67,103 +70,23 @@ namespace AmplePack.Migrations
 
                     b.Property<string>("Address")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Contact")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.ToTable("Customers");
-                });
-
-            modelBuilder.Entity("AmplePack.Models.CustomerProduct", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("CustomerId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("DefaultQuantity")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("GSM")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Height")
-                        .HasColumnType("decimal(10,2)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastOrderDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("Length")
-                        .HasColumnType("decimal(10,2)");
-
-                    b.Property<string>("PaperType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<decimal>("PricePerBox")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("PrintingType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("ProductName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("TotalOrdersCount")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Width")
-                        .HasColumnType("decimal(10,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CustomerId");
-
-                    b.HasIndex("CustomerId", "ProductName")
-                        .IsUnique();
-
-                    b.ToTable("CustomerProducts");
                 });
 
             modelBuilder.Entity("AmplePack.Models.Inventory", b =>
@@ -176,8 +99,7 @@ namespace AmplePack.Migrations
 
                     b.Property<string>("ItemName")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Quantity")
                         .HasColumnType("decimal(10,2)");
@@ -187,8 +109,7 @@ namespace AmplePack.Migrations
 
                     b.Property<string>("Unit")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -211,8 +132,7 @@ namespace AmplePack.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18,2)");
@@ -234,17 +154,6 @@ namespace AmplePack.Migrations
 
                     b.Property<string>("BoxType")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int?>("CustomerProductId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("DeliveryDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Notes")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("OrderId")
@@ -258,27 +167,13 @@ namespace AmplePack.Migrations
 
                     b.Property<string>("Size")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CustomerProductId");
 
                     b.HasIndex("OrderId");
 
                     b.ToTable("OrderDetails");
-                });
-
-            modelBuilder.Entity("AmplePack.Models.CustomerProduct", b =>
-                {
-                    b.HasOne("AmplePack.Models.Customer", "Customer")
-                        .WithMany("CustomerProducts")
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Customer");
                 });
 
             modelBuilder.Entity("AmplePack.Models.Order", b =>
@@ -294,26 +189,17 @@ namespace AmplePack.Migrations
 
             modelBuilder.Entity("AmplePack.Models.OrderDetail", b =>
                 {
-                    b.HasOne("AmplePack.Models.CustomerProduct", "CustomerProduct")
-                        .WithMany()
-                        .HasForeignKey("CustomerProductId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
                     b.HasOne("AmplePack.Models.Order", "Order")
                         .WithMany("OrderDetails")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("CustomerProduct");
-
                     b.Navigation("Order");
                 });
 
             modelBuilder.Entity("AmplePack.Models.Customer", b =>
                 {
-                    b.Navigation("CustomerProducts");
-
                     b.Navigation("Orders");
                 });
 

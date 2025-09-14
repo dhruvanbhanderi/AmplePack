@@ -1,0 +1,67 @@
+@page
+@model AmplePack.Pages_Customers.EditModel
+
+@{
+    ViewData["Title"] = "Edit Customer";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="row">
+  <div class="col-md-12">
+    <div class="card card-warning">
+      <div class="card-header">
+        <h3 class="card-title">Edit Customer</h3>
+      </div>
+      <!-- /.card-header -->
+      <!-- form start -->
+      <form method="post">
+        <div class="card-body">
+          <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+          <input type="hidden" asp-for="Customer.Id" />
+          
+          <div class="form-group">
+            <label asp-for="Customer.Name" class="control-label"></label>
+            <input asp-for="Customer.Name" class="form-control" placeholder="Enter customer name" />
+            <span asp-validation-for="Customer.Name" class="text-danger"></span>
+          </div>
+          
+          <div class="form-group">
+            <label asp-for="Customer.Email" class="control-label"></label>
+            <input asp-for="Customer.Email" class="form-control" type="email" placeholder="Enter email address" />
+            <span asp-validation-for="Customer.Email" class="text-danger"></span>
+          </div>
+          
+          <div class="form-group">
+            <label asp-for="Customer.Contact" class="control-label"></label>
+            <input asp-for="Customer.Contact" class="form-control" placeholder="Enter phone number" />
+            <span asp-validation-for="Customer.Contact" class="text-danger"></span>
+          </div>
+          
+          <div class="form-group">
+            <label asp-for="Customer.Address" class="control-label"></label>
+            <textarea asp-for="Customer.Address" class="form-control" rows="3" placeholder="Enter full address"></textarea>
+            <span asp-validation-for="Customer.Address" class="text-danger"></span>
+          </div>
+        </div>
+        <!-- /.card-body -->
+
+        <div class="card-footer">
+          <button type="submit" class="btn btn-warning">
+            <i class="fas fa-save"></i> Update Customer
+          </button>
+          <a asp-page="./Index" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+          </a>
+          <a asp-page="./Details" asp-route-id="@Model.Customer?.Id" class="btn btn-info">
+            <i class="fas fa-eye"></i> View Details
+          </a>
+        </div>
+      </form>
+    </div>
+    <!-- /.card -->
+  </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

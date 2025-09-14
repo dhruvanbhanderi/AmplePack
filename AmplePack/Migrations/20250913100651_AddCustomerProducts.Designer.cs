@@ -4,6 +4,7 @@ using AmplePack.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AmplePack.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250913100651_AddCustomerProducts")]
+    partial class AddCustomerProducts
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -237,16 +240,6 @@ namespace AmplePack.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int?>("CustomerProductId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("DeliveryDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Notes")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int>("OrderId")
                         .HasColumnType("int");
 
@@ -262,8 +255,6 @@ namespace AmplePack.Migrations
                         .HasColumnType("nvarchar(20)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CustomerProductId");
 
                     b.HasIndex("OrderId");
 
@@ -294,18 +285,11 @@ namespace AmplePack.Migrations
 
             modelBuilder.Entity("AmplePack.Models.OrderDetail", b =>
                 {
-                    b.HasOne("AmplePack.Models.CustomerProduct", "CustomerProduct")
-                        .WithMany()
-                        .HasForeignKey("CustomerProductId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
                     b.HasOne("AmplePack.Models.Order", "Order")
                         .WithMany("OrderDetails")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("CustomerProduct");
 
                     b.Navigation("Order");
                 });

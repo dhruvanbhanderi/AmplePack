@@ -18,6 +18,13 @@ namespace AmplePack
 
             var app = builder.Build();
 
+            // Seed the database
+            using (var scope = app.Services.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                DbSeeder.SeedData(context);
+            }
+
             // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
             {
@@ -27,6 +34,7 @@ namespace AmplePack
             }
 
             app.UseHttpsRedirection();
+            app.UseStaticFiles();
             app.UseRouting();
 
             app.UseAuthorization();

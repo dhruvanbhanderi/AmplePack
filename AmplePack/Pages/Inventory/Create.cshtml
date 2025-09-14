@@ -1,0 +1,108 @@
+@page
+@model AmplePack.Pages_Inventory.CreateModel
+@{
+    ViewData["Title"] = "Add Inventory Item";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="row">
+  <div class="col-md-12">
+    <div class="card card-primary">
+      <div class="card-header">
+        <h3 class="card-title">Add New Inventory Item</h3>
+      </div>
+      <!-- /.card-header -->
+      <!-- form start -->
+      <form method="post">
+        <div class="card-body">
+          <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+          
+          <div class="form-group">
+            <label asp-for="Inventory.ItemName" class="control-label">Item Name</label>
+            <input asp-for="Inventory.ItemName" class="form-control" placeholder="Enter item name (e.g., Small Box, Bubble Wrap)" />
+            <span asp-validation-for="Inventory.ItemName" class="text-danger"></span>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label asp-for="Inventory.Quantity" class="control-label">Current Quantity</label>
+                <input asp-for="Inventory.Quantity" class="form-control" type="number" min="0" step="1" placeholder="0" />
+                <span asp-validation-for="Inventory.Quantity" class="text-danger"></span>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label asp-for="Inventory.Unit" class="control-label">Unit of Measurement</label>
+                <select asp-for="Inventory.Unit" class="form-control">
+                  <option value="">-- Select Unit --</option>
+                  <option value="pieces">Pieces</option>
+                  <option value="rolls">Rolls</option>
+                  <option value="boxes">Boxes</option>
+                  <option value="sheets">Sheets</option>
+                  <option value="meters">Meters</option>
+                  <option value="kilograms">Kilograms</option>
+                </select>
+                <span asp-validation-for="Inventory.Unit" class="text-danger"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label asp-for="Inventory.ReorderLevel" class="control-label">Reorder Level</label>
+            <input asp-for="Inventory.ReorderLevel" class="form-control" type="number" min="0" step="1" placeholder="Minimum quantity before reordering" />
+            <span asp-validation-for="Inventory.ReorderLevel" class="text-danger"></span>
+            <small class="form-text text-muted">Alert will be shown when quantity falls below this level</small>
+          </div>
+
+          <!-- Additional Information Card -->
+          <div class="card card-secondary collapsed-card">
+            <div class="card-header">
+              <h3 class="card-title">Additional Information (Optional)</h3>
+              <div class="card-tools">
+                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+            </div>
+            <div class="card-body" style="display: none;">
+              <div class="form-group">
+                <label>Item Description</label>
+                <textarea class="form-control" rows="3" placeholder="Enter item description, specifications, or notes"></textarea>
+              </div>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label>Supplier</label>
+                    <input type="text" class="form-control" placeholder="Supplier name" />
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label>Storage Location</label>
+                    <input type="text" class="form-control" placeholder="Warehouse location" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /.card-body -->
+
+        <div class="card-footer">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> Add Item
+          </button>
+          <a asp-page="./Index" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+          </a>
+        </div>
+      </form>
+    </div>
+    <!-- /.card -->
+  </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

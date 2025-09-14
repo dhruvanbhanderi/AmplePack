@@ -1,0 +1,202 @@
+@page
+@model AmplePack.Pages_CustomerProducts.IndexModel
+@{
+    ViewData["Title"] = "Customer Product Patterns";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="row">
+  <div class="col-12">
+    <!-- Filter Section -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Filter Products</h3>
+        <div class="card-tools">
+          <a asp-page="Create" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Product Pattern
+          </a>
+        </div>
+      </div>
+      <div class="card-body">
+        <form method="get">
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label>Customer</label>
+                <select asp-for="SelectedCustomerId" class="form-control">
+                  <option value="">-- All Customers --</option>
+                  @foreach (var customer in Model.CustomerNames)
+                  {
+                    <option value="@customer.Key">@customer.Value</option>
+                  }
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>Search</label>
+                <input asp-for="SearchTerm" class="form-control" placeholder="Search by product name, description, or customer..." />
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="form-group">
+                <label>&nbsp;</label>
+                <div>
+                  <button type="submit" class="btn btn-info">
+                    <i class="fas fa-search"></i> Filter
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Products Grid -->
+    <div class="row">
+      @foreach (var product in Model.CustomerProducts)
+      {
+        <div class="col-md-6 col-lg-4">
+          <div class="card @(product.IsActive ? "card-outline card-primary" : "card-outline card-secondary")">
+            <div class="card-header">
+              <h3 class="card-title">
+                <i class="fas fa-box mr-2"></i>
+                @product.ProductName
+              </h3>
+              <div class="card-tools">
+                @if (!product.IsActive)
+                {
+                  <span class="badge badge-secondary">Inactive</span>
+                }
+                else
+                {
+                  <span class="badge badge-success">Active</span>
+                }
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-12">
+                  <strong>Customer:</strong> @product.Customer?.Name<br>
+                  <strong>Size:</strong> @product.SizeDisplay<br>
+                  <strong>Specifications:</strong> @product.SpecificationDisplay<br>
+                  <strong>Price:</strong> <span class="text-success">$@product.PricePerBox</span> per box<br>
+                  @if (!string.IsNullOrEmpty(product.Description))
+                  {
+                    <strong>Description:</strong> @product.Description<br>
+                  }
+                  @if (!string.IsNullOrEmpty(product.Category))
+                  {
+                    <strong>Category:</strong> <span class="badge badge-info">@product.Category</span><br>
+                  }
+                </div>
+              </div>
+              
+              <div class="row mt-2">
+                <div class="col-6">
+                  <small class="text-muted">
+                    Default Qty: @product.DefaultQuantity<br>
+                    Total Orders: @product.TotalOrdersCount
+                  </small>
+                </div>
+                <div class="col-6">
+                  <small class="text-muted">
+                    Created: @product.CreatedDate.ToString("MM/dd/yyyy")<br>
+                    @if (product.LastOrderDate.HasValue)
+                    {
+                      <span>Last Order: @product.LastOrderDate.Value.ToString("MM/dd/yyyy")</span>
+                    }
+                    else
+                    {
+                      <span class="text-warning">Never ordered</span>
+                    }
+                  </small>
+                </div>
+              </div>
+            </div>
+            <div class="card-footer">
+              <div class="btn-group w-100">
+                <a asp-page="./Details" asp-route-id="@product.Id" class="btn btn-info btn-sm">
+                  <i class="fas fa-eye"></i> Details
+                </a>
+                <a asp-page="./Edit" asp-route-id="@product.Id" class="btn btn-warning btn-sm">
+                  <i class="fas fa-edit"></i> Edit
+                </a>
+                <a asp-page="/Orders/Create" asp-route-productId="@product.Id" class="btn btn-success btn-sm">
+                  <i class="fas fa-shopping-cart"></i> Order
+                </a>
+                <a asp-page="./Delete" asp-route-id="@product.Id" class="btn btn-danger btn-sm">
+                  <i class="fas fa-trash"></i> Delete
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (!Model.CustomerProducts.Any())
+    {
+      <div class="card">
+        <div class="card-body text-center">
+          <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+          <h4>No Product Patterns Found</h4>
+          <p class="text-muted">
+            @if (Model.SelectedCustomerId.HasValue || !string.IsNullOrEmpty(Model.SearchTerm))
+            {
+              <span>No products match your current filters.</span>
+            }
+            else
+            {
+              <span>No customer product patterns have been created yet.</span>
+            }
+          </p>
+          <a asp-page="Create" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create First Product Pattern
+          </a>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mt-3">
+  <div class="col-md-3">
+    <div class="info-box">
+      <span class="info-box-icon bg-info"><i class="fas fa-boxes"></i></span>
+      <div class="info-box-content">
+        <span class="info-box-text">Total Patterns</span>
+        <span class="info-box-number">@Model.CustomerProducts.Count</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="info-box">
+      <span class="info-box-icon bg-success"><i class="fas fa-check-circle"></i></span>
+      <div class="info-box-content">
+        <span class="info-box-text">Active Patterns</span>
+        <span class="info-box-number">@Model.CustomerProducts.Count(p => p.IsActive)</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="info-box">
+      <span class="info-box-icon bg-warning"><i class="fas fa-users"></i></span>
+      <div class="info-box-content">
+        <span class="info-box-text">Customers</span>
+        <span class="info-box-number">@Model.CustomerProducts.Select(p => p.CustomerId).Distinct().Count()</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="info-box">
+      <span class="info-box-icon bg-danger"><i class="fas fa-shopping-cart"></i></span>
+      <div class="info-box-content">
+        <span class="info-box-text">Total Orders</span>
+        <span class="info-box-number">@Model.CustomerProducts.Sum(p => p.TotalOrdersCount)</span>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,288 @@
+@page
+@model AmplePack.Pages_Reports.IndexModel
+@{
+    ViewData["Title"] = "Reports Dashboard";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<!-- Info boxes -->
+<div class="row">
+  <div class="col-12 col-sm-6 col-md-3">
+    <div class="info-box">
+      <span class="info-box-icon bg-info elevation-1"><i class="fas fa-dollar-sign"></i></span>
+      <div class="info-box-content">
+        <span class="info-box-text">Total Revenue</span>
+        <span class="info-box-number">$@Model.TotalRevenue.ToString("N2")</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-sm-6 col-md-3">
+    <div class="info-box mb-3">
+      <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-calendar-alt"></i></span>
+      <div class="info-box-content">
+        <span class="info-box-text">This Month</span>
+        <span class="info-box-number">$@Model.MonthlyRevenue.ToString("N2")</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-sm-6 col-md-3">
+    <div class="info-box mb-3">
+      <span class="info-box-icon bg-success elevation-1"><i class="fas fa-shopping-cart"></i></span>
+      <div class="info-box-content">
+        <span class="info-box-text">Orders This Month</span>
+        <span class="info-box-number">@Model.TotalOrdersThisMonth</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-sm-6 col-md-3">
+    <div class="info-box mb-3">
+      <span class="info-box-icon bg-warning elevation-1"><i class="fas fa-users"></i></span>
+      <div class="info-box-content">
+        <span class="info-box-text">Total Customers</span>
+        <span class="info-box-number">@Model.TotalCustomers</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title">Monthly Revenue Report</h5>
+        <div class="card-tools">
+          <button type="button" class="btn btn-tool" data-card-widget="collapse">
+            <i class="fas fa-minus"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-8">
+            <p class="text-center">
+              <strong>Revenue: @DateTime.Now.AddMonths(-11).ToString("MMM yyyy") - @DateTime.Now.ToString("MMM yyyy")</strong>
+            </p>
+            <div class="chart">
+              <canvas id="revenueChart" height="180" style="height: 180px;"></canvas>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <p class="text-center">
+              <strong>Order Status Distribution</strong>
+            </p>
+            <div class="progress-group">
+              Completed Orders
+              <span class="float-right"><b>@Model.CompletedOrders</b>/@(Model.CompletedOrders + Model.PendingOrders + Model.ProcessingOrders + Model.CancelledOrders)</span>
+              <div class="progress progress-sm">
+                <div class="progress-bar bg-success" style="width: @(Model.CompletedOrders > 0 ? (Model.CompletedOrders * 100.0 / (Model.CompletedOrders + Model.PendingOrders + Model.ProcessingOrders + Model.CancelledOrders)) : 0)%"></div>
+              </div>
+            </div>
+            <div class="progress-group">
+              Processing Orders
+              <span class="float-right"><b>@Model.ProcessingOrders</b>/@(Model.CompletedOrders + Model.PendingOrders + Model.ProcessingOrders + Model.CancelledOrders)</span>
+              <div class="progress progress-sm">
+                <div class="progress-bar bg-info" style="width: @(Model.ProcessingOrders > 0 ? (Model.ProcessingOrders * 100.0 / (Model.CompletedOrders + Model.PendingOrders + Model.ProcessingOrders + Model.CancelledOrders)) : 0)%"></div>
+              </div>
+            </div>
+            <div class="progress-group">
+              Pending Orders
+              <span class="float-right"><b>@Model.PendingOrders</b>/@(Model.CompletedOrders + Model.PendingOrders + Model.ProcessingOrders + Model.CancelledOrders)</span>
+              <div class="progress progress-sm">
+                <div class="progress-bar bg-warning" style="width: @(Model.PendingOrders > 0 ? (Model.PendingOrders * 100.0 / (Model.CompletedOrders + Model.PendingOrders + Model.ProcessingOrders + Model.CancelledOrders)) : 0)%"></div>
+              </div>
+            </div>
+            <div class="progress-group">
+              Cancelled Orders
+              <span class="float-right"><b>@Model.CancelledOrders</b>/@(Model.CompletedOrders + Model.PendingOrders + Model.ProcessingOrders + Model.CancelledOrders)</span>
+              <div class="progress progress-sm">
+                <div class="progress-bar bg-danger" style="width: @(Model.CancelledOrders > 0 ? (Model.CancelledOrders * 100.0 / (Model.CompletedOrders + Model.PendingOrders + Model.ProcessingOrders + Model.CancelledOrders)) : 0)%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6">
+    <!-- Top Customers -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Top Customers by Revenue</h3>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Orders</th>
+              <th>Total Revenue</th>
+            </tr>
+          </thead>
+          <tbody>
+            @foreach (var customer in Model.TopCustomers)
+            {
+              <tr>
+                <td>
+                  <a asp-page="/Customers/Details" asp-route-id="@customer.Id">
+                    @customer.Name
+                  </a>
+                </td>
+                <td>@customer.Orders.Count()</td>
+                <td>$@customer.Orders.Where(o => o.Status == "Completed").Sum(o => o.TotalAmount).ToString("N2")</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <!-- Critical Stock Items -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Critical Stock Items</h3>
+        <div class="card-tools">
+          <span class="badge badge-danger">@Model.LowStockCount items need attention</span>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        @if (Model.CriticalStockItems.Any())
+        {
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Current Stock</th>
+                <th>Reorder Level</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach (var item in Model.CriticalStockItems)
+              {
+                <tr>
+                  <td>
+                    <a asp-page="/Inventory/Details" asp-route-id="@item.Id">
+                      @item.ItemName
+                    </a>
+                  </td>
+                  <td>@item.Quantity @item.Unit</td>
+                  <td>@item.ReorderLevel @item.Unit</td>
+                  <td>
+                    <span class="badge @(item.Quantity > 0 ? "badge-warning" : "badge-danger")">
+                      @(item.Quantity > 0 ? "Low Stock" : "Out of Stock")
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+        else
+        {
+          <div class="p-3 text-center text-muted">
+            <i class="fas fa-check-circle fa-2x mb-2"></i>
+            <p>All inventory items are well stocked!</p>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Export Options -->
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Export Reports</h3>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3">
+            <button type="button" class="btn btn-success btn-block" onclick="exportReport('excel')">
+              <i class="fas fa-file-excel"></i> Export to Excel
+            </button>
+          </div>
+          <div class="col-md-3">
+            <button type="button" class="btn btn-danger btn-block" onclick="exportReport('pdf')">
+              <i class="fas fa-file-pdf"></i> Export to PDF
+            </button>
+          </div>
+          <div class="col-md-3">
+            <button type="button" class="btn btn-info btn-block" onclick="exportReport('csv')">
+              <i class="fas fa-file-csv"></i> Export to CSV
+            </button>
+          </div>
+          <div class="col-md-3">
+            <button type="button" class="btn btn-secondary btn-block" onclick="window.print()">
+              <i class="fas fa-print"></i> Print Report
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Revenue Chart
+    var revenueChartCanvas = document.getElementById('revenueChart').getContext('2d');
+    var revenueData = {
+      labels: [@Html.Raw(string.Join(",", Model.MonthlyRevenueChart.Select(m => $"'{m.Month}'")))],
+      datasets: [{
+        label: 'Revenue',
+        backgroundColor: 'rgba(60,141,188,0.9)',
+        borderColor: 'rgba(60,141,188,0.8)',
+        pointRadius: false,
+        pointColor: '#3b8bba',
+        pointStrokeColor: 'rgba(60,141,188,1)',
+        pointHighlightFill: '#fff',
+        pointHighlightStroke: 'rgba(60,141,188,1)',
+        data: [@string.Join(",", Model.MonthlyRevenueChart.Select(m => m.Revenue.ToString("F2")))]
+      }]
+    };
+
+    var revenueChartOptions = {
+      maintainAspectRatio: false,
+      responsive: true,
+      legend: {
+        display: false
+      },
+      scales: {
+        x: {
+          grid: {
+            display: false,
+          }
+        },
+        y: {
+          grid: {
+            display: false,
+          },
+          ticks: {
+            callback: function(value, index, values) {
+              return '$' + value.toLocaleString();
+            }
+          }
+        }
+      }
+    };
+
+    new Chart(revenueChartCanvas, {
+      type: 'line',
+      data: revenueData,
+      options: revenueChartOptions
+    });
+
+    function exportReport(format) {
+      alert('Export to ' + format.toUpperCase() + ' functionality would be implemented here');
+    }
+  </script>
+}
