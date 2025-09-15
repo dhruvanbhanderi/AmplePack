@@ -20,11 +20,11 @@
             <div class="col-lg-3 col-md-6 col-sm-6 mb-2">
                 <div class="info-box">
                     <span class="info-box-icon bg-info">
-                        <i class="fas fa-dollar-sign"></i>
+                        <i class="fas fa-rupee-sign"></i>
                     </span>
                     <div class="info-box-content">
                         <span class="info-box-text">Total Revenue</span>
-                        <span class="info-box-number">$@Model.TotalRevenue.ToString("N0")</span>
+                        <span class="info-box-number">?@Model.TotalRevenue.ToString("N0")</span>
                     </div>
                 </div>
             </div>
@@ -35,7 +35,7 @@
                     </span>
                     <div class="info-box-content">
                         <span class="info-box-text">Monthly Revenue</span>
-                        <span class="info-box-number">$@Model.MonthlyRevenue.ToString("N0")</span>
+                        <span class="info-box-number">?@Model.MonthlyRevenue.ToString("N0")</span>
                     </div>
                 </div>
             </div>
@@ -156,7 +156,7 @@
                                                     <span class="badge badge-primary">@customer.Orders.Count()</span>
                                                 </td>
                                                 <td>
-                                                    <strong class="text-success">$@customer.Orders.Where(o => o.Status == "Completed").Sum(o => o.TotalAmount).ToString("N0")</strong>
+                                                    <strong class="text-success">?@customer.Orders.Where(o => o.Status == "Completed").Sum(o => o.TotalAmount).ToString("N0")</strong>
                                                 </td>
                                             </tr>
                                             rank++;
@@ -271,11 +271,11 @@
                             <div class="col-lg-3 col-md-6 mb-2">
                                 <div class="info-box">
                                     <span class="info-box-icon bg-success">
-                                        <i class="fas fa-dollar-sign"></i>
+                                        <i class="fas fa-rupee-sign"></i>
                                     </span>
                                     <div class="info-box-content">
                                         <span class="info-box-text">Inventory Value</span>
-                                        <span class="info-box-number">$@Model.TotalInventoryValue.ToString("N0")</span>
+                                        <span class="info-box-number">?@Model.TotalInventoryValue.ToString("N0")</span>
                                     </div>
                                 </div>
                             </div>
@@ -323,7 +323,7 @@
                     data: {
                         labels: [@Html.Raw(string.Join(",", Model.MonthlyRevenueChart.Select(x => "'" + x.Month + "'")))],
                         datasets: [{
-                            label: 'Revenue ($)',
+                            label: 'Revenue (?)',
                             data: [@Html.Raw(string.Join(",", Model.MonthlyRevenueChart.Select(x => x.Revenue.ToString())))],
                             borderColor: '#007bff',
                             backgroundColor: 'rgba(0, 123, 255, 0.1)',
@@ -351,7 +351,7 @@
                                 },
                                 ticks: {
                                     callback: function(value) {
-                                        return '$' + value.toLocaleString();
+                                        return '?' + value.toLocaleString('en-IN');
                                     }
                                 }
                             },
@@ -371,7 +371,7 @@
                                 bodyColor: '#fff',
                                 callbacks: {
                                     label: function(context) {
-                                        return 'Revenue: $' + context.parsed.y.toLocaleString();
+                                        return 'Revenue: ?' + context.parsed.y.toLocaleString('en-IN');
                                     }
                                 }
                             }

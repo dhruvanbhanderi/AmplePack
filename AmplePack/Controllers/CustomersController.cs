@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using AmplePack.Data;
@@ -9,6 +10,7 @@ using AmplePack.Models;
 
 namespace AmplePack.Controllers
 {
+    [Authorize]
     public class CustomersController : Controller
     {
         private readonly AppDbContext _context;
@@ -21,7 +23,7 @@ namespace AmplePack.Controllers
         // GET: Customers
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Customers.ToListAsync());
+            return View(await _context.Customers.Include(c => c.Orders).ToListAsync());
         }
 
         // GET: Customers/Details/5
@@ -45,6 +47,7 @@ namespace AmplePack.Controllers
         }
 
         // GET: Customers/Create
+        [Authorize(Roles = "Admin,Manager")]
         public IActionResult Create()
         {
             return View();
@@ -53,6 +56,7 @@ namespace AmplePack.Controllers
         // POST: Customers/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Create([Bind("Id,Name,Contact,Email,Address")] Customer customer)
         {
             if (ModelState.IsValid)
@@ -65,6 +69,7 @@ namespace AmplePack.Controllers
         }
 
         // GET: Customers/Edit/5
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -83,6 +88,7 @@ namespace AmplePack.Controllers
         // POST: Customers/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Contact,Email,Address")] Customer customer)
         {
             if (id != customer.Id)
@@ -114,6 +120,7 @@ namespace AmplePack.Controllers
         }
 
         // GET: Customers/Delete/5
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -134,6 +141,7 @@ namespace AmplePack.Controllers
         // POST: Customers/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var customer = await _context.Customers.FindAsync(id);

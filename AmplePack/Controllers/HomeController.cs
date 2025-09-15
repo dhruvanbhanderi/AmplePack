@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using AmplePack.Models;
@@ -6,13 +7,16 @@ using AmplePack.Data;
 
 namespace AmplePack.Controllers
 {
+    [Authorize]
     public class HomeController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly ILogger<HomeController> _logger;
 
-        public HomeController(AppDbContext context)
+        public HomeController(AppDbContext context, ILogger<HomeController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public async Task<IActionResult> Index()

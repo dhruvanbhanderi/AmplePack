@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +11,7 @@ using AmplePack.Models;
 
 namespace AmplePack.Controllers
 {
+    [Authorize]
     public class OrdersController : Controller
     {
         private readonly AppDbContext _context;
@@ -68,6 +70,7 @@ namespace AmplePack.Controllers
         }
 
         // GET: Orders/Create
+        [Authorize(Roles = "Admin,Manager")]
         public IActionResult Create()
         {
             ViewData["CustomerId"] = new SelectList(_context.Customers, "Id", "Name");
@@ -77,6 +80,7 @@ namespace AmplePack.Controllers
         // POST: Orders/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Create([Bind("Id,CustomerId,Date,Status,TotalAmount")] Order order)
         {
             if (ModelState.IsValid)
@@ -90,6 +94,7 @@ namespace AmplePack.Controllers
         }
 
         // GET: Orders/CreateWorkflow
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> CreateWorkflow(int? customerId, int? productId)
         {
             var model = new OrderDetailInput();
@@ -121,6 +126,7 @@ namespace AmplePack.Controllers
         // POST: Orders/CreateWorkflow
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> CreateWorkflow(OrderDetailInput input)
         {
             if (ModelState.IsValid)
@@ -271,6 +277,7 @@ namespace AmplePack.Controllers
         }
 
         // GET: Orders/Edit/5
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -291,6 +298,7 @@ namespace AmplePack.Controllers
         // POST: Orders/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Edit(int id, [Bind("Id,CustomerId,Date,Status,TotalAmount")] Order order)
         {
             if (id != order.Id)
@@ -324,6 +332,7 @@ namespace AmplePack.Controllers
         }
 
         // GET: Orders/Delete/5
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -346,6 +355,7 @@ namespace AmplePack.Controllers
         // POST: Orders/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var order = await _context.Orders.FindAsync(id);

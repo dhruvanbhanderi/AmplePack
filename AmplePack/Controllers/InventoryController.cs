@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using AmplePack.Data;
@@ -9,6 +10,7 @@ using AmplePack.Models;
 
 namespace AmplePack.Controllers
 {
+    [Authorize]
     public class InventoryController : Controller
     {
         private readonly AppDbContext _context;
@@ -43,6 +45,7 @@ namespace AmplePack.Controllers
         }
 
         // GET: Inventory/Create
+        [Authorize(Roles = "Admin,Manager")]
         public IActionResult Create()
         {
             return View();
@@ -51,6 +54,7 @@ namespace AmplePack.Controllers
         // POST: Inventory/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Create([Bind("Id,ProductName,ItemName,AvailableQuantity,UnitPrice,Unit,Category,ReorderLevel")] Inventory inventory)
         {
             if (ModelState.IsValid)
@@ -63,6 +67,7 @@ namespace AmplePack.Controllers
         }
 
         // GET: Inventory/Edit/5
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -81,6 +86,7 @@ namespace AmplePack.Controllers
         // POST: Inventory/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> Edit(int id, [Bind("Id,ProductName,ItemName,AvailableQuantity,UnitPrice,Unit,Category,ReorderLevel")] Inventory inventory)
         {
             if (id != inventory.Id)
@@ -112,6 +118,7 @@ namespace AmplePack.Controllers
         }
 
         // GET: Inventory/Delete/5
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -132,6 +139,7 @@ namespace AmplePack.Controllers
         // POST: Inventory/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var inventory = await _context.Inventories.FindAsync(id);
