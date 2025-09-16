@@ -1,3 +1,4 @@
+@using AmplePack.Helpers
 @model AmplePack.Models.Inventory
 @{
     ViewData["Title"] = "Inventory Details";
@@ -21,7 +22,7 @@
                     <div class="card-header">
                         <h3 class="card-title">
                             <i class="fas fa-box mr-2"></i>
-                            @Model.ProductName
+                            @Model.ItemName
                         </h3>
                         <div class="card-tools">
                             @if (Model.IsLowStock)
@@ -41,9 +42,6 @@
                     
                     <div class="card-body">
                         <dl class="row">
-                            <dt class="col-sm-3">Product Name:</dt>
-                            <dd class="col-sm-9">@Model.ProductName</dd>
-                            
                             <dt class="col-sm-3">Item Name:</dt>
                             <dd class="col-sm-9">@Model.ItemName</dd>
                             
@@ -56,12 +54,12 @@
                             
                             <dt class="col-sm-3">Unit Price:</dt>
                             <dd class="col-sm-9">
-                                <strong class="text-success">$@Model.UnitPrice.ToString("N2")</strong>
+                                <strong class="text-success">@CurrencyHelper.FormatCurrency(Model.UnitPrice)</strong>
                             </dd>
                             
                             <dt class="col-sm-3">Total Value:</dt>
                             <dd class="col-sm-9">
-                                <strong class="text-primary h5">$@Model.TotalValue.ToString("N2")</strong>
+                                <strong class="text-primary h5">@CurrencyHelper.FormatCurrency(Model.TotalValue)</strong>
                             </dd>
                             
                             <dt class="col-sm-3">Category:</dt>
@@ -101,7 +99,7 @@
                                     </span>
                                     <div class="info-box-content">
                                         <span class="info-box-text">Inventory Value</span>
-                                        <span class="info-box-number">$@Model.TotalValue.ToString("N2")</span>
+                                        <span class="info-box-number">@CurrencyHelper.FormatCurrency(Model.TotalValue)</span>
                                     </div>
                                 </div>
                             </div>

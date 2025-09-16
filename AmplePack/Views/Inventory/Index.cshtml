@@ -1,3 +1,4 @@
+@using AmplePack.Helpers
 @model List<AmplePack.Models.Inventory>
 @{
     ViewData["Title"] = "Inventory Management";
@@ -38,7 +39,6 @@
                                 <table id="inventoryTable" class="table table-bordered table-hover table-striped">
                                     <thead class="thead-dark">
                                         <tr>
-                                            <th>Product Name</th>
                                             <th>Item Name</th>
                                             <th>Category</th>
                                             <th>Available Qty</th>
@@ -54,9 +54,8 @@
                                         {
                                             <tr class="@(item.IsLowStock ? "table-warning" : "")">
                                                 <td>
-                                                    <strong>@(string.IsNullOrEmpty(item.ProductName) ? "N/A" : item.ProductName)</strong>
+                                                    <strong>@item.ItemName</strong>
                                                 </td>
-                                                <td>@item.ItemName</td>
                                                 <td>
                                                     @if (!string.IsNullOrEmpty(item.Category))
                                                     {
@@ -73,9 +72,9 @@
                                                     </span>
                                                 </td>
                                                 <td>@item.Unit</td>
-                                                <td>$@item.UnitPrice.ToString("N2")</td>
+                                                <td>@CurrencyHelper.FormatCurrency(item.UnitPrice)</td>
                                                 <td>
-                                                    <strong class="text-success">$@item.TotalValue.ToString("N2")</strong>
+                                                    <strong class="text-success">@CurrencyHelper.FormatCurrency(item.TotalValue)</strong>
                                                 </td>
                                                 <td>
                                                     @if (item.IsLowStock)
@@ -142,7 +141,7 @@
                 "pageLength": 25,
                 "order": [[ 0, "asc" ]],
                 "columnDefs": [
-                    { "orderable": false, "targets": 8 }
+                    { "orderable": false, "targets": 7 }
                 ],
                 "language": {
                     "search": "Search inventory:",
@@ -166,4 +165,4 @@
             font-size: 0.75em;
         }
     </style>
-}
+}}

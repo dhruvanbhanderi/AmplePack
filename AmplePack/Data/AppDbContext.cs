@@ -12,7 +12,6 @@ namespace AmplePack.Data
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderDetail> OrderDetails { get; set; }
         public DbSet<Inventory> Inventories { get; set; }
-        public DbSet<BoxPricing> BoxPricings { get; set; }
         public DbSet<CustomerProduct> CustomerProducts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -28,30 +27,10 @@ namespace AmplePack.Data
                 .Property(od => od.PricePerBox)
                 .HasColumnType("decimal(18,2)");
 
-            modelBuilder.Entity<BoxPricing>()
-                .Property(bp => bp.Cost)
-                .HasColumnType("decimal(18,2)");
-
-            modelBuilder.Entity<BoxPricing>()
-                .Property(bp => bp.L)
-                .HasColumnType("decimal(10,2)");
-
-            modelBuilder.Entity<BoxPricing>()
-                .Property(bp => bp.W)
-                .HasColumnType("decimal(10,2)");
-
-            modelBuilder.Entity<BoxPricing>()
-                .Property(bp => bp.H)
-                .HasColumnType("decimal(10,2)");
-
             // Configure Inventory properties
             modelBuilder.Entity<Inventory>()
                 .Property(i => i.AvailableQuantity)
                 .HasColumnType("decimal(10,2)");
-
-            modelBuilder.Entity<Inventory>()
-                .Property(i => i.Quantity)
-                .HasColumnType("decimal(18,2)");
 
             modelBuilder.Entity<Inventory>()
                 .Property(i => i.ReorderLevel)

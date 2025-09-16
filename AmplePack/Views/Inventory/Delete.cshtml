@@ -1,3 +1,4 @@
+@using AmplePack.Helpers
 @model AmplePack.Models.Inventory
 @{
     ViewData["Title"] = "Delete Inventory Item";
@@ -32,9 +33,6 @@
                         </div>
                         
                         <dl class="row">
-                            <dt class="col-sm-3">Product Name:</dt>
-                            <dd class="col-sm-9">@Model.ProductName</dd>
-                            
                             <dt class="col-sm-3">Item Name:</dt>
                             <dd class="col-sm-9">@Model.ItemName</dd>
                             
@@ -46,11 +44,11 @@
                             </dd>
                             
                             <dt class="col-sm-3">Unit Price:</dt>
-                            <dd class="col-sm-9">$@Model.UnitPrice.ToString("N2")</dd>
+                            <dd class="col-sm-9">@CurrencyHelper.FormatCurrency(Model.UnitPrice)</dd>
                             
                             <dt class="col-sm-3">Total Value:</dt>
                             <dd class="col-sm-9">
-                                <strong class="text-danger">$@Model.TotalValue.ToString("N2")</strong>
+                                <strong class="text-danger">@CurrencyHelper.FormatCurrency(Model.TotalValue)</strong>
                             </dd>
                             
                             <dt class="col-sm-3">Category:</dt>
@@ -63,7 +61,7 @@
                         {
                             <div class="alert alert-warning">
                                 <strong>Note:</strong> This item currently has @Model.AvailableQuantity.ToString("N2") @Model.Unit in stock 
-                                with a total value of $@Model.TotalValue.ToString("N2"). 
+                                with a total value of @CurrencyHelper.FormatCurrency(Model.TotalValue). 
                                 Deleting this item will permanently remove this inventory value from your records.
                             </div>
                         }

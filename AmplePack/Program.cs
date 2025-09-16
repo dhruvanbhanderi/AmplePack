@@ -89,6 +89,7 @@ namespace AmplePack
                 .WithStaticAssets();
 
             app.Run();
+
         }
     }
 }

@@ -1,0 +1,290 @@
+@using AmplePack.Helpers
+@model AmplePack.Models.Order
+@{
+    ViewData["Title"] = "Order Details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Order #@Model.Id</h1>
+            </div>
+            <div class="col-sm-6">
+                <div class="float-sm-right">
+                    <span class="badge @(Model.Status == "Completed" ? "badge-success" : Model.Status == "Pending" ? "badge-warning" : Model.Status == "Processing" ? "badge-info" : "badge-danger") badge-lg">
+                        @Model.Status
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-8">
+                <!-- Order Information -->
+                <div class="card card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-shopping-cart"></i> Order Information
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <strong><i class="fas fa-calendar mr-1"></i> Order Date:</strong>
+                                <p class="text-muted">@Model.Date.ToString("MMMM dd, yyyy")</p>
+                            </div>
+                            <div class="col-sm-6">
+                                <strong><i class="fas fa-money-bill mr-1"></i> Total Amount:</strong>
+                                <p class="text-muted h5">@CurrencyHelper.FormatCurrency(Model.TotalAmount)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Customer Information -->
+                <div class="card card-info">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-user"></i> Customer Information
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.Customer != null)
+                        {
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <strong><i class="fas fa-user mr-1"></i> Name:</strong>
+                                    <p class="text-muted">@Model.Customer.Name</p>
+                                </div>
+                                <div class="col-sm-6">
+                                    <strong><i class="fas fa-envelope mr-1"></i> Email:</strong>
+                                    <p class="text-muted">
+                                        <a href="mailto:@Model.Customer.Email">@Model.Customer.Email</a>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <strong><i class="fas fa-phone mr-1"></i> Contact:</strong>
+                                    <p class="text-muted">
+                                        <a href="tel:@Model.Customer.Contact">@Model.Customer.Contact</a>
+                                    </p>
+                                </div>
+                                <div class="col-sm-6">
+                                    <strong><i class="fas fa-map-marker-alt mr-1"></i> Address:</strong>
+                                    <p class="text-muted">@Model.Customer.Address</p>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Order Details -->
+                @if (Model.OrderDetails?.Any() == true)
+                {
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-list"></i> Order Items (@Model.OrderDetails.Count())
+                            </h3>
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Box Type</th>
+                                        <th>Size</th>
+                                        <th>Quantity</th>
+                                        <th>Price per Box</th>
+                                        <th>Total</th>
+                                        <th>Delivery Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var detail in Model.OrderDetails)
+                                    {
+                                        <tr>
+                                            <td>@detail.BoxType</td>
+                                            <td>@detail.Size</td>
+                                            <td>@detail.Quantity</td>
+                                            <td>@CurrencyHelper.FormatCurrency(detail.PricePerBox)</td>
+                                            <td>@CurrencyHelper.FormatCurrency(detail.Quantity * detail.PricePerBox)</td>
+                                            <td>
+                                                @if (detail.DeliveryDate.HasValue)
+                                                {
+                                                    @detail.DeliveryDate.Value.ToString("MMM dd, yyyy")
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">Not specified</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-info">
+                                        <th colspan="4" class="text-right">Grand Total:</th>
+                                        <th colspan="2">@CurrencyHelper.FormatCurrency(Model.TotalAmount)</th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                            <h4>No Order Items</h4>
+                            <p class="text-muted">This order doesn't have any items yet.</p>
+                        </div>
+                    </div>
+                }
+            </div>
+            
+            <div class="col-md-4">
+                <!-- Order Timeline -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-history"></i> Order Timeline
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="timeline">
+                            <div class="time-label">
+                                <span class="bg-green">@Model.Date.ToString("MMM dd")</span>
+                            </div>
+                            <div>
+                                <i class="fas fa-plus bg-blue"></i>
+                                <div class="timeline-item">
+                                    <span class="time"><i class="fas fa-clock"></i> @Model.Date.ToString("h:mm tt")</span>
+                                    <h3 class="timeline-header">Order Created</h3>
+                                    <div class="timeline-body">
+                                        Order #@Model.Id was created for @Model.Customer?.Name
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            @if (Model.Status == "Processing" || Model.Status == "Completed")
+                            {
+                                <div>
+                                    <i class="fas fa-cog bg-yellow"></i>
+                                    <div class="timeline-item">
+                                        <h3 class="timeline-header">Order Processing</h3>
+                                        <div class="timeline-body">
+                                            Order is being processed
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            
+                            @if (Model.Status == "Completed")
+                            {
+                                <div>
+                                    <i class="fas fa-check bg-green"></i>
+                                    <div class="timeline-item">
+                                        <h3 class="timeline-header">Order Completed</h3>
+                                        <div class="timeline-body">
+                                            Order has been completed successfully
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            
+                            @if (Model.Status == "Cancelled")
+                            {
+                                <div>
+                                    <i class="fas fa-times bg-red"></i>
+                                    <div class="timeline-item">
+                                        <h3 class="timeline-header">Order Cancelled</h3>
+                                        <div class="timeline-body">
+                                            Order has been cancelled
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-tools"></i> Quick Actions
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+                        {
+                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning btn-block">
+                                <i class="fas fa-edit"></i> Edit Order
+                            </a>
+                        }
+                        
+                        @if (Model.Status != "Completed" && (User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Staff")))
+                        {
+                            <form asp-action="UpdateStatus" method="post" class="d-inline">
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <input type="hidden" name="status" value="Completed" />
+                                <button type="submit" class="btn btn-success btn-block" onclick="return confirm('Mark this order as completed?')">
+                                    <i class="fas fa-check"></i> Mark as Completed
+                                </button>
+                            </form>
+                        }
+                        
+                        @if (Model.Status == "Pending" && (User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Staff")))
+                        {
+                            <form asp-action="UpdateStatus" method="post" class="d-inline">
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <input type="hidden" name="status" value="Processing" />
+                                <button type="submit" class="btn btn-info btn-block" onclick="return confirm('Start processing this order?')">
+                                    <i class="fas fa-cog"></i> Start Processing
+                                </button>
+                            </form>
+                        }
+                        
+                        <a href="mailto:@Model.Customer?.Email" class="btn btn-primary btn-block">
+                            <i class="fas fa-envelope"></i> Email Customer
+                        </a>
+                        
+                        <a href="tel:@Model.Customer?.Contact" class="btn btn-secondary btn-block">
+                            <i class="fas fa-phone"></i> Call Customer
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card-footer">
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Orders
+                    </a>
+                    @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+                    {
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                            <i class="fas fa-edit"></i> Edit Order
+                        </a>
+                    }
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <a asp-action="Delete" asp-route-id="@Model.Id" class="btn.btn-danger">
+                            <i class="fas fa-trash"></i> Delete Order
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

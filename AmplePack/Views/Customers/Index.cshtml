@@ -3,6 +3,86 @@
     ViewData["Title"] = "Customer Management";
 }
 
+<!-- Add CSS for Actions dropdown -->
+<style>
+    /* Ensure Actions column is visible */
+    .table th:last-child,
+    .table td:last-child {
+        min-width: 200px !important;
+        white-space: nowrap;
+    }
+    
+    /* Dropdown styling */
+    .btn-group {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .dropdown-menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        z-index: 1000;
+        display: none;
+        min-width: 200px;
+        padding: 0.5rem 0;
+        margin: 0.125rem 0 0;
+        font-size: 0.875rem;
+        color: #212529;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid rgba(0,0,0,.15);
+        border-radius: 0.25rem;
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,.175);
+    }
+    
+    .dropdown-menu.show {
+        display: block;
+    }
+    
+    .dropdown-item {
+        display: block;
+        width: 100%;
+        padding: 0.375rem 1rem;
+        clear: both;
+        font-weight: 400;
+        color: #212529;
+        text-align: inherit;
+        text-decoration: none;
+        white-space: nowrap;
+        background-color: transparent;
+        border: 0;
+    }
+    
+    .dropdown-item:hover,
+    .dropdown-item:focus {
+        color: #16181b;
+        background-color: #f8f9fa;
+        text-decoration: none;
+    }
+    
+    .dropdown-divider {
+        height: 0;
+        margin: 0.5rem 0;
+        overflow: hidden;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    /* Button group styling */
+    .btn-group .btn {
+        margin-right: 2px;
+    }
+    
+    .btn-group .btn:last-child {
+        margin-right: 0;
+    }
+    
+    /* Table responsiveness */
+    .table-responsive {
+        overflow-x: auto;
+    }
+</style>
+
 <div class="content-header">
     <div class="container-fluid">
         <div class="row mb-2">
@@ -44,7 +124,7 @@
                                             <th>Address</th>
                                             <th>Orders</th>
                                             <th>Products</th>
-                                            <th>Actions</th>
+                                            <th style="min-width: 200px;">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -101,29 +181,68 @@
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <div class="btn-group">
-                                                        <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-toggle="dropdown">
-                                                            Actions
+                                                    <!-- Option 1: Bootstrap Dropdown -->
+                                                    <div class="btn-group" style="display: inline-block;">
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                                            <i class="fas fa-cog mr-1"></i> Actions
                                                         </button>
-                                                        <div class="dropdown-menu">
-                                                            <a class="dropdown-item" asp-action="Details" asp-route-id="@customer.Id">
-                                                                <i class="fas fa-eye mr-2"></i>View Details
+                                                        <ul class="dropdown-menu">
+                                                            <li>
+                                                                <a class="dropdown-item" asp-action="Details" asp-route-id="@customer.Id">
+                                                                    <i class="fas fa-eye mr-2"></i>View Details
+                                                                </a>
+                                                            </li>
+                                                            @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+                                                            {
+                                                                <li>
+                                                                    <a class="dropdown-item" asp-action="Edit" asp-route-id="@customer.Id">
+                                                                        <i class="fas fa-edit mr-2"></i>Edit Customer
+                                                                    </a>
+                                                                </li>
+                                                            }
+                                                            <li><hr class="dropdown-divider"></li>
+                                                            <li>
+                                                                <a class="dropdown-item" asp-controller="Orders" asp-action="CreateWorkflow" asp-route-customerId="@customer.Id">
+                                                                    <i class="fas fa-plus mr-2"></i>Create Order
+                                                                </a>
+                                                            </li>
+                                                            <li>
+                                                                <a class="dropdown-item" asp-controller="CustomerProducts" asp-action="Create" asp-route-customerId="@customer.Id">
+                                                                    <i class="fas fa-cube mr-2"></i>Add Product
+                                                                </a>
+                                                            </li>
+                                                            @if (User.IsInRole("Admin"))
+                                                            {
+                                                                <li><hr class="dropdown-divider"></li>
+                                                                <li>
+                                                                    <a class="dropdown-item text-danger" asp-action="Delete" asp-route-id="@customer.Id">
+                                                                        <i class="fas fa-trash mr-2"></i>Delete Customer
+                                                                    </a>
+                                                                </li>
+                                                            }
+                                                        </ul>
+                                                    </div>
+                                                
+                                                    <!-- Option 2: Button Group (Fallback) -->
+                                                    <div class="btn-group btn-group-sm d-none" role="group" style="margin-left: 5px;">
+                                                        <a href="@Url.Action("Details", new { id = customer.Id })" class="btn btn-outline-info" title="View Details">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+                                                        {
+                                                            <a href="@Url.Action("Edit", new { id = customer.Id })" class="btn btn-outline-warning" title="Edit">
+                                                                <i class="fas fa-edit"></i>
                                                             </a>
-                                                            <a class="dropdown-item" asp-action="Edit" asp-route-id="@customer.Id">
-                                                                <i class="fas fa-edit mr-2"></i>Edit Customer
+                                                        }
+                                                        <a href="@Url.Action("CreateWorkflow", "Orders", new { customerId = customer.Id })" class="btn btn-outline-success" title="Create Order">
+                                                            <i class="fas fa-plus"></i>
+                                                        </a>
+                                                        @if (User.IsInRole("Admin"))
+                                                        {
+                                                            <a href="@Url.Action("Delete", new { id = customer.Id })" class="btn btn-outline-danger" title="Delete">
+                                                                <i class="fas fa-trash"></i>
                                                             </a>
-                                                            <div class="dropdown-divider"></div>
-                                                            <a class="dropdown-item" asp-controller="Orders" asp-action="CreateWorkflow" asp-route-customerId="@customer.Id">
-                                                                <i class="fas fa-plus mr-2"></i>Create Order
-                                                            </a>
-                                                            <a class="dropdown-item" asp-controller="CustomerProducts" asp-action="Create" asp-route-customerId="@customer.Id">
-                                                                <i class="fas fa-cube mr-2"></i>Add Product
-                                                            </a>
-                                                            <div class="dropdown-divider"></div>
-                                                            <a class="dropdown-item text-danger" asp-action="Delete" asp-route-id="@customer.Id">
-                                                                <i class="fas fa-trash mr-2"></i>Delete Customer
-                                                            </a>
-                                                        </div>
+                                                        }
                                                     </div>
                                                 </td>
                                             </tr>
@@ -157,6 +276,7 @@
     
     <script>
         $(document).ready(function() {
+            // Initialize DataTables
             $('#customersTable').DataTable({
                 "responsive": true,
                 "lengthChange": true,
@@ -164,7 +284,8 @@
                 "pageLength": 25,
                 "order": [[ 0, "asc" ]],
                 "columnDefs": [
-                    { "orderable": false, "targets": 6 }
+                    { "orderable": false, "targets": 6 }, // Actions column
+                    { "width": "200px", "targets": 6 }    // Fixed width for Actions
                 ],
                 "language": {
                     "search": "Search customers:",
@@ -172,6 +293,33 @@
                     "info": "Showing _START_ to _END_ of _TOTAL_ customers"
                 }
             });
+            
+            // Debug: Check if dropdowns are working
+            console.log('Customer table loaded. Checking dropdown functionality...');
+            
+            // Fallback: If Bootstrap dropdown fails, show button group
+            setTimeout(function() {
+                $('.dropdown-toggle').each(function() {
+                    var $this = $(this);
+                    $this.on('click', function(e) {
+                        e.preventDefault();
+                        var $menu = $this.next('.dropdown-menu');
+                        if ($menu.is(':visible')) {
+                            $menu.hide();
+                        } else {
+                            $('.dropdown-menu').hide(); // Hide all other dropdowns
+                            $menu.show();
+                        }
+                    });
+                });
+                
+                // Close dropdown when clicking outside
+                $(document).on('click', function(e) {
+                    if (!$(e.target).closest('.btn-group').length) {
+                        $('.dropdown-menu').hide();
+                    }
+                });
+            }, 500);
         });
     </script>
 }

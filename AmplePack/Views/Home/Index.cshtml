@@ -1,4 +1,5 @@
-﻿@{
+﻿@using AmplePack.Helpers
+@{
     ViewData["Title"] = "Dashboard";
 }
 
@@ -47,11 +48,11 @@
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-warning">
                     <div class="inner">
-                        <h3>₹@ViewBag.TotalRevenue.ToString("N0")</h3>
+                        <h3>@CurrencyHelper.FormatCurrency(ViewBag.TotalRevenue)</h3>
                         <p>Total Revenue</p>
                     </div>
                     <div class="icon">
-                        <i class="fas fa-rupee-sign"></i>
+                        <i class="fas fa-money-bill"></i>
                     </div>
                     <a href="@Url.Action("Index", "Reports")" class="small-box-footer">
                         More info <i class="fas fa-arrow-circle-right"></i>
@@ -220,7 +221,7 @@
                                                 </td>
                                                 <td>@order.Customer?.Name</td>
                                                 <td>@order.Date.ToString("MMM dd, yyyy")</td>
-                                                <td>₹@order.TotalAmount.ToString("N2")</td>
+                                                <td>@CurrencyHelper.FormatCurrency(order.TotalAmount)</td>
                                                 <td>
                                                     @if (order.Status == "Pending")
                                                     {
@@ -280,7 +281,7 @@
                             @foreach (var item in ((List<AmplePack.Models.Inventory>)ViewBag.LowStockItems).Take(3))
                             {
                                 <div class="alert alert-warning alert-dismissible">
-                                    <h6 class="mb-1">@item.ProductName</h6>
+                                    <h6 class="mb-1">@item.ItemName</h6>
                                     <small>Only @item.AvailableQuantity @item.Unit remaining (Reorder at @item.ReorderLevel)</small>
                                 </div>
                             }

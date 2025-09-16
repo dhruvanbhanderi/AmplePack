@@ -6,10 +6,6 @@ namespace AmplePack.Models
     {
         public int Id { get; set; }
         
-        [Required(ErrorMessage = "Product name is required")]
-        [StringLength(100, ErrorMessage = "Product name cannot be longer than 100 characters")]
-        public string ProductName { get; set; } = string.Empty;
-        
         [Required(ErrorMessage = "Item name is required")]
         [StringLength(100, ErrorMessage = "Item name cannot be longer than 100 characters")]
         public string ItemName { get; set; } = string.Empty;
@@ -38,7 +34,7 @@ namespace AmplePack.Models
         public bool IsLowStock => AvailableQuantity <= ReorderLevel;
         public decimal TotalValue => AvailableQuantity * UnitPrice;
         
-        // For backward compatibility
+        // For backward compatibility - simplified
         public decimal Quantity 
         { 
             get => AvailableQuantity; 

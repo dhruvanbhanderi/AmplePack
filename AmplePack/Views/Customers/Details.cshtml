@@ -1,0 +1,301 @@
+@model AmplePack.Models.Customer
+@{
+    ViewData["Title"] = "Customer Details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Customer Details</h1>
+            </div>
+            <div class="col-sm-6">
+                <div class="float-sm-right">
+                    <span class="badge badge-primary badge-lg">
+                        Customer ID: #@Model.Id
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-8">
+                <!-- Profile Card -->
+                <div class="card card-primary card-outline">
+                    <div class="card-body box-profile">
+                        <div class="text-center">
+                            <img class="profile-user-img img-fluid img-circle"
+                                 src="https://adminlte.io/themes/v3/dist/img/user4-128x128.jpg"
+                                 alt="Customer profile picture">
+                        </div>
+
+                        <h3 class="profile-username text-center">@Model.Name</h3>
+                        <p class="text-muted text-center">Customer ID: #@Model.Id</p>
+
+                        <ul class="list-group list-group-unbordered mb-3">
+                            <li class="list-group-item">
+                                <b><i class="fas fa-envelope mr-1"></i> Email</b> 
+                                @if (!string.IsNullOrEmpty(Model.Email))
+                                {
+                                    <a class="float-right text-primary" href="mailto:@Model.Email">@Model.Email</a>
+                                }
+                                else
+                                {
+                                    <span class="float-right text-muted">Not provided</span>
+                                }
+                            </li>
+                            <li class="list-group-item">
+                                <b><i class="fas fa-phone mr-1"></i> Contact</b> 
+                                @if (!string.IsNullOrEmpty(Model.Contact))
+                                {
+                                    <a class="float-right text-primary" href="tel:@Model.Contact">@Model.Contact</a>
+                                }
+                                else
+                                {
+                                    <span class="float-right text-muted">Not provided</span>
+                                }
+                            </li>
+                            <li class="list-group-item">
+                                <b><i class="fas fa-map-marker-alt mr-1"></i> Address</b>
+                                @if (!string.IsNullOrEmpty(Model.Address))
+                                {
+                                    <span class="float-right">@Model.Address</span>
+                                }
+                                else
+                                {
+                                    <span class="float-right text-muted">Not provided</span>
+                                }
+                            </li>
+                        </ul>
+
+                        <div class="row">
+                            @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+                            {
+                                <div class="col-6">
+                                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning btn-block">
+                                        <i class="fas fa-edit"></i> Edit Customer
+                                    </a>
+                                </div>
+                                <div class="col-6">
+                                    <a asp-controller="Orders" asp-action="CreateWorkflow" asp-route-customerId="@Model.Id" class="btn btn-success btn-block">
+                                        <i class="fas fa-plus"></i> New Order
+                                    </a>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="col-12">
+                                    <a asp-controller="Orders" asp-action="CreateWorkflow" asp-route-customerId="@Model.Id" class="btn btn-success btn-block">
+                                        <i class="fas fa-plus"></i> New Order
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Customer Statistics -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-chart-bar"></i> Customer Statistics
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 col-sm-6 col-12">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-info"><i class="fas fa-shopping-cart"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Total Orders</span>
+                                        <span class="info-box-number">@Model.Orders.Count</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6 col-12">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-success"><i class="fas fa-rupee-sign"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Total Spent</span>
+                                        <span class="info-box-number">?@Model.Orders.Sum(o => o.TotalAmount).ToString("N0")</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6 col-12">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-warning"><i class="fas fa-cube"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Products</span>
+                                        <span class="info-box-number">@Model.CustomerProducts.Count</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6 col-12">
+                                <div class="info-box">
+                                    <span class="info-box-icon bg-danger"><i class="fas fa-star"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Status</span>
+                                        <span class="info-box-number">Active</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <!-- Recent Orders -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-history"></i> Recent Orders
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.Orders?.Any() == true)
+                        {
+                            <ul class="list-unstyled">
+                                @foreach (var order in Model.Orders.OrderByDescending(o => o.Date).Take(5))
+                                {
+                                    <li class="media mb-3">
+                                        <div class="media-body">
+                                            <h6 class="mt-0 mb-1">
+                                                <a asp-controller="Orders" asp-action="Details" asp-route-id="@order.Id">
+                                                    Order #@order.Id
+                                                </a>
+                                            </h6>
+                                            <small class="text-muted">@order.Date.ToString("MMM dd, yyyy")</small>
+                                            <div class="float-right">
+                                                <span class="badge @(order.Status == "Completed" ? "badge-success" : order.Status == "Pending" ? "badge-warning" : order.Status == "Processing" ? "badge-info" : "badge-danger")">
+                                                    @order.Status
+                                                </span>
+                                            </div>
+                                            <br>
+                                            <strong class="text-success">?@order.TotalAmount.ToString("N2")</strong>
+                                        </div>
+                                    </li>
+                                }
+                            </ul>
+                            @if (Model.Orders.Count > 5)
+                            {
+                                <div class="text-center">
+                                    <a asp-controller="Orders" asp-action="Index" class="btn btn-sm btn-outline-primary">
+                                        View All Orders (@Model.Orders.Count)
+                                    </a>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center text-muted">
+                                <i class="fas fa-shopping-cart fa-2x mb-2"></i>
+                                <p>No orders found for this customer.</p>
+                                <a asp-controller="Orders" asp-action="CreateWorkflow" asp-route-customerId="@Model.Id" class="btn btn-primary btn-sm">
+                                    Create First Order
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Customer Products -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-cube"></i> Customer Products
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.CustomerProducts?.Any() == true)
+                        {
+                            @foreach (var product in Model.CustomerProducts.Take(3))
+                            {
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div>
+                                        <strong>@product.ProductName</strong><br>
+                                        <small class="text-muted">@product.Length×@product.Width×@product.Height</small>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="badge @(product.IsActive ? "badge-success" : "badge-secondary")">
+                                            @(product.IsActive ? "Active" : "Inactive")
+                                        </span><br>
+                                        <small class="text-muted">?@product.PricePerBox.ToString("N2")</small>
+                                    </div>
+                                </div>
+                            }
+                            @if (Model.CustomerProducts.Count > 3)
+                            {
+                                <div class="text-center mt-2">
+                                    <a asp-controller="CustomerProducts" asp-action="Index" asp-route-customerId="@Model.Id" class="btn btn-sm btn-outline-info">
+                                        View All Products (@Model.CustomerProducts.Count)
+                                    </a>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center text-muted">
+                                <i class="fas fa-cube fa-2x mb-2"></i>
+                                <p>No products defined.</p>
+                                <a asp-controller="CustomerProducts" asp-action="Create" asp-route-customerId="@Model.Id" class="btn btn-primary btn-sm">
+                                    Add Product
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-tools"></i> Quick Actions
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <a asp-controller="Orders" asp-action="CreateWorkflow" asp-route-customerId="@Model.Id" class="btn btn-primary btn-block">
+                            <i class="fas fa-plus"></i> New Order
+                        </a>
+                        <a asp-controller="CustomerProducts" asp-action="Create" asp-route-customerId="@Model.Id" class="btn btn-info btn-block">
+                            <i class="fas fa-cube"></i> Add Product
+                        </a>
+                        <a href="mailto:@Model.Email" class="btn btn-secondary btn-block">
+                            <i class="fas fa-envelope"></i> Send Email
+                        </a>
+                        <a href="tel:@Model.Contact" class="btn btn-success btn-block">
+                            <i class="fas fa-phone"></i> Call Customer
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card-footer">
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Customers
+                    </a>
+                    @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+                    {
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                            <i class="fas fa-edit"></i> Edit Customer
+                        </a>
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Delete Customer
+                            </a>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

@@ -58,15 +58,13 @@ namespace AmplePack.Data
             context.Customers.AddRange(customers);
             context.SaveChanges();
 
-            // Seed Inventory with proper ProductName and Category
+            // Seed Inventory
             var inventoryItems = new List<Inventory>
             {
                 new Inventory
                 {
-                    ProductName = "Small Corrugated Box",
-                    ItemName = "Small Box (12x8x6)",
+                    ItemName = "Small Corrugated Box (12x8x6)",
                     AvailableQuantity = 500,
-                    Quantity = 500,
                     UnitPrice = 2.50m,
                     Unit = "pieces",
                     Category = "Packaging",
@@ -74,10 +72,8 @@ namespace AmplePack.Data
                 },
                 new Inventory
                 {
-                    ProductName = "Medium Corrugated Box", 
-                    ItemName = "Medium Box (16x12x8)",
+                    ItemName = "Medium Corrugated Box (16x12x8)",
                     AvailableQuantity = 300,
-                    Quantity = 300,
                     UnitPrice = 3.75m,
                     Unit = "pieces",
                     Category = "Packaging",
@@ -85,10 +81,8 @@ namespace AmplePack.Data
                 },
                 new Inventory
                 {
-                    ProductName = "Large Corrugated Box",
-                    ItemName = "Large Box (20x16x12)",
+                    ItemName = "Large Corrugated Box (20x16x12)",
                     AvailableQuantity = 200,
-                    Quantity = 200,
                     UnitPrice = 5.25m,
                     Unit = "pieces",
                     Category = "Packaging",
@@ -96,10 +90,8 @@ namespace AmplePack.Data
                 },
                 new Inventory
                 {
-                    ProductName = "Extra Large Corrugated Box",
-                    ItemName = "Extra Large Box (24x20x16)",
+                    ItemName = "Extra Large Corrugated Box (24x20x16)",
                     AvailableQuantity = 15, // Low stock to test alerts
-                    Quantity = 15,
                     UnitPrice = 8.50m,
                     Unit = "pieces",
                     Category = "Packaging",
@@ -107,10 +99,8 @@ namespace AmplePack.Data
                 },
                 new Inventory
                 {
-                    ProductName = "Bubble Wrap Protection",
                     ItemName = "Bubble Wrap Roll (50m)",
                     AvailableQuantity = 8, // Low stock to test alerts
-                    Quantity = 8,
                     UnitPrice = 15.99m,
                     Unit = "rolls",
                     Category = "Supplies",
@@ -118,10 +108,8 @@ namespace AmplePack.Data
                 },
                 new Inventory
                 {
-                    ProductName = "Heavy Duty Packing Tape",
-                    ItemName = "Packing Tape (48mm x 50m)",
+                    ItemName = "Heavy Duty Packing Tape (48mm x 50m)",
                     AvailableQuantity = 150,
-                    Quantity = 150,
                     UnitPrice = 3.99m,
                     Unit = "rolls",
                     Category = "Supplies",
@@ -129,10 +117,8 @@ namespace AmplePack.Data
                 },
                 new Inventory
                 {
-                    ProductName = "Premium Gift Box",
-                    ItemName = "Gift Box (20x15x10)",
+                    ItemName = "Premium Gift Box (20x15x10)",
                     AvailableQuantity = 75,
-                    Quantity = 75,
                     UnitPrice = 6.99m,
                     Unit = "pieces",
                     Category = "Premium",
@@ -140,10 +126,8 @@ namespace AmplePack.Data
                 },
                 new Inventory
                 {
-                    ProductName = "Shipping Labels",
                     ItemName = "Adhesive Shipping Labels",
                     AvailableQuantity = 5, // Low stock
-                    Quantity = 5,
                     UnitPrice = 12.50m,
                     Unit = "sheets",
                     Category = "Supplies",

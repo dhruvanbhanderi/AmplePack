@@ -1,3 +1,4 @@
+@using AmplePack.Helpers
 @model List<AmplePack.Models.Order>
 @{
     ViewData["Title"] = "Orders Management";
@@ -61,11 +62,11 @@
           <div class="col-lg-3 col-6">
             <div class="small-box bg-danger">
               <div class="inner">
-                <h3>?@ViewBag.MonthlyRevenue.ToString("N2")</h3>
+                <h3>@CurrencyHelper.FormatCurrency((decimal)ViewBag.MonthlyRevenue)</h3>
                 <p>Monthly Revenue</p>
               </div>
               <div class="icon">
-                <i class="fas fa-rupee-sign"></i>
+                <i class="fas fa-money-bill"></i>
               </div>
             </div>
           </div>
@@ -156,7 +157,7 @@
                                 }
                               </td>
                               <td>
-                                <strong class="text-success">?@order.TotalAmount.ToString("N2")</strong>
+                                <strong class="text-success">@CurrencyHelper.FormatCurrency(order.TotalAmount)</strong>
                               </td>
                               <td>
                                 @if (order.Status == "Pending")
