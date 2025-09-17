@@ -21,42 +21,50 @@ namespace AmplePack.Controllers
             _context = context;
         }
 
-        // GET: CustomerProducts
+        // GET: CustomerProducts - Show customers first, then products when customer selected
         public async Task<IActionResult> Index(int? customerId, string searchTerm)
         {
-            // Get all customers with their product counts
-            var customers = await _context.Customers
-                .Include(c => c.CustomerProducts)
-                .OrderBy(c => c.Name)
-                .ToListAsync();
-
-            ViewBag.Customers = customers;
-            ViewBag.SelectedCustomerId = customerId;
-            ViewBag.SearchTerm = searchTerm;
-
-            // If a specific customer is selected, show their products
-            if (customerId.HasValue)
+            // If no customer is selected, show all customers with their product counts
+            if (!customerId.HasValue)
             {
-                var customerProducts = await _context.CustomerProducts
-                    .Include(cp => cp.Customer)
-                    .Where(cp => cp.CustomerId == customerId.Value)
+                var customers = await _context.Customers
+                    .Include(c => c.CustomerProducts)
+                    .OrderBy(c => c.Name)
                     .ToListAsync();
 
-                // Filter by search term if provided
-                if (!string.IsNullOrEmpty(searchTerm))
-                {
-                    customerProducts = customerProducts.Where(cp => 
-                        cp.ProductName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                        cp.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
-                }
-
-                ViewBag.CustomerProducts = customerProducts;
-                ViewBag.SelectedCustomer = customers.FirstOrDefault(c => c.Id == customerId.Value);
-                return View("CustomerProducts");
+                return View("CustomerList", customers);
             }
 
-            // Default view showing customers
-            return View(customers);
+            // If customer is selected, show their products
+            var selectedCustomer = await _context.Customers
+                .FirstOrDefaultAsync(c => c.Id == customerId.Value);
+
+            if (selectedCustomer == null)
+            {
+                return NotFound();
+            }
+
+            var customerProductsQuery = _context.CustomerProducts
+                .Include(cp => cp.Customer)
+                .Where(cp => cp.CustomerId == customerId.Value);
+
+            // Filter by search term if provided
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                customerProductsQuery = customerProductsQuery.Where(cp => 
+                    cp.ProductName.Contains(searchTerm) ||
+                    cp.Description.Contains(searchTerm));
+            }
+
+            var customerProducts = await customerProductsQuery
+                .OrderBy(cp => cp.ProductName)
+                .ToListAsync();
+
+            ViewBag.SelectedCustomer = selectedCustomer;
+            ViewBag.CustomerProducts = customerProducts;
+            ViewBag.SearchTerm = searchTerm;
+
+            return View("CustomerProducts", selectedCustomer);
         }
 
         // GET: CustomerProducts/Details/5
@@ -101,7 +109,7 @@ namespace AmplePack.Controllers
         {
             if (ModelState.IsValid)
             {
-                customerProduct.CreatedDate = DateTime.Now;
+                customerProduct.CreatedDate = DateTime.UtcNow;
                 customerProduct.IsActive = true;
                 _context.Add(customerProduct);
                 await _context.SaveChangesAsync();

@@ -1,0 +1,98 @@
+@model AmplePack.Models.Order
+@{
+    ViewData["Title"] = "Create Order";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Create Order</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a asp-action="Index">Orders</a></li>
+                    <li class="breadcrumb-item active">Create</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title">Order Details</h3>
+                    </div>
+                    <form asp-action="Create">
+                        <div class="card-body">
+                            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                            <div class="form-group">
+                                <label asp-for="CustomerId" class="control-label">Customer</label>
+                                <select asp-for="CustomerId" class="form-control" asp-items="ViewBag.CustomerId">
+                                    <option value="">Select a customer</option>
+                                </select>
+                                <span asp-validation-for="CustomerId" class="text-danger"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label asp-for="Date" class="control-label">Order Date</label>
+                                <input asp-for="Date" class="form-control" type="date" />
+                                <span asp-validation-for="Date" class="text-danger"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label asp-for="Status" class="control-label">Status</label>
+                                <select asp-for="Status" class="form-control">
+                                    <option value="Pending">Pending</option>
+                                    <option value="Processing">Processing</option>
+                                    <option value="Completed">Completed</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                </select>
+                                <span asp-validation-for="Status" class="text-danger"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label asp-for="TotalAmount" class="control-label">Total Amount</label>
+                                <input asp-for="TotalAmount" class="form-control" type="number" step="0.01" />
+                                <span asp-validation-for="TotalAmount" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Create Order
+                            </button>
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to List
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card card-info">
+                    <div class="card-header">
+                        <h3 class="card-title">Note</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Consider using the <strong>Create Workflow</strong> instead for a more streamlined order creation process that includes product details.</p>
+                        <a asp-action="CreateWorkflow" class="btn btn-info btn-block">
+                            <i class="fas fa-plus"></i> Use Create Workflow
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

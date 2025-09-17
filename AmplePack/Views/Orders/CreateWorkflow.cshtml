@@ -27,7 +27,7 @@
                         </h3>
                     </div>
                     
-                    <form asp-action="CreateWorkflow" method="post">
+                    <form asp-action="CreateWorkflow" method="post" id="orderForm">
                         <div class="card-body">
                             @if (!string.IsNullOrEmpty(TempData["SuccessMessage"]?.ToString()))
                             {
@@ -37,15 +37,22 @@
                                 </div>
                             }
                             
-                            <div asp-validation-summary="All" class="alert alert-danger"></div>
+                            <div asp-validation-summary="All" class="alert alert-danger" style="display: none;"></div>
                             
                             <!-- Customer Selection -->
                             <div class="form-group">
                                 <label asp-for="CustomerId" class="font-weight-bold">Customer *</label>
-                                <select asp-for="CustomerId" class="form-control" asp-items="ViewBag.Customers" required>
+                                <select asp-for="CustomerId" class="form-control" id="CustomerId" required>
                                     <option value="">-- Select Customer --</option>
+                                    @foreach (var customer in (SelectList)ViewBag.Customers)
+                                    {
+                                        <option value="@customer.Value" selected="@customer.Selected">@customer.Text</option>
+                                    }
                                 </select>
                                 <span asp-validation-for="CustomerId" class="text-danger"></span>
+                                <small class="form-text text-muted">
+                                    <a href="@Url.Action("Create", "Customers")" target="_blank">Add new customer if not found</a>
+                                </small>
                             </div>
 
                             <!-- Product Selection -->
@@ -54,33 +61,86 @@
                                 <select asp-for="CustomerProductId" class="form-control" id="productSelect">
                                     <option value="">-- Select Customer Product or Enter Manual Details --</option>
                                 </select>
-                                <small class="text-muted">Select a saved customer product or enter details manually below</small>
+                                <small class="text-muted">Select a saved customer product to auto-fill details, or enter manually below</small>
+                                <div class="mt-2">
+                                    <a href="#" id="addProductLink" style="display: none;" target="_blank">
+                                        <i class="fas fa-plus"></i> Add new product for this customer
+                                    </a>
+                                </div>
                             </div>
 
-                            <!-- Manual Product Details -->
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label asp-for="BoxType" class="font-weight-bold">Box Type</label>
-                                        <input asp-for="BoxType" class="form-control" placeholder="e.g., Custom Shipping Box" />
-                                        <span asp-validation-for="BoxType" class="text-danger"></span>
-                                    </div>
+                            <!-- Manual Product Details Section -->
+                            <div class="card mt-3" id="productDetailsCard">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Product Details</h6>
+                                    <small class="text-muted">These fields will be auto-filled when you select a product above</small>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label class="font-weight-bold">Dimensions (cm)</label>
-                                        <div class="row">
-                                            <div class="col-4">
-                                                <input asp-for="Length" class="form-control" placeholder="Length" />
-                                                <small class="text-muted">Length</small>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label asp-for="BoxType" class="font-weight-bold">Box Type *</label>
+                                                <input asp-for="BoxType" class="form-control" placeholder="e.g., Custom Shipping Box" required />
+                                                <span asp-validation-for="BoxType" class="text-danger"></span>
                                             </div>
-                                            <div class="col-4">
-                                                <input asp-for="Width" class="form-control" placeholder="Width" />
-                                                <small class="text-muted">Width</small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label class="font-weight-bold">Dimensions (cm) *</label>
+                                                <div class="row">
+                                                    <div class="col-4">
+                                                        <input asp-for="Length" class="form-control" placeholder="Length" step="0.01" type="number" required />
+                                                        <small class="text-muted">Length</small>
+                                                    </div>
+                                                    <div class="col-4">
+                                                        <input asp-for="Width" class="form-control" placeholder="Width" step="0.01" type="number" required />
+                                                        <small class="text-muted">Width</small>
+                                                    </div>
+                                                    <div class="col-4">
+                                                        <input asp-for="Height" class="form-control" placeholder="Height" step="0.01" type="number" required />
+                                                        <small class="text-muted">Height</small>
+                                                    </div>
+                                                </div>
+                                                <span asp-validation-for="Length" class="text-danger"></span>
+                                                <span asp-validation-for="Width" class="text-danger"></span>
+                                                <span asp-validation-for="Height" class="text-danger"></span>
                                             </div>
-                                            <div class="col-4">
-                                                <input asp-for="Height" class="form-control" placeholder="Height" />
-                                                <small class="text-muted">Height</small>
+                                        </div>
+                                    </div>
+
+                                    <!-- Product Specifications -->
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label asp-for="GSM" class="font-weight-bold">GSM</label>
+                                                <input asp-for="GSM" class="form-control" type="number" placeholder="e.g., 250" />
+                                                <span asp-validation-for="GSM" class="text-danger"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label asp-for="PaperType" class="font-weight-bold">Paper Type</label>
+                                                <select asp-for="PaperType" class="form-control">
+                                                    <option value="">-- Select --</option>
+                                                    <option value="Corrugated">Corrugated</option>
+                                                    <option value="Kraft Paper">Kraft Paper</option>
+                                                    <option value="Duplex Board">Duplex Board</option>
+                                                    <option value="Art Paper">Art Paper</option>
+                                                </select>
+                                                <span asp-validation-for="PaperType" class="text-danger"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label asp-for="PrintingType" class="font-weight-bold">Printing Type</label>
+                                                <select asp-for="PrintingType" class="form-control">
+                                                    <option value="">-- Select --</option>
+                                                    <option value="1 Color">1 Color</option>
+                                                    <option value="2 Color">2 Color</option>
+                                                    <option value="4 Color">4 Color</option>
+                                                    <option value="Full Color">Full Color</option>
+                                                </select>
+                                                <span asp-validation-for="PrintingType" class="text-danger"></span>
                                             </div>
                                         </div>
                                     </div>
@@ -88,7 +148,7 @@
                             </div>
 
                             <!-- Quantity and Price -->
-                            <div class="row">
+                            <div class="row mt-3">
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label asp-for="Quantity" class="font-weight-bold">Quantity *</label>
@@ -106,6 +166,7 @@
                                             <input asp-for="PricePerBox" class="form-control" type="number" step="0.01" min="0.01" required />
                                         </div>
                                         <span asp-validation-for="PricePerBox" class="text-danger"></span>
+                                        <small class="text-muted">You can modify the price from the default product price</small>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -166,10 +227,22 @@
             // Load customer products when customer changes
             $('#CustomerId').on('change', function() {
                 const customerId = $(this).val();
+                const $productSelect = $('#productSelect');
+                const $addProductLink = $('#addProductLink');
+                
+                // Clear product selection
+                $productSelect.html('<option value="">-- Select Customer Product or Enter Manual Details --</option>');
+                clearProductForm();
+                
                 if (customerId) {
+                    // Update add product link
+                    $addProductLink.attr('href', '@Url.Action("Create", "CustomerProducts")?customerId=' + customerId);
+                    $addProductLink.show();
+                    
+                    // Load customer products
                     loadCustomerProducts(customerId);
                 } else {
-                    $('#productSelect').html('<option value="">-- Select Customer Product or Enter Manual Details --</option>');
+                    $addProductLink.hide();
                 }
             });
 
@@ -178,6 +251,8 @@
                 const productId = $(this).val();
                 if (productId) {
                     loadProductDetails(productId);
+                } else {
+                    clearProductForm();
                 }
             });
 
@@ -186,12 +261,13 @@
                     .done(function(products) {
                         let options = '<option value="">-- Select Customer Product or Enter Manual Details --</option>';
                         products.forEach(function(product) {
-                            options += `<option value="${product.id}">${product.productName} - Rs.${product.pricePerBox}</option>`;
+                            options += `<option value="${product.id}">${product.productName} - Rs.${product.pricePerBox.toFixed(2)}</option>`;
                         });
                         $('#productSelect').html(options);
                     })
                     .fail(function() {
                         console.error('Failed to load customer products');
+                        alert('Failed to load customer products. Please try again.');
                     });
             }
 
@@ -200,22 +276,114 @@
                     .done(function(response) {
                         if (response.success) {
                             const product = response.product;
+                            
+                            // Fill product details (auto-fill from master product)
                             $('#BoxType').val(product.productName);
                             $('#Length').val(product.length);
                             $('#Width').val(product.width);
                             $('#Height').val(product.height);
                             $('#Quantity').val(product.defaultQuantity);
                             $('#PricePerBox').val(product.pricePerBox);
+                            
+                            // Fill additional specifications if available
+                            if (product.gsm) $('#GSM').val(product.gsm);
+                            if (product.paperType) $('#PaperType').val(product.paperType);
+                            if (product.printingType) $('#PrintingType').val(product.printingType);
+                            
                             calculateTotal();
+                        } else {
+                            alert('Failed to load product details. Please enter manually.');
                         }
                     })
                     .fail(function() {
                         console.error('Failed to load product details');
+                        alert('Failed to load product details. Please enter manually.');
                     });
             }
 
-            // Initial calculation
+            function clearProductForm() {
+                $('#BoxType').val('');
+                $('#Length').val('');
+                $('#Width').val('');
+                $('#Height').val('');
+                $('#GSM').val('');
+                $('#PaperType').val('');
+                $('#PrintingType').val('');
+                $('#Quantity').val('1');
+                $('#PricePerBox').val('');
+                calculateTotal();
+            }
+
+            // Form validation before submit - SIMPLIFIED VERSION
+            $('#orderForm').on('submit', function(e) {
+                // Clear previous errors
+                $('.alert-danger').hide();
+                
+                let isValid = true;
+                let errorMessages = [];
+
+                // Validate required fields with better checking
+                const customerValue = $('#CustomerId').val();
+                if (!customerValue || customerValue.trim() === '') {
+                    errorMessages.push('Please select a customer.');
+                    isValid = false;
+                }
+
+                const boxType = $('#BoxType').val();
+                if (!boxType || boxType.trim() === '') {
+                    errorMessages.push('Box type is required.');
+                    isValid = false;
+                }
+
+                const length = $('#Length').val();
+                if (!length || isNaN(length) || parseFloat(length) <= 0) {
+                    errorMessages.push('Valid length is required.');
+                    isValid = false;
+                }
+
+                const width = $('#Width').val();
+                if (!width || isNaN(width) || parseFloat(width) <= 0) {
+                    errorMessages.push('Valid width is required.');
+                    isValid = false;
+                }
+
+                const height = $('#Height').val();
+                if (!height || isNaN(height) || parseFloat(height) <= 0) {
+                    errorMessages.push('Valid height is required.');
+                    isValid = false;
+                }
+
+                const quantity = $('#Quantity').val();
+                if (!quantity || isNaN(quantity) || parseInt(quantity) <= 0) {
+                    errorMessages.push('Valid quantity is required.');
+                    isValid = false;
+                }
+
+                const price = $('#PricePerBox').val();
+                if (!price || isNaN(price) || parseFloat(price) <= 0) {
+                    errorMessages.push('Valid price per box is required.');
+                    isValid = false;
+                }
+
+                if (!isValid) {
+                    e.preventDefault();
+                    const $errorDiv = $('.alert-danger');
+                    $errorDiv.html('<ul class="mb-0">' + errorMessages.map(msg => `<li>${msg}</li>`).join('') + '</ul>');
+                    $errorDiv.show();
+                    $('html, body').animate({ scrollTop: 0 }, 500);
+                    return false;
+                }
+                
+                return true;
+            });
+
+            // Initial calculation and setup
             calculateTotal();
+            
+            // Trigger customer change if pre-selected
+            if ($('#CustomerId').val()) {
+                $('#CustomerId').trigger('change');
+            }
         });
     </script>
-}
+}}

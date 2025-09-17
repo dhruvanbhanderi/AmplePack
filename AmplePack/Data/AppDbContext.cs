@@ -18,44 +18,48 @@ namespace AmplePack.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configure decimal properties with proper precision and scale
+            // Configure decimal properties (database-agnostic)
             modelBuilder.Entity<Order>()
                 .Property(o => o.TotalAmount)
-                .HasColumnType("decimal(18,2)");
+                .HasPrecision(18, 2);
 
             modelBuilder.Entity<OrderDetail>()
                 .Property(od => od.PricePerBox)
-                .HasColumnType("decimal(18,2)");
+                .HasPrecision(18, 2);
 
             // Configure Inventory properties
             modelBuilder.Entity<Inventory>()
                 .Property(i => i.AvailableQuantity)
-                .HasColumnType("decimal(10,2)");
+                .HasPrecision(10, 2);
+
+            modelBuilder.Entity<Inventory>()
+                .Property(i => i.Quantity)
+                .HasPrecision(10, 2);
 
             modelBuilder.Entity<Inventory>()
                 .Property(i => i.ReorderLevel)
-                .HasColumnType("decimal(10,2)");
+                .HasPrecision(10, 2);
 
             modelBuilder.Entity<Inventory>()
                 .Property(i => i.UnitPrice)
-                .HasColumnType("decimal(18,2)");
+                .HasPrecision(18, 2);
 
             // Configure CustomerProduct decimal properties
             modelBuilder.Entity<CustomerProduct>()
                 .Property(cp => cp.Length)
-                .HasColumnType("decimal(10,2)");
+                .HasPrecision(10, 2);
 
             modelBuilder.Entity<CustomerProduct>()
                 .Property(cp => cp.Width)
-                .HasColumnType("decimal(10,2)");
+                .HasPrecision(10, 2);
 
             modelBuilder.Entity<CustomerProduct>()
                 .Property(cp => cp.Height)
-                .HasColumnType("decimal(10,2)");
+                .HasPrecision(10, 2);
 
             modelBuilder.Entity<CustomerProduct>()
                 .Property(cp => cp.PricePerBox)
-                .HasColumnType("decimal(18,2)");
+                .HasPrecision(18, 2);
 
             // Configure relationships
             modelBuilder.Entity<Order>()
@@ -80,7 +84,7 @@ namespace AmplePack.Data
                 .HasOne(od => od.CustomerProduct)
                 .WithMany()
                 .HasForeignKey(od => od.CustomerProductId)
-                .OnDelete(DeleteBehavior.NoAction); // No action to avoid cascade conflicts
+                .OnDelete(DeleteBehavior.SetNull); // Changed to SetNull for SQLite compatibility
 
             // Configure indexes for better performance
             modelBuilder.Entity<CustomerProduct>()

@@ -18,8 +18,8 @@ namespace AmplePack.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var currentMonth = DateTime.Now.Month;
-            var currentYear = DateTime.Now.Year;
+            var currentMonth = DateTime.UtcNow.Month;
+            var currentYear = DateTime.UtcNow.Year;
 
             var viewModel = new ReportsViewModel();
 
@@ -44,25 +44,33 @@ namespace AmplePack.Controllers
             viewModel.NewCustomersThisMonth = await _context.Customers
                 .CountAsync(c => c.Orders.Any(o => o.Date.Month == currentMonth && o.Date.Year == currentYear));
 
-            viewModel.TopCustomers = await _context.Customers
+            // Fixed: Get top customers by loading data first, then ordering in memory
+            var customersWithOrders = await _context.Customers
                 .Include(c => c.Orders)
+                .ToListAsync();
+            
+            viewModel.TopCustomers = customersWithOrders
                 .OrderByDescending(c => c.Orders.Where(o => o.Status == "Completed").Sum(o => o.TotalAmount))
                 .Take(5)
-                .ToListAsync();
+                .ToList();
 
             // Inventory Reports
             viewModel.TotalInventoryItems = await _context.Inventories.CountAsync();
-            viewModel.LowStockCount = await _context.Inventories.CountAsync(i => i.Quantity <= i.ReorderLevel);
+            viewModel.LowStockCount = await _context.Inventories.CountAsync(i => i.AvailableQuantity <= i.ReorderLevel);
             
             // Calculate total inventory value
             viewModel.TotalInventoryValue = await _context.Inventories
                 .SumAsync(i => i.AvailableQuantity * i.UnitPrice);
             
-            viewModel.CriticalStockItems = await _context.Inventories
-                .Where(i => i.Quantity <= i.ReorderLevel)
-                .OrderBy(i => i.Quantity)
-                .Take(5)
+            // Fixed: Get critical stock items by loading data first, then ordering in memory
+            var criticalStockItems = await _context.Inventories
+                .Where(i => i.AvailableQuantity <= i.ReorderLevel)
                 .ToListAsync();
+            
+            viewModel.CriticalStockItems = criticalStockItems
+                .OrderBy(i => i.AvailableQuantity)
+                .Take(5)
+                .ToList();
 
             // Order Status Reports
             viewModel.PendingOrders = await _context.Orders.CountAsync(o => o.Status == "Pending");
@@ -76,15 +84,16 @@ namespace AmplePack.Controllers
         private async Task<List<MonthlyRevenueData>> GetMonthlyRevenueData()
         {
             var result = new List<MonthlyRevenueData>();
-            var startDate = DateTime.Now.AddMonths(-11).Date;
-
-            for (int i = 0; i < 12; i++)
+            var now = DateTime.UtcNow;
+            
+            // Get the last 12 months
+            for (int i = 11; i >= 0; i--)
             {
-                var monthStart = startDate.AddMonths(i);
-                var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+                var monthStart = new DateTime(now.Year, now.Month, 1).AddMonths(-i);
+                var monthEnd = monthStart.AddMonths(1);
 
                 var revenue = await _context.Orders
-                    .Where(o => o.Status == "Completed" && o.Date >= monthStart && o.Date <= monthEnd)
+                    .Where(o => o.Status == "Completed" && o.Date >= monthStart && o.Date < monthEnd)
                     .SumAsync(o => o.TotalAmount);
 
                 result.Add(new MonthlyRevenueData

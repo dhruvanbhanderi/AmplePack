@@ -138,7 +138,7 @@ namespace AmplePack.Data
             context.Inventories.AddRange(inventoryItems);
             context.SaveChanges();
 
-            // Seed Customer Products
+            // Seed Customer Products with UTC dates
             var customerProducts = new List<CustomerProduct>
             {
                 new CustomerProduct
@@ -156,7 +156,7 @@ namespace AmplePack.Data
                     DefaultQuantity = 100,
                     Category = "Premium",
                     IsActive = true,
-                    CreatedDate = DateTime.Now.AddMonths(-2)
+                    CreatedDate = DateTime.UtcNow.AddMonths(-2)
                 },
                 new CustomerProduct
                 {
@@ -173,7 +173,7 @@ namespace AmplePack.Data
                     DefaultQuantity = 200,
                     Category = "Standard",
                     IsActive = true,
-                    CreatedDate = DateTime.Now.AddMonths(-1)
+                    CreatedDate = DateTime.UtcNow.AddMonths(-1)
                 },
                 new CustomerProduct
                 {
@@ -190,7 +190,7 @@ namespace AmplePack.Data
                     DefaultQuantity = 50,
                     Category = "Premium",
                     IsActive = true,
-                    CreatedDate = DateTime.Now.AddDays(-20)
+                    CreatedDate = DateTime.UtcNow.AddDays(-20)
                 },
                 new CustomerProduct
                 {
@@ -207,78 +207,131 @@ namespace AmplePack.Data
                     DefaultQuantity = 75,
                     Category = "Premium",
                     IsActive = true,
-                    CreatedDate = DateTime.Now.AddDays(-10)
+                    CreatedDate = DateTime.UtcNow.AddDays(-10)
                 }
             };
 
             context.CustomerProducts.AddRange(customerProducts);
             context.SaveChanges();
 
-            // Seed Orders with varied dates for better reporting
+            // Seed Orders with varying dates to ensure good chart data
+            var now = DateTime.UtcNow;
             var orders = new List<Order>
             {
+                // Previous months orders
                 new Order
                 {
                     CustomerId = customers[0].Id,
-                    Date = DateTime.Now.AddDays(-30),
+                    Date = now.AddMonths(-3).AddDays(-5),
+                    Status = "Completed",
+                    TotalAmount = 1200.00m
+                },
+                new Order
+                {
+                    CustomerId = customers[1].Id,
+                    Date = now.AddMonths(-2).AddDays(-10),
+                    Status = "Completed",
+                    TotalAmount = 850.00m
+                },
+                new Order
+                {
+                    CustomerId = customers[2].Id,
+                    Date = now.AddMonths(-2).AddDays(-5),
+                    Status = "Completed",
+                    TotalAmount = 650.00m
+                },
+                new Order
+                {
+                    CustomerId = customers[3].Id,
+                    Date = now.AddMonths(-1).AddDays(-15),
                     Status = "Completed",
                     TotalAmount = 425.00m
                 },
                 new Order
                 {
                     CustomerId = customers[1].Id,
-                    Date = DateTime.Now.AddDays(-25),
+                    Date = now.AddMonths(-1).AddDays(-10),
                     Status = "Completed",
                     TotalAmount = 750.00m
                 },
                 new Order
                 {
+                    CustomerId = customers[4].Id,
+                    Date = now.AddMonths(-1).AddDays(-5),
+                    Status = "Completed",
+                    TotalAmount = 320.00m
+                },
+                // Current month orders
+                new Order
+                {
+                    CustomerId = customers[0].Id,
+                    Date = now.AddDays(-25),
+                    Status = "Completed",
+                    TotalAmount = 950.00m
+                },
+                new Order
+                {
                     CustomerId = customers[2].Id,
-                    Date = DateTime.Now.AddDays(-20),
+                    Date = now.AddDays(-20),
                     Status = "Completed",
                     TotalAmount = 275.00m
                 },
                 new Order
                 {
-                    CustomerId = customers[0].Id,
-                    Date = DateTime.Now.AddDays(-15),
+                    CustomerId = customers[3].Id,
+                    Date = now.AddDays(-15),
                     Status = "Completed",
                     TotalAmount = 850.00m
                 },
                 new Order
                 {
-                    CustomerId = customers[3].Id,
-                    Date = DateTime.Now.AddDays(-10),
+                    CustomerId = customers[1].Id,
+                    Date = now.AddDays(-10),
                     Status = "Completed",
                     TotalAmount = 374.25m
                 },
                 new Order
                 {
+                    CustomerId = customers[4].Id,
+                    Date = now.AddDays(-8),
+                    Status = "Completed",
+                    TotalAmount = 580.00m
+                },
+                // Recent orders in various statuses
+                new Order
+                {
                     CustomerId = customers[2].Id,
-                    Date = DateTime.Now.AddDays(-5),
+                    Date = now.AddDays(-5),
                     Status = "Processing",
                     TotalAmount = 320.00m
                 },
                 new Order
                 {
                     CustomerId = customers[3].Id,
-                    Date = DateTime.Now.AddDays(-2),
-                    Status = "Pending",
+                    Date = now.AddDays(-3),
+                    Status = "Processing",
                     TotalAmount = 180.00m
                 },
                 new Order
                 {
                     CustomerId = customers[4].Id,
-                    Date = DateTime.Now.AddDays(-1),
+                    Date = now.AddDays(-2),
                     Status = "Pending",
                     TotalAmount = 225.00m
+                },
+                new Order
+                {
+                    CustomerId = customers[0].Id,
+                    Date = now.AddDays(-1),
+                    Status = "Pending",
+                    TotalAmount = 445.00m
                 }
             };
 
             context.Orders.AddRange(orders);
             context.SaveChanges();
 
-            // Seed Order Details
+            // Seed Order Details with corresponding data
             var orderDetails = new List<OrderDetail>
             {
                 // Order 1 Details
@@ -288,7 +341,7 @@ namespace AmplePack.Data
                     CustomerProductId = customerProducts[0].Id,
                     BoxType = "Custom Shipping Box",
                     Size = "15×12×8",
-                    Quantity = 100,
+                    Quantity = 280,
                     PricePerBox = 4.25m,
                     Notes = "Include company logo"
                 },
@@ -299,7 +352,7 @@ namespace AmplePack.Data
                     CustomerProductId = customerProducts[1].Id,
                     BoxType = "Product Packaging Box", 
                     Size = "10×8×6",
-                    Quantity = 200,
+                    Quantity = 225,
                     PricePerBox = 3.75m,
                     Notes = "Eco-friendly materials required"
                 },
@@ -310,7 +363,7 @@ namespace AmplePack.Data
                     CustomerProductId = customerProducts[2].Id,
                     BoxType = "Logistics Box - Heavy Duty",
                     Size = "18×14×10",
-                    Quantity = 50,
+                    Quantity = 118,
                     PricePerBox = 5.50m,
                     Notes = "Extra reinforcement needed"
                 },
@@ -321,14 +374,65 @@ namespace AmplePack.Data
                     CustomerProductId = customerProducts[0].Id,
                     BoxType = "Custom Shipping Box",
                     Size = "15×12×8",
-                    Quantity = 200,
+                    Quantity = 100,
                     PricePerBox = 4.25m,
-                    DeliveryDate = DateTime.Now.AddDays(7)
+                    DeliveryDate = now.AddDays(7)
                 },
                 // Order 5 Details
                 new OrderDetail
                 {
                     OrderId = orders[4].Id,
+                    CustomerProductId = customerProducts[1].Id,
+                    BoxType = "Product Packaging Box",
+                    Size = "10×8×6",
+                    Quantity = 200,
+                    PricePerBox = 3.75m,
+                    Notes = "Priority order"
+                },
+                // Order 6 Details
+                new OrderDetail
+                {
+                    OrderId = orders[5].Id,
+                    BoxType = "Standard Box",
+                    Size = "14×10×8",
+                    Quantity = 80,
+                    PricePerBox = 4.00m,
+                    Notes = "Standard packaging"
+                },
+                // Current month orders
+                new OrderDetail
+                {
+                    OrderId = orders[6].Id,
+                    CustomerProductId = customerProducts[0].Id,
+                    BoxType = "Custom Shipping Box",
+                    Size = "15×12×8",
+                    Quantity = 225,
+                    PricePerBox = 4.25m,
+                    Notes = "Current month order"
+                },
+                new OrderDetail
+                {
+                    OrderId = orders[7].Id,
+                    CustomerProductId = customerProducts[2].Id,
+                    BoxType = "Logistics Box - Heavy Duty",
+                    Size = "18×14×10",
+                    Quantity = 50,
+                    PricePerBox = 5.50m,
+                    Notes = "Heavy duty required"
+                },
+                new OrderDetail
+                {
+                    OrderId = orders[8].Id,
+                    CustomerProductId = customerProducts[0].Id,
+                    BoxType = "Custom Shipping Box",
+                    Size = "15×12×8",
+                    Quantity = 200,
+                    PricePerBox = 4.25m,
+                    DeliveryDate = now.AddDays(5)
+                },
+                new OrderDetail
+                {
+                    OrderId = orders[9].Id,
                     CustomerProductId = customerProducts[3].Id,
                     BoxType = "Tech Product Box",
                     Size = "12×10×8",
@@ -336,34 +440,51 @@ namespace AmplePack.Data
                     PricePerBox = 4.99m,
                     Notes = "Anti-static coating required"
                 },
-                // Order 6 Details (Processing)
                 new OrderDetail
                 {
-                    OrderId = orders[5].Id,
+                    OrderId = orders[10].Id,
+                    BoxType = "Premium Box",
+                    Size = "16×12×10",
+                    Quantity = 145,
+                    PricePerBox = 4.00m,
+                    Notes = "Premium finish"
+                },
+                // Processing and Pending orders
+                new OrderDetail
+                {
+                    OrderId = orders[11].Id,
                     BoxType = "Standard Box",
                     Size = "16×12×8",
                     Quantity = 80,
                     PricePerBox = 4.00m,
                     Notes = "Rush order"
                 },
-                // Order 7 Details (Pending)
                 new OrderDetail
                 {
-                    OrderId = orders[6].Id,
+                    OrderId = orders[12].Id,
                     BoxType = "Small Box",
                     Size = "12×8×6",
                     Quantity = 60,
                     PricePerBox = 3.00m
                 },
-                // Order 8 Details (Pending)
                 new OrderDetail
                 {
-                    OrderId = orders[7].Id,
+                    OrderId = orders[13].Id,
                     BoxType = "Medium Box",
                     Size = "14×10×8",
                     Quantity = 50,
                     PricePerBox = 4.50m,
-                    DeliveryDate = DateTime.Now.AddDays(14)
+                    DeliveryDate = now.AddDays(14)
+                },
+                new OrderDetail
+                {
+                    OrderId = orders[14].Id,
+                    CustomerProductId = customerProducts[0].Id,
+                    BoxType = "Custom Shipping Box",
+                    Size = "15×12×8",
+                    Quantity = 105,
+                    PricePerBox = 4.25m,
+                    Notes = "Pending approval"
                 }
             };
 

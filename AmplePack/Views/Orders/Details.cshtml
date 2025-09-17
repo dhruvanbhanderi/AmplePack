@@ -22,6 +22,26 @@
     </div>
 </div>
 
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
 <section class="content">
     <div class="container-fluid">
         <div class="row">
@@ -224,6 +244,10 @@
                         </h3>
                     </div>
                     <div class="card-body">
+                        <a asp-action="DownloadInvoice" asp-route-id="@Model.Id" class="btn btn-primary btn-block">
+                            <i class="fas fa-file-pdf"></i> Download Invoice (PDF)
+                        </a>
+                        
                         @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
                         {
                             <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning btn-block">
@@ -253,11 +277,11 @@
                             </form>
                         }
                         
-                        <a href="mailto:@Model.Customer?.Email" class="btn btn-primary btn-block">
+                        <a href="mailto:@Model.Customer?.Email" class="btn btn-outline-primary btn-block">
                             <i class="fas fa-envelope"></i> Email Customer
                         </a>
                         
-                        <a href="tel:@Model.Customer?.Contact" class="btn btn-secondary btn-block">
+                        <a href="tel:@Model.Customer?.Contact" class="btn btn-outline-secondary btn-block">
                             <i class="fas fa-phone"></i> Call Customer
                         </a>
                     </div>
@@ -271,6 +295,9 @@
                     <a asp-action="Index" class="btn btn-secondary">
                         <i class="fas fa-arrow-left"></i> Back to Orders
                     </a>
+                    <a asp-action="DownloadInvoice" asp-route-id="@Model.Id" class="btn btn-primary">
+                        <i class="fas fa-file-pdf"></i> Download Invoice (PDF)
+                    </a>
                     @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
                     {
                         <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
@@ -279,7 +306,7 @@
                     }
                     @if (User.IsInRole("Admin"))
                     {
-                        <a asp-action="Delete" asp-route-id="@Model.Id" class="btn.btn-danger">
+                        <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">
                             <i class="fas fa-trash"></i> Delete Order
                         </a>
                     }

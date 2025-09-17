@@ -23,55 +23,6 @@
 
 <section class="content">
     <div class="container-fluid">
-        <!-- Filter Section -->
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <form method="get" asp-action="Index">
-                    <div class="input-group">
-                        <select name="customerId" class="form-control" onchange="this.form.submit()">
-                            <option value="">All Customers</option>
-                            @foreach (var customer in (SelectList)ViewBag.Customers)
-                            {
-                                <option value="@customer.Value" selected="@customer.Selected">@customer.Text</option>
-                            }
-                        </select>
-                        <div class="input-group-append">
-                            <button class="btn btn-outline-secondary" type="submit">
-                                <i class="fas fa-filter"></i>
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="col-md-6">
-                <form method="get" asp-action="Index">
-                    <input type="hidden" name="customerId" value="@ViewBag.SelectedCustomerId" />
-                    <div class="input-group">
-                        <input type="text" name="searchTerm" class="form-control" placeholder="Search products..." value="@ViewBag.SearchTerm">
-                        <div class="input-group-append">
-                            <button class="btn btn-outline-secondary" type="submit">
-                                <i class="fas fa-search"></i>
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        @if (ViewBag.SelectedCustomer != null)
-        {
-            <div class="row mb-3">
-                <div class="col-12">
-                    <div class="alert alert-info">
-                        <h5><i class="fas fa-user mr-2"></i>Products for: @ViewBag.SelectedCustomer.Name</h5>
-                        <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
-                            <i class="fas fa-times"></i> Show All Customers
-                        </a>
-                    </div>
-                </div>
-            </div>
-        }
-
         @if (Model.Any())
         {
             <div class="row">
@@ -145,23 +96,6 @@
                         </div>
                     </div>
                 }
-            </div>
-
-            <!-- Pagination info -->
-            <div class="row">
-                <div class="col-12">
-                    <div class="text-center text-muted">
-                        Showing @Model.Count product(s)
-                        @if (ViewBag.SelectedCustomer != null)
-                        {
-                            <text> for @ViewBag.SelectedCustomer.Name</text>
-                        }
-                        @if (!string.IsNullOrEmpty(ViewBag.SearchTerm))
-                        {
-                            <text> matching "@ViewBag.SearchTerm"</text>
-                        }
-                    </div>
-                </div>
             </div>
         }
         else

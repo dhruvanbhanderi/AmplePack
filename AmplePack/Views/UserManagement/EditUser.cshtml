@@ -3,71 +3,245 @@
     ViewData["Title"] = "Edit User";
 }
 
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h4 class="card-title mb-0">@ViewData["Title"]</h4>
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">@ViewData["Title"]</h1>
             </div>
-            <div class="card-body">
-                <form asp-action="EditUser" method="post">
-                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                    
-                    <input asp-for="Id" type="hidden" />
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label asp-for="FirstName" class="form-label"></label>
-                                <input asp-for="FirstName" class="form-control" />
-                                <span asp-validation-for="FirstName" class="text-danger"></span>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label asp-for="LastName" class="form-label"></label>
-                                <input asp-for="LastName" class="form-control" />
-                                <span asp-validation-for="LastName" class="text-danger"></span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group mb-3">
-                        <label asp-for="Email" class="form-label"></label>
-                        <input asp-for="Email" class="form-control" readonly />
-                        <small class="form-text text-muted">Email cannot be changed.</small>
-                    </div>
-                    
-                    <div class="form-check mb-3">
-                        <input asp-for="IsActive" class="form-check-input" />
-                        <label asp-for="IsActive" class="form-check-label"></label>
-                    </div>
-                    
-                    <div class="form-group mb-3">
-                        <label class="form-label">Roles</label>
-                        @for (int i = 0; i < Model.AllRoles.Count; i++)
-                        {
-                            <div class="form-check">
-                                <input type="checkbox" 
-                                       name="SelectedRoles" 
-                                       value="@Model.AllRoles[i]" 
-                                       class="form-check-input"
-                                       @(Model.UserRoles.Contains(Model.AllRoles[i]) ? "checked" : "") />
-                                <label class="form-check-label">@Model.AllRoles[i]</label>
-                            </div>
-                        }
-                    </div>
-                    
-                    <div class="form-group">
-                        <button type="submit" class="btn btn-primary">Update User</button>
-                        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
-                    </div>
-                </form>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
+                    <li class="breadcrumb-item"><a asp-controller="UserManagement" asp-action="Index">User Management</a></li>
+                    <li class="breadcrumb-item active">Edit User</li>
+                </ol>
             </div>
         </div>
     </div>
 </div>
 
+<section class="content">
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-user-edit mr-2"></i>
+                            Edit User: @Model.FirstName @Model.LastName
+                        </h3>
+                    </div>
+                    
+                    <form asp-action="EditUser" method="post">
+                        <div class="card-body">
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                            
+                            <input asp-for="Id" type="hidden" />
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="FirstName">
+                                            <i class="fas fa-user mr-1"></i>
+                                            First Name
+                                        </label>
+                                        <input asp-for="FirstName" class="form-control" placeholder="Enter first name" />
+                                        <span asp-validation-for="FirstName" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="LastName">
+                                            <i class="fas fa-user mr-1"></i>
+                                            Last Name
+                                        </label>
+                                        <input asp-for="LastName" class="form-control" placeholder="Enter last name" />
+                                        <span asp-validation-for="LastName" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label asp-for="UserName">
+                                    <i class="fas fa-at mr-1"></i>
+                                    Username
+                                </label>
+                                <input asp-for="UserName" class="form-control" readonly />
+                                <small class="form-text text-muted">Username cannot be changed.</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label asp-for="Email">
+                                    <i class="fas fa-envelope mr-1"></i>
+                                    Email Address
+                                </label>
+                                <input asp-for="Email" class="form-control" readonly />
+                                <small class="form-text text-muted">Email cannot be changed.</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <div class="custom-control custom-switch">
+                                    <input asp-for="IsActive" type="checkbox" class="custom-control-input" id="isActiveSwitch" />
+                                    <label class="custom-control-label" for="isActiveSwitch">
+                                        <i class="fas fa-toggle-on mr-1"></i>
+                                        User is Active
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">Inactive users cannot log in to the system.</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>
+                                    <i class="fas fa-user-tag mr-1"></i>
+                                    User Roles
+                                </label>
+                                <div class="row">
+                                    @for (int i = 0; i < Model.AllRoles.Count; i++)
+                                    {
+                                        <div class="col-md-4 mb-2">
+                                            <div class="custom-control custom-checkbox">
+                                                <input type="checkbox" 
+                                                       name="SelectedRoles" 
+                                                       value="@Model.AllRoles[i]" 
+                                                       class="custom-control-input"
+                                                       id="role-@i"
+                                                       @(Model.UserRoles.Contains(Model.AllRoles[i]) ? "checked" : "") />
+                                                <label class="custom-control-label" for="role-@i">
+                                                    @if (Model.AllRoles[i] == "Admin")
+                                                    {
+                                                        <span class="badge badge-danger mr-1">Admin</span>
+                                                        <span>Administrator</span>
+                                                    }
+                                                    else if (Model.AllRoles[i] == "Manager")
+                                                    {
+                                                        <span class="badge badge-warning mr-1">Manager</span>
+                                                        <span>Manager</span>
+                                                    }
+                                                    else if (Model.AllRoles[i] == "Staff")
+                                                    {
+                                                        <span class="badge badge-info mr-1">Staff</span>
+                                                        <span>Staff Member</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge badge-secondary mr-1">@Model.AllRoles[i]</span>
+                                                        <span>@Model.AllRoles[i]</span>
+                                                    }
+                                                </label>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                                <small class="form-text text-muted">Select one or more roles for this user.</small>
+                            </div>
+                        </div>
+                        
+                        <div class="card-footer">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save mr-1"></i>
+                                        Update User
+                                    </button>
+                                    <a asp-action="Index" class="btn btn-secondary ml-2">
+                                        <i class="fas fa-times mr-1"></i>
+                                        Cancel
+                                    </a>
+                                </div>
+                                <div class="col-md-6 text-right">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Changes will take effect immediately
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- User Information Card -->
+                <div class="card card-info">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            Role Permissions
+                        </h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <h6><span class="badge badge-danger">Admin</span> Administrator</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-check text-success mr-1"></i>Full system access</li>
+                                    <li><i class="fas fa-check text-success mr-1"></i>User management</li>
+                                    <li><i class="fas fa-check text-success mr-1"></i>All CRUD operations</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-4">
+                                <h6><span class="badge badge-warning">Manager</span> Manager</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-check text-success mr-1"></i>Manage orders & customers</li>
+                                    <li><i class="fas fa-check text-success mr-1"></i>Inventory management</li>
+                                    <li><i class="fas fa-times text-danger mr-1"></i>No user management</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-4">
+                                <h6><span class="badge badge-info">Staff</span> Staff Member</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-check text-success mr-1"></i>View-only access</li>
+                                    <li><i class="fas fa-check text-success mr-1"></i>Update order status</li>
+                                    <li><i class="fas fa-times text-danger mr-1"></i>No creation/deletion</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        $(document).ready(function() {
+            // Form validation enhancement
+            $('form').on('submit', function() {
+                var selectedRoles = $('input[name="SelectedRoles"]:checked').length;
+                if (selectedRoles === 0) {
+                    alert('Please select at least one role for the user.');
+                    return false;
+                }
+                
+                // Show loading state
+                var $btn = $(this).find('button[type="submit"]');
+                var originalText = $btn.html();
+                $btn.html('<i class="fas fa-spinner fa-spin mr-1"></i>Updating...').prop('disabled', true);
+                
+                return true;
+            });
+            
+            // Role selection feedback
+            $('input[name="SelectedRoles"]').on('change', function() {
+                var selectedCount = $('input[name="SelectedRoles"]:checked').length;
+                if (selectedCount === 0) {
+                    $('.role-warning').remove();
+                    $(this).closest('.form-group').append(
+                        '<div class="alert alert-warning role-warning mt-2">' +
+                        '<i class="fas fa-exclamation-triangle mr-1"></i>' +
+                        'At least one role must be selected.' +
+                        '</div>'
+                    );
+                } else {
+                    $('.role-warning').remove();
+                }
+            });
+        });
+    </script>
 }

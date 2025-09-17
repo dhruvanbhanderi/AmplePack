@@ -100,7 +100,7 @@
                           <th>Items</th>
                           <th>Total Amount</th>
                           <th>Status</th>
-                          <th width="140px">Actions</th>
+                          <th width="180px">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -194,24 +194,33 @@
                                   <a href="@Url.Action("Details", new { id = order.Id })" class="btn btn-sm btn-outline-info" title="View Details">
                                     <i class="fas fa-eye"></i>
                                   </a>
-                                  <a href="@Url.Action("Edit", new { id = order.Id })" class="btn btn-sm btn-outline-warning" title="Edit">
-                                    <i class="fas fa-edit"></i>
+                                  <a href="@Url.Action("DownloadInvoice", new { id = order.Id })" class="btn btn-sm btn-outline-primary" title="Download Invoice PDF">
+                                    <i class="fas fa-file-pdf"></i>
                                   </a>
-                                  @if (order.Status == "Pending")
+                                  @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+                                  {
+                                    <a href="@Url.Action("Edit", new { id = order.Id })" class="btn btn-sm btn-outline-warning" title="Edit">
+                                      <i class="fas fa-edit"></i>
+                                    </a>
+                                  }
+                                  @if (order.Status == "Pending" && (User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Staff")))
                                   {
                                     <button type="button" class="btn btn-sm btn-outline-success" onclick="updateStatus(@order.Id, 'Processing')" title="Start Processing">
                                       <i class="fas fa-play"></i>
                                     </button>
                                   }
-                                  @if (order.Status == "Processing")
+                                  @if (order.Status == "Processing" && (User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Staff")))
                                   {
                                     <button type="button" class="btn btn-sm btn-outline-success" onclick="updateStatus(@order.Id, 'Completed')" title="Mark Completed">
                                       <i class="fas fa-check"></i>
                                     </button>
                                   }
-                                  <a href="@Url.Action("Delete", new { id = order.Id })" class="btn btn-sm btn-outline-danger" title="Delete">
-                                    <i class="fas fa-trash"></i>
-                                  </a>
+                                  @if (User.IsInRole("Admin"))
+                                  {
+                                    <a href="@Url.Action("Delete", new { id = order.Id })" class="btn btn-sm btn-outline-danger" title="Delete">
+                                      <i class="fas fa-trash"></i>
+                                    </a>
+                                  }
                                 </div>
                               </td>
                           </tr>

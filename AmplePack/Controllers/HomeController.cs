@@ -43,11 +43,14 @@ namespace AmplePack.Controllers
                 .Take(5)
                 .ToListAsync();
 
-            // Low stock items
-            ViewBag.LowStockItems = await _context.Inventories
+            // Low stock items - Fixed: Order in memory to avoid SQLite decimal ordering issue
+            var lowStockItems = await _context.Inventories
                 .Where(i => i.AvailableQuantity <= i.ReorderLevel)
-                .OrderBy(i => i.AvailableQuantity)
                 .ToListAsync();
+            
+            ViewBag.LowStockItems = lowStockItems
+                .OrderBy(i => i.AvailableQuantity)
+                .ToList();
 
             return View();
         }
