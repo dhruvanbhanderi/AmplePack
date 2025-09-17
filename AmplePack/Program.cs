@@ -14,9 +14,9 @@ namespace AmplePack
             // Add services to the container - MVC only
             builder.Services.AddControllersWithViews();
 
-            // Register AppDbContext with SQL Server connection string (temporarily)
+            // Register AppDbContext with PostgreSQL (Supabase)
             builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+                options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             // Configure Identity
             builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -57,14 +57,27 @@ namespace AmplePack
 
             var app = builder.Build();
 
-            // Seed the database
+            // Ensure database is created and seeded
             using (var scope = app.Services.CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                DbSeeder.SeedData(context);
+                
+                try
+                {
+                    // Ensure database is created
+                    await context.Database.EnsureCreatedAsync();
+                    
+                    // Seed the database
+                    DbSeeder.SeedData(context);
 
-                // Seed Identity data
-                await IdentitySeeder.SeedAsync(scope.ServiceProvider);
+                    // Seed Identity data
+                    await IdentitySeeder.SeedAsync(scope.ServiceProvider);
+                }
+                catch (Exception ex)
+                {
+                    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+                    logger.LogError(ex, "An error occurred while creating/seeding the database.");
+                }
             }
 
             // Configure the HTTP request pipeline.
@@ -89,7 +102,6 @@ namespace AmplePack
                 .WithStaticAssets();
 
             app.Run();
-
         }
     }
 }
