@@ -317,12 +317,96 @@ namespace AmplePack.Controllers
                 return NotFound();
             }
 
+            var oldStatus = order.Status;
             order.Status = status;
             _context.Update(order);
             await _context.SaveChangesAsync();
 
+            // Log status change for audit
+            await LogOrderStatusChange(id, oldStatus, status);
+
             TempData["SuccessMessage"] = $"Order #{id} status updated to {status}";
             return RedirectToAction(nameof(Index));
+        }
+
+        // API: Get customers with order summary for Orders page
+        [HttpGet]
+        public async Task<IActionResult> GetCustomersWithOrders()
+        {
+            try
+            {
+                var customers = await _context.Customers
+                    .Include(c => c.Orders.Take(5)) // Limit orders per customer for performance
+                    .Select(c => new
+                    {
+                        id = c.Id,
+                        name = c.Name,
+                        email = c.Email,
+                        contact = c.Contact,
+                        totalOrders = c.Orders.Count,
+                        lastOrderDate = c.Orders.Any() ? c.Orders.Max(o => o.Date) : (DateTime?)null,
+                        totalValue = c.Orders.Where(o => o.Status == "Completed").Sum(o => o.TotalAmount),
+                        recentOrders = c.Orders.OrderByDescending(o => o.Date).Take(3).Select(o => new
+                        {
+                            id = o.Id,
+                            date = o.Date,
+                            status = o.Status,
+                            totalAmount = o.TotalAmount
+                        }).ToList()
+                    })
+                    .OrderBy(c => c.name)
+                    .ToListAsync();
+
+                return Json(new { success = true, customers });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        // API: Get customer orders
+        [HttpGet]
+        [Route("api/customer-orders/{customerId}")]
+        public async Task<IActionResult> GetCustomerOrders(int customerId)
+        {
+            try
+            {
+                var orders = await _context.Orders
+                    .Where(o => o.CustomerId == customerId)
+                    .OrderByDescending(o => o.Date)
+                    .Take(10) // Limit to recent orders
+                    .Select(o => new
+                    {
+                        id = o.Id,
+                        date = o.Date,
+                        status = o.Status,
+                        totalAmount = o.TotalAmount
+                    })
+                    .ToListAsync();
+
+                return Json(new { success = true, orders });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        // API: Log order status change for audit
+        [HttpPost]
+        [Route("api/audit/order-status")]
+        public async Task<IActionResult> LogOrderStatusChangeApi([FromBody] OrderStatusChangeLog log)
+        {
+            try
+            {
+                await LogOrderStatusChange(log.OrderId, log.FromStatus, log.ToStatus, log.ChangedBy);
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
         }
 
         // GET: Orders/Edit/5
@@ -459,9 +543,61 @@ namespace AmplePack.Controllers
             }
         }
 
+        // Helper method to log order status changes
+        private async Task LogOrderStatusChange(int orderId, string fromStatus, string toStatus, string? changedBy = null)
+        {
+            try
+            {
+                var order = await _context.Orders
+                    .Include(o => o.Customer)
+                    .FirstOrDefaultAsync(o => o.Id == orderId);
+
+                var details = new
+                {
+                    OrderId = orderId,
+                    CustomerName = order?.Customer?.Name ?? "Unknown",
+                    FromStatus = fromStatus,
+                    ToStatus = toStatus
+                };
+
+                var auditLog = new AuditLog
+                {
+                    EntityType = "Order",
+                    EntityId = orderId,
+                    Action = "STATUS_CHANGE",
+                    Field = "Status",
+                    OldValue = fromStatus,
+                    NewValue = toStatus,
+                    Details = System.Text.Json.JsonSerializer.Serialize(details),
+                    ChangedBy = changedBy ?? User?.Identity?.Name ?? "System",
+                    Timestamp = DateTime.UtcNow,
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    UserAgent = HttpContext.Request.Headers["User-Agent"].ToString()
+                };
+
+                _context.AuditLogs.Add(auditLog);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                // Log the error but don't fail the main operation
+                System.Diagnostics.Debug.WriteLine($"Failed to create audit log: {ex.Message}");
+            }
+        }
+
         private bool OrderExists(int id)
         {
             return _context.Orders.Any(e => e.Id == id);
         }
+    }
+
+    // DTO for order status change logging
+    public class OrderStatusChangeLog
+    {
+        public int OrderId { get; set; }
+        public string FromStatus { get; set; }
+        public string ToStatus { get; set; }
+        public string ChangedBy { get; set; }
+        public DateTime Timestamp { get; set; }
     }
 }
