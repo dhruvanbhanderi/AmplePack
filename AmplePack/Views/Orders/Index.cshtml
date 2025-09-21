@@ -86,8 +86,21 @@
                   </a>
                 </div>
               </div>
-              <!-- /.card-header -->
-              <div class="card-body">
+
+              <!-- View Toggle Buttons -->
+              <div class="card-body pb-2">
+                <div class="btn-group mb-3" role="group">
+                    <button type="button" class="btn btn-primary" id="showOrdersBtn">
+                        <i class="fas fa-shopping-cart"></i> All Orders
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="showCustomersBtn">
+                        <i class="fas fa-users"></i> Customers & Orders
+                    </button>
+                </div>
+              </div>
+
+              <!-- Orders View (Default) -->
+              <div class="card-body pt-0" id="ordersView">
                 @if (Model.Any())
                 {
                   <div class="table-responsive">
@@ -160,34 +173,17 @@
                                 <strong class="text-success">@CurrencyHelper.FormatCurrency(order.TotalAmount)</strong>
                               </td>
                               <td>
-                                @if (order.Status == "Pending")
-                                {
-                                  <span class="badge badge-warning">
-                                    <i class="fas fa-clock mr-1"></i>@order.Status
-                                  </span>
-                                }
-                                else if (order.Status == "Processing")
-                                {
-                                  <span class="badge badge-info">
-                                    <i class="fas fa-cog mr-1"></i>@order.Status
-                                  </span>
-                                }
-                                else if (order.Status == "Completed")
-                                {
-                                  <span class="badge badge-success">
-                                    <i class="fas fa-check mr-1"></i>@order.Status
-                                  </span>
-                                }
-                                else if (order.Status == "Cancelled")
-                                {
-                                  <span class="badge badge-danger">
-                                    <i class="fas fa-times mr-1"></i>@order.Status
-                                  </span>
-                                }
-                                else
-                                {
-                                  <span class="badge badge-secondary">@order.Status</span>
-                                }
+                                <div class="dropdown">
+                                  <select class="form-control form-control-sm order-status-select" 
+                                          data-order-id="@order.Id" 
+                                          data-original-status="@order.Status"
+                                          onchange="updateOrderStatus(@order.Id, this.value, '@order.Status')">
+                                    <option value="Pending" selected="@(order.Status == "Pending")">Pending</option>
+                                    <option value="Processing" selected="@(order.Status == "Processing")">Processing</option>
+                                    <option value="Completed" selected="@(order.Status == "Completed")">Completed</option>
+                                    <option value="Cancelled" selected="@(order.Status == "Cancelled")">Cancelled</option>
+                                  </select>
+                                </div>
                               </td>
                               <td>
                                 <div class="btn-group d-flex" role="group">
@@ -202,18 +198,6 @@
                                     <a href="@Url.Action("Edit", new { id = order.Id })" class="btn btn-sm btn-outline-warning" title="Edit">
                                       <i class="fas fa-edit"></i>
                                     </a>
-                                  }
-                                  @if (order.Status == "Pending" && (User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Staff")))
-                                  {
-                                    <button type="button" class="btn btn-sm btn-outline-success" onclick="updateStatus(@order.Id, 'Processing')" title="Start Processing">
-                                      <i class="fas fa-play"></i>
-                                    </button>
-                                  }
-                                  @if (order.Status == "Processing" && (User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Staff")))
-                                  {
-                                    <button type="button" class="btn btn-sm btn-outline-success" onclick="updateStatus(@order.Id, 'Completed')" title="Mark Completed">
-                                      <i class="fas fa-check"></i>
-                                    </button>
                                   }
                                   @if (User.IsInRole("Admin"))
                                   {
@@ -241,6 +225,14 @@
                   </div>
                 }
               </div>
+
+              <!-- Customers View (Hidden by default) -->
+              <div class="card-body pt-0 d-none" id="customersView">
+                <div class="text-center py-4">
+                  <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+                  <p>Loading customers and their orders...</p>
+                </div>
+              </div>
               <!-- /.card-body -->
             </div>
             <!-- /.card -->
@@ -267,7 +259,8 @@
   
   <script>
     $(function () {
-      $("#ordersTable").DataTable({
+      // Initialize DataTables for orders
+      const ordersTable = $("#ordersTable").DataTable({
         "responsive": true, 
         "lengthChange": true, 
         "autoWidth": false,
@@ -286,15 +279,228 @@
           }
         }
       });
+
+      // View switching functionality
+      let customersTable = null;
+      let customersLoaded = false;
+
+      // Show Orders View
+      $('#showOrdersBtn').on('click', function() {
+        $('#showOrdersBtn').removeClass('btn-outline-primary').addClass('btn-primary');
+        $('#showCustomersBtn').removeClass('btn-primary').addClass('btn-outline-primary');
+        $('#ordersView').removeClass('d-none');
+        $('#customersView').addClass('d-none');
+        
+        // Redraw orders table to fix any display issues
+        if (ordersTable) {
+          ordersTable.columns.adjust().draw();
+        }
+      });
+
+      // Show Customers View
+      $('#showCustomersBtn').on('click', function() {
+        $('#showCustomersBtn').removeClass('btn-outline-primary').addClass('btn-primary');
+        $('#showOrdersBtn').removeClass('btn-primary').addClass('btn-outline-primary');
+        $('#ordersView').addClass('d-none');
+        $('#customersView').removeClass('d-none');
+        
+        // Load customers data if not already loaded
+        if (!customersLoaded) {
+          loadCustomersWithOrders();
+        } else if (customersTable) {
+          customersTable.columns.adjust().draw();
+        }
+      });
+
+      // Load customers with orders
+      function loadCustomersWithOrders() {
+        // Show loading state
+        $('#customersView').html(`
+          <div class="text-center py-4">
+            <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+            <p>Loading customers and their orders...</p>
+          </div>
+        `);
+
+        // Make AJAX call to get customers
+        $.ajax({
+          url: '@Url.Action("GetCustomersWithOrders")',
+          type: 'GET',
+          success: function(response) {
+            if (response.success && response.customers) {
+              renderCustomersView(response.customers);
+              customersLoaded = true;
+            } else {
+              showError('Failed to load customers data');
+            }
+          },
+          error: function() {
+            showError('Error loading customers data');
+          }
+        });
+      }
+
+      // Render customers view
+      function renderCustomersView(customers) {
+        if (customers.length === 0) {
+          $('#customersView').html(`
+            <div class="text-center py-5">
+              <i class="fas fa-users fa-3x text-muted mb-3"></i>
+              <h4>No Customers Found</h4>
+              <p class="text-muted">Get started by adding your first customer.</p>
+              <a href="@Url.Action("Create", "Customers")" class="btn btn-success">
+                <i class="fas fa-user-plus"></i> Add First Customer
+              </a>
+            </div>
+          `);
+          return;
+        }
+
+        let tableHtml = `
+          <div class="table-responsive">
+            <table id="customersOrdersTable" class="table table-bordered table-hover table-striped">
+              <thead class="thead-dark">
+                <tr>
+                  <th>Customer</th>
+                  <th>Contact Info</th>
+                  <th>Orders</th>
+                  <th>Total Value</th>
+                  <th>Recent Orders</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+
+        customers.forEach(customer => {
+          const lastOrderDate = customer.lastOrderDate ? new Date(customer.lastOrderDate).toLocaleDateString() : 'Never';
+          const recentOrdersHtml = customer.recentOrders.map(order => 
+            `<div class="small mb-1">
+              <strong>#${order.id}</strong> - ${new Date(order.date).toLocaleDateString()} 
+              <span class="badge badge-sm badge-${getStatusBadgeClass(order.status)}">${order.status}</span>
+              <br><small class="text-success">Rs.${order.totalAmount.toFixed(2)}</small>
+            </div>`
+          ).join('');
+
+          tableHtml += `
+            <tr>
+              <td>
+                <div>
+                  <strong>${customer.name}</strong><br>
+                  <small class="text-muted">ID: #${customer.id}</small>
+                </div>
+              </td>
+              <td>
+                <div>
+                  ${customer.email ? `<i class="fas fa-envelope mr-1"></i>${customer.email}<br>` : ''}
+                  ${customer.contact ? `<i class="fas fa-phone mr-1"></i>${customer.contact}` : '<span class="text-muted">No contact</span>'}
+                </div>
+              </td>
+              <td>
+                <span class="badge badge-primary">${customer.totalOrders} orders</span><br>
+                <small class="text-muted">Last: ${lastOrderDate}</small>
+              </td>
+              <td>
+                <strong class="text-success">Rs.${customer.totalValue.toFixed(2)}</strong>
+              </td>
+              <td>
+                <div class="recent-orders">
+                  ${recentOrdersHtml || '<small class="text-muted">No recent orders</small>'}
+                </div>
+              </td>
+              <td>
+                <div class="btn-group-vertical btn-group-sm">
+                  <a href="@Url.Action("Details", "Customers")/${customer.id}" class="btn btn-outline-info btn-sm">
+                    <i class="fas fa-eye"></i> View
+                  </a>
+                  <a href="@Url.Action("CreateWorkflow", "Orders")?customerId=${customer.id}" class="btn btn-outline-success btn-sm">
+                    <i class="fas fa-plus"></i> New Order
+                  </a>
+                </div>
+              </td>
+            </tr>
+          `;
+        });
+
+        tableHtml += `
+              </tbody>
+            </table>
+          </div>
+        `;
+
+        $('#customersView').html(tableHtml);
+
+        // Initialize DataTable for customers
+        customersTable = $('#customersOrdersTable').DataTable({
+          "responsive": true,
+          "lengthChange": true,
+          "autoWidth": false,
+          "pageLength": 15,
+          "order": [[ 0, "asc" ]],
+          "columnDefs": [
+            { "orderable": false, "targets": 5 }
+          ],
+          "language": {
+            "search": "Search customers:",
+            "lengthMenu": "Show _MENU_ customers per page",
+            "info": "Showing _START_ to _END_ of _TOTAL_ customers"
+          }
+        });
+      }
+
+      // Helper function to get status badge class
+      function getStatusBadgeClass(status) {
+        switch(status) {
+          case 'Pending': return 'warning';
+          case 'Processing': return 'info';
+          case 'Completed': return 'success';
+          case 'Cancelled': return 'danger';
+          default: return 'secondary';
+        }
+      }
+
+      // Show error message
+      function showError(message) {
+        $('#customersView').html(`
+          <div class="alert alert-danger" role="alert">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            ${message}
+            <button type="button" class="btn btn-sm btn-outline-danger ml-3" onclick="loadCustomersWithOrders()">
+              <i class="fas fa-redo"></i> Retry
+            </button>
+          </div>
+        `);
+      }
     });
 
-    function updateStatus(orderId, newStatus) {
+    // Function to update order status
+    function updateOrderStatus(orderId, newStatus, originalStatus) {
+      if (newStatus === originalStatus) {
+        return; // No change
+      }
+      
       if (confirm(`Are you sure you want to change the order status to ${newStatus}?`)) {
+        // Show loading state
+        $(`select[data-order-id="${orderId}"]`).prop('disabled', true);
+        
+        // Submit the form
         document.getElementById('statusOrderId').value = orderId;
         document.getElementById('statusNewStatus').value = newStatus;
         document.getElementById('statusUpdateForm').submit();
+      } else {
+        // Reset the select to original value
+        $(`select[data-order-id="${orderId}"]`).val(originalStatus);
       }
     }
+
+    // Handle status change events
+    $(document).on('change', '.order-status-select', function() {
+      const orderId = $(this).data('order-id');
+      const newStatus = $(this).val();
+      const originalStatus = $(this).data('original-status');
+      
+      updateOrderStatus(orderId, newStatus, originalStatus);
+    });
   </script>
 
   <style>
@@ -329,6 +535,72 @@
     
     .table td {
       vertical-align: middle;
+    }
+
+    /* Enhanced status select styling */
+    .order-status-select {
+      min-width: 120px;
+      font-size: 0.875rem;
+    }
+
+    .order-status-select:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Toast container */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1055;
+    }
+
+    .toast {
+      min-width: 300px;
+    }
+
+    /* View toggle buttons */
+    .btn-group .btn {
+      transition: all 0.3s ease;
+    }
+
+    /* Customers view styling */
+    .recent-orders {
+      max-width: 200px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .recent-orders .small {
+      font-size: 0.75rem;
+      line-height: 1.2;
+    }
+
+    .btn-group-vertical .btn {
+      margin-bottom: 2px;
+    }
+
+    .btn-group-vertical .btn:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Loading and error states */
+    .alert .btn {
+      float: right;
+    }
+
+    /* Responsive improvements */
+    @@media (max-width: 768px) {
+      .recent-orders {
+        max-width: 150px;
+        max-height: 80px;
+      }
+      
+      .btn-group-vertical .btn {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+      }
     }
   </style>
 }

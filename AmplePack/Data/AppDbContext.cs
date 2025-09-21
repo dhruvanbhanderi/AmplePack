@@ -13,6 +13,7 @@ namespace AmplePack.Data
         public DbSet<OrderDetail> OrderDetails { get; set; }
         public DbSet<Inventory> Inventories { get; set; }
         public DbSet<CustomerProduct> CustomerProducts { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -96,6 +97,16 @@ namespace AmplePack.Data
 
             modelBuilder.Entity<OrderDetail>()
                 .HasIndex(od => od.CustomerProductId);
+
+            // Configure AuditLog indexes
+            modelBuilder.Entity<AuditLog>()
+                .HasIndex(al => new { al.EntityType, al.EntityId });
+
+            modelBuilder.Entity<AuditLog>()
+                .HasIndex(al => al.Timestamp);
+
+            modelBuilder.Entity<AuditLog>()
+                .HasIndex(al => al.ChangedBy);
         }
     }
 }

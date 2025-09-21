@@ -1,3 +1,4 @@
+@using AmplePack.Helpers
 @model AmplePack.Models.Customer
 @{
     ViewData["Title"] = "Customer Details";
@@ -122,7 +123,7 @@
                                     <span class="info-box-icon bg-success"><i class="fas fa-rupee-sign"></i></span>
                                     <div class="info-box-content">
                                         <span class="info-box-text">Total Spent</span>
-                                        <span class="info-box-number">?@Model.Orders.Sum(o => o.TotalAmount).ToString("N0")</span>
+                                        <span class="info-box-number">@CurrencyHelper.FormatCurrency(Model.Orders.Sum(o => o.TotalAmount))</span>
                                     </div>
                                 </div>
                             </div>
@@ -177,7 +178,7 @@
                                                 </span>
                                             </div>
                                             <br>
-                                            <strong class="text-success">?@order.TotalAmount.ToString("N2")</strong>
+                                            <strong class="text-success">@CurrencyHelper.FormatCurrency(order.TotalAmount)</strong>
                                         </div>
                                     </li>
                                 }
@@ -219,13 +220,13 @@
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <div>
                                         <strong>@product.ProductName</strong><br>
-                                        <small class="text-muted">@product.Length×@product.Width×@product.Height</small>
+                                        <small class="text-muted">@product.Length × @product.Width × @product.Height</small>
                                     </div>
                                     <div class="text-right">
                                         <span class="badge @(product.IsActive ? "badge-success" : "badge-secondary")">
                                             @(product.IsActive ? "Active" : "Inactive")
                                         </span><br>
-                                        <small class="text-muted">?@product.PricePerBox.ToString("N2")</small>
+                                        <small class="text-muted">@CurrencyHelper.FormatCurrency(product.PricePerBox)</small>
                                     </div>
                                 </div>
                             }
@@ -265,12 +266,18 @@
                         <a asp-controller="CustomerProducts" asp-action="Create" asp-route-customerId="@Model.Id" class="btn btn-info btn-block">
                             <i class="fas fa-cube"></i> Add Product
                         </a>
-                        <a href="mailto:@Model.Email" class="btn btn-secondary btn-block">
-                            <i class="fas fa-envelope"></i> Send Email
-                        </a>
-                        <a href="tel:@Model.Contact" class="btn btn-success btn-block">
-                            <i class="fas fa-phone"></i> Call Customer
-                        </a>
+                        @if (!string.IsNullOrEmpty(Model.Email))
+                        {
+                            <a href="mailto:@Model.Email" class="btn btn-secondary btn-block">
+                                <i class="fas fa-envelope"></i> Send Email
+                            </a>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.Contact))
+                        {
+                            <a href="tel:@Model.Contact" class="btn btn-success btn-block">
+                                <i class="fas fa-phone"></i> Call Customer
+                            </a>
+                        }
                     </div>
                 </div>
             </div>

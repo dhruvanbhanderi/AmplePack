@@ -31,10 +31,53 @@
                             <i class="fas fa-boxes mr-2"></i>
                             Inventory Items
                         </h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-bs-toggle="tooltip" title="Quick adjust inventory levels">
+                                <i class="fas fa-info-circle"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="card-body">
+                        @{
+                            var frequentItems = Model.Any() ? Model.Where(i => i.IsLowStock || i.Category == "Frequent").Take(5) : Enumerable.Empty<AmplePack.Models.Inventory>();
+                        }
+                        
                         @if (Model.Any())
                         {
+                            @if (frequentItems.Any())
+                            {
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-bolt"></i> Quick Adjust - Frequent Items</h6>
+                                    <div class="row">
+                                        @foreach (var item in frequentItems)
+                                        {
+                                            <div class="col-md-6 col-lg-4 mb-2">
+                                                <div class="d-flex align-items-center justify-content-between p-2 bg-light rounded">
+                                                    <div>
+                                                        <strong>@item.ItemName</strong><br>
+                                                        <small class="text-muted">@item.AvailableQuantity.ToString("N2") @item.Unit</small>
+                                                    </div>
+                                                    <div class="btn-group">
+                                                        <button class="btn btn-sm btn-success quick-add" 
+                                                                data-item-id="@item.Id" 
+                                                                data-item-name="@item.ItemName"
+                                                                title="Quick Add Stock">
+                                                            <i class="fas fa-plus"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-warning quick-remove" 
+                                                                data-item-id="@item.Id" 
+                                                                data-item-name="@item.ItemName"
+                                                                title="Quick Remove Stock">
+                                                            <i class="fas fa-minus"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
                             <div class="table-responsive">
                                 <table id="inventoryTable" class="table table-bordered table-hover table-striped">
                                     <thead class="thead-dark">
@@ -46,13 +89,13 @@
                                             <th>Unit Price</th>
                                             <th>Total Value</th>
                                             <th>Status</th>
-                                            <th width="120px">Actions</th>
+                                            <th width="200px">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach (var item in Model)
                                         {
-                                            <tr class="@(item.IsLowStock ? "table-warning" : "")">
+                                            <tr class="@(item.IsLowStock ? "table-warning" : "") inventory-item-row" data-item-id="@item.Id">
                                                 <td>
                                                     <strong>@item.ItemName</strong>
                                                 </td>
@@ -66,7 +109,7 @@
                                                         <span class="badge badge-secondary">Uncategorized</span>
                                                     }
                                                 </td>
-                                                <td>
+                                                <td class="quantity-cell">
                                                     <span class="badge @(item.IsLowStock ? "badge-warning" : "badge-success")">
                                                         @item.AvailableQuantity.ToString("N2")
                                                     </span>
@@ -90,7 +133,26 @@
                                                         </span>
                                                     }
                                                 </td>
-                                                <td>
+                                                <td class="actions-cell">
+                                                    <!-- Quick Adjust Controls -->
+                                                    <div class="btn-group quick-adjust mr-2" role="group">
+                                                        <button class="btn btn-sm btn-success quick-add" 
+                                                                data-item-id="@item.Id" 
+                                                                data-item-name="@item.ItemName"
+                                                                title="Quick Add Stock"
+                                                                aria-label="Quick add stock for @item.ItemName">
+                                                            <i class="fas fa-plus"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-warning quick-remove" 
+                                                                data-item-id="@item.Id" 
+                                                                data-item-name="@item.ItemName"
+                                                                title="Quick Remove Stock"
+                                                                aria-label="Quick remove stock for @item.ItemName">
+                                                            <i class="fas fa-minus"></i>
+                                                        </button>
+                                                    </div>
+
+                                                    <!-- Standard Actions -->
                                                     <div class="btn-group" role="group">
                                                         <a href="@Url.Action("Details", new { id = item.Id })" class="btn btn-sm btn-outline-info" title="View Details">
                                                             <i class="fas fa-eye"></i>
@@ -98,9 +160,17 @@
                                                         <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-sm btn-outline-warning" title="Edit">
                                                             <i class="fas fa-edit"></i>
                                                         </a>
-                                                        <a href="@Url.Action("Delete", new { id = item.Id })" class="btn btn-sm btn-outline-danger" title="Delete">
-                                                            <i class="fas fa-trash"></i>
-                                                        </a>
+                                                        @if (User.IsInRole("Admin"))
+                                                        {
+                                                            <a href="@Url.Action("Delete", new { id = item.Id })" class="btn btn-sm btn-outline-danger" title="Delete">
+                                                                <i class="fas fa-trash"></i>
+                                                            </a>
+                                                        }
+                                                        <button class="btn btn-sm btn-outline-secondary" 
+                                                                onclick="showAuditLog('inventory', @item.Id)" 
+                                                                title="View Audit Log">
+                                                            <i class="fas fa-history"></i>
+                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -127,6 +197,115 @@
     </div>
 </section>
 
+<!-- CSRF Token for AJAX requests -->
+@Html.AntiForgeryToken()
+
+<!-- Quick Add Modal -->
+<div class="modal fade" id="quickAddModal" tabindex="-1" role="dialog" aria-labelledby="quickAddModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="quickAddModalLabel">
+                    <i class="fas fa-plus text-success"></i> Quick Add Stock
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="quickAddForm">
+                    <input type="hidden" id="addItemId">
+                    <div class="form-group">
+                        <label for="addItemName">Item:</label>
+                        <input type="text" class="form-control" id="addItemName" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="addQuantity">Quantity to Add: <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="addQuantity" 
+                               min="0.01" step="0.01" required aria-describedby="addQuantityHelp">
+                        <small id="addQuantityHelp" class="form-text text-muted">Enter the amount to add to current stock</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="addReason">Reason (Optional):</label>
+                        <textarea class="form-control" id="addReason" rows="2" 
+                                  placeholder="e.g., New stock delivery, Returned items, Stock adjustment"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmQuickAdd">
+                    <i class="fas fa-plus"></i> Add Stock
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Remove Modal -->
+<div class="modal fade" id="quickRemoveModal" tabindex="-1" role="dialog" aria-labelledby="quickRemoveModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="quickRemoveModalLabel">
+                    <i class="fas fa-minus text-warning"></i> Quick Remove Stock
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="quickRemoveForm">
+                    <input type="hidden" id="removeItemId">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="removeItemName">Item:</label>
+                                <input type="text" class="form-control" id="removeItemName" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="removeQuantity">Quantity to Remove: <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="removeQuantity" 
+                                       min="0.01" step="0.01" required aria-describedby="removeQuantityHelp">
+                                <small id="removeQuantityHelp" class="form-text text-muted">Enter the amount to remove from current stock</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="removeCustomer">Associated Customer (Optional):</label>
+                                <select class="form-control" id="removeCustomer" aria-describedby="removeCustomerHelp">
+                                    <option value="">Select Customer</option>
+                                </select>
+                                <small id="removeCustomerHelp" class="form-text text-muted">Link this removal to a specific customer</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="removeOrder">Associated Order (Optional):</label>
+                                <select class="form-control" id="removeOrder" disabled aria-describedby="removeOrderHelp">
+                                    <option value="">Select Order</option>
+                                </select>
+                                <small id="removeOrderHelp" class="form-text text-muted">Link this removal to a specific order</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="removeReason">Reason: <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="removeReason" rows="3" required
+                                  placeholder="e.g., Used for order, Damaged goods, Quality control, Stock adjustment"
+                                  aria-describedby="removeReasonHelp"></textarea>
+                        <small id="removeReasonHelp" class="form-text text-muted">Provide a clear reason for this inventory removal</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" id="confirmQuickRemove">
+                    <i class="fas fa-minus"></i> Remove Stock
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.4/css/dataTables.bootstrap4.min.css">
     <script src="https://cdn.datatables.net/1.11.4/js/jquery.dataTables.min.js"></script>
@@ -134,6 +313,7 @@
     
     <script>
         $(document).ready(function() {
+            // Initialize DataTables
             $('#inventoryTable').DataTable({
                 "responsive": true,
                 "lengthChange": true,
@@ -149,10 +329,239 @@
                     "info": "Showing _START_ to _END_ of _TOTAL_ items"
                 }
             });
+
+            // Initialize tooltips
+            $('[data-bs-toggle="tooltip"]').tooltip();
+
+            // Initialize inventory quick adjust functionality
+            if (window.AmplePack) {
+                window.inventoryQuickAdjust = new AmplePack.InventoryQuickAdjust();
+            }
+
+            // Quick add button event handler
+            $(document).on('click', '.quick-add', function() {
+                const itemId = $(this).data('item-id');
+                const itemName = $(this).data('item-name');
+                
+                $('#addItemId').val(itemId);
+                $('#addItemName').val(itemName);
+                $('#addQuantity').val('');
+                $('#addReason').val('');
+                
+                $('#quickAddModal').modal('show');
+            });
+
+            // Quick remove button event handler
+            $(document).on('click', '.quick-remove', function() {
+                const itemId = $(this).data('item-id');
+                const itemName = $(this).data('item-name');
+                
+                $('#removeItemId').val(itemId);
+                $('#removeItemName').val(itemName);
+                $('#removeQuantity').val('');
+                $('#removeCustomer').val('');
+                $('#removeOrder').val('').prop('disabled', true);
+                $('#removeReason').val('');
+                
+                // Load customers
+                loadCustomers();
+                
+                $('#quickRemoveModal').modal('show');
+            });
+
+            // Customer selection change handler
+            $('#removeCustomer').on('change', function() {
+                const customerId = $(this).val();
+                if (customerId) {
+                    loadCustomerOrders(customerId);
+                } else {
+                    $('#removeOrder').empty().append('<option value="">Select Order</option>').prop('disabled', true);
+                }
+            });
+
+            // Confirm quick add
+            $('#confirmQuickAdd').on('click', function() {
+                processQuickAdd();
+            });
+
+            // Confirm quick remove
+            $('#confirmQuickRemove').on('click', function() {
+                processQuickRemove();
+            });
         });
+
+        // Load customers for remove modal
+        async function loadCustomers() {
+            try {
+                const response = await fetch('/api/customers');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const $select = $('#removeCustomer');
+                    $select.empty().append('<option value="">Select Customer</option>');
+                    
+                    data.customers.forEach(customer => {
+                        $select.append(`<option value="${customer.id}">${customer.name}</option>`);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading customers:', error);
+                AmplePack.showToast('Error loading customers', 'error');
+            }
+        }
+
+        // Load customer orders
+        async function loadCustomerOrders(customerId) {
+            try {
+                const response = await fetch(`/api/customer-orders/${customerId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const $select = $('#removeOrder');
+                    $select.empty().append('<option value="">Select Order</option>');
+                    
+                    data.orders.forEach(order => {
+                        const orderDate = new Date(order.date).toLocaleDateString();
+                        $select.append(`<option value="${order.id}">Order #${order.id} - ${orderDate}</option>`);
+                    });
+                    
+                    $select.prop('disabled', false);
+                }
+            } catch (error) {
+                console.error('Error loading customer orders:', error);
+                AmplePack.showToast('Error loading customer orders', 'error');
+            }
+        }
+
+        // Process quick add
+        async function processQuickAdd() {
+            const formData = {
+                itemId: parseInt($('#addItemId').val()),
+                quantity: parseFloat($('#addQuantity').val()),
+                reason: $('#addReason').val()
+            };
+            
+            if (!formData.quantity || formData.quantity <= 0) {
+                AmplePack.showToast('Please enter a valid quantity', 'error');
+                return;
+            }
+            
+            try {
+                AmplePack.showLoading('#confirmQuickAdd');
+                
+                const response = await fetch('/api/inventory/quick-add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    $('#quickAddModal').modal('hide');
+                    AmplePack.showToast(result.message || `Successfully added ${formData.quantity} units`, 'success');
+                    updateInventoryDisplay(formData.itemId, result.newQuantity);
+                } else {
+                    AmplePack.showToast(result.message || 'Failed to add inventory', 'error');
+                }
+            } catch (error) {
+                console.error('Error adding inventory:', error);
+                AmplePack.showToast('Error adding inventory', 'error');
+            } finally {
+                AmplePack.hideLoading('#confirmQuickAdd');
+            }
+        }
+
+        // Process quick remove
+        async function processQuickRemove() {
+            const formData = {
+                itemId: parseInt($('#removeItemId').val()),
+                quantity: parseFloat($('#removeQuantity').val()),
+                customerId: $('#removeCustomer').val() ? parseInt($('#removeCustomer').val()) : null,
+                orderId: $('#removeOrder').val() ? parseInt($('#removeOrder').val()) : null,
+                reason: $('#removeReason').val()
+            };
+            
+            if (!formData.quantity || formData.quantity <= 0) {
+                AmplePack.showToast('Please enter a valid quantity', 'error');
+                return;
+            }
+            
+            if (!formData.reason.trim()) {
+                AmplePack.showToast('Please provide a reason for the removal', 'error');
+                return;
+            }
+            
+            try {
+                AmplePack.showLoading('#confirmQuickRemove');
+                
+                const response = await fetch('/api/inventory/quick-remove', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    $('#quickRemoveModal').modal('hide');
+                    AmplePack.showToast(result.message || `Successfully removed ${formData.quantity} units`, 'success');
+                    updateInventoryDisplay(formData.itemId, result.newQuantity);
+                } else {
+                    AmplePack.showToast(result.message || 'Failed to remove inventory', 'error');
+                }
+            } catch (error) {
+                console.error('Error removing inventory:', error);
+                AmplePack.showToast('Error removing inventory', 'error');
+            } finally {
+                AmplePack.hideLoading('#confirmQuickRemove');
+            }
+        }
+
+        // Update inventory display
+        function updateInventoryDisplay(itemId, newQuantity) {
+            const $row = $(`.inventory-item-row[data-item-id="${itemId}"]`);
+            const $quantityCell = $row.find('.quantity-cell');
+            
+            // Determine badge class based on low stock status
+            const isLowStock = newQuantity < 10; // You might want to make this configurable
+            const badgeClass = isLowStock ? 'badge-warning' : 'badge-success';
+            
+            $quantityCell.html(`<span class="badge ${badgeClass}">${newQuantity.toFixed(2)}</span>`);
+            
+            // Add flash effect
+            $quantityCell.addClass('inventory-update-success');
+            setTimeout(() => {
+                $quantityCell.removeClass('inventory-update-success');
+            }, 2000);
+
+            // Update row styling if low stock status changed
+            if (isLowStock) {
+                $row.addClass('table-warning');
+            } else {
+                $row.removeClass('table-warning');
+            }
+        }
+
+        // Show audit log function
+        window.showAuditLog = function(type, entityId) {
+            // This would typically show a modal with audit log entries
+            AmplePack.showToast(`Audit log for ${type} #${entityId} - Feature coming soon!`, 'info');
+        };
     </script>
 
     <style>
+        /* Quick adjust styling */
+        .quick-adjust .btn {
+            margin: 0 1px;
+        }
+        
         .btn-group .btn {
             margin: 0 1px;
         }
@@ -164,5 +573,68 @@
         .badge {
             font-size: 0.75em;
         }
+
+        /* Quick actions alert */
+        .alert-info .btn-group {
+            white-space: nowrap;
+        }
+
+        .alert-info .d-flex {
+            border: 1px solid #b8daff;
+            background: white;
+        }
+
+        /* Enhanced inventory styling */
+        .inventory-item-row.table-warning {
+            background-color: rgba(255, 193, 7, 0.1) !important;
+        }
+
+        .inventory-update-success {
+            background-color: #d4edda !important;
+            color: #155724 !important;
+            transition: background-color 2s ease;
+        }
+
+        /* Quick add/remove button styling */
+        .quick-add, .quick-remove {
+            transition: all 0.3s ease;
+        }
+
+        .quick-add:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+        }
+
+        .quick-remove:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+        }
+
+        /* Modal enhancements */
+        .modal-lg {
+            max-width: 900px;
+        }
+
+        .form-text {
+            font-size: 0.875rem;
+        }
+
+        /* Accessibility improvements */
+        .quick-add:focus,
+        .quick-remove:focus {
+            outline: 2px solid #007bff;
+            outline-offset: 2px;
+        }
+
+        /* Loading states */
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+        }
     </style>
-}}
+}
