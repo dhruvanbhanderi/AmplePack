@@ -9,7 +9,6 @@ using Microsoft.EntityFrameworkCore;
 using AmplePack.Data;
 using AmplePack.Models;
 using AmplePack.ViewModels;
-using Microsoft.AspNetCore.Authorization;
 using AmplePack.Services;
 
 namespace AmplePack.Controllers
@@ -19,37 +18,100 @@ namespace AmplePack.Controllers
     {
         private readonly AppDbContext _context;
         private readonly InvoiceService _invoiceService;
+        private readonly OrderManagementService _orderManagementService;
 
-        public OrdersController(AppDbContext context, InvoiceService invoiceService)
+        public OrdersController(AppDbContext context, InvoiceService invoiceService, OrderManagementService orderManagementService)
         {
             _context = context;
             _invoiceService = invoiceService;
+            _orderManagementService = orderManagementService;
         }
 
         // GET: Orders
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(OrderFilterViewModel filter)
         {
-            var orders = await _context.Orders
-                .Include(o => o.Customer)
-                .Include(o => o.OrderDetails)
-                    .ThenInclude(od => od.CustomerProduct)
-                .OrderByDescending(o => o.Date)
-                .ToListAsync();
+            // Set default values if not provided
+            if (string.IsNullOrEmpty(filter.SortBy))
+            {
+                filter.SortBy = "Date";
+                filter.SortOrder = "desc";
+            }
 
-            // Get statistics for dashboard
-            ViewBag.TotalOrders = orders.Count;
-            ViewBag.PendingOrders = orders.Count(o => o.Status == "Pending");
-            ViewBag.ProcessingOrders = orders.Count(o => o.Status == "Processing");
-            ViewBag.CompletedOrders = orders.Count(o => o.Status == "Completed");
-            ViewBag.CancelledOrders = orders.Count(o => o.Status == "Cancelled");
+            var viewModel = await _orderManagementService.GetFilteredOrdersAsync(filter);
             
-            var currentMonth = DateTime.Now.Month;
-            var currentYear = DateTime.Now.Year;
-            ViewBag.MonthlyRevenue = orders
-                .Where(o => o.Status == "Completed" && o.Date.Month == currentMonth && o.Date.Year == currentYear)
-                .Sum(o => o.TotalAmount);
+            // Store filter in ViewBag for JavaScript access
+            ViewBag.CurrentFilter = filter;
+            
+            return View(viewModel);
+        }
 
-            return View(orders);
+        // GET: Orders/Export
+        public async Task<IActionResult> Export(OrderFilterViewModel filter, string format = "excel")
+        {
+            try
+            {
+                var data = await _orderManagementService.ExportOrdersAsync(filter, format);
+                
+                var fileName = $"Orders_Export_{DateTime.Now:yyyyMMdd_HHmmss}";
+                var contentType = format.ToLower() switch
+                {
+                    "excel" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "csv" => "text/csv",
+                    "pdf" => "application/pdf",
+                    _ => "application/octet-stream"
+                };
+                
+                var fileExtension = format.ToLower() switch
+                {
+                    "excel" => ".xlsx",
+                    "csv" => ".csv",
+                    "pdf" => ".pdf",
+                    _ => ".bin"
+                };
+
+                return File(data, contentType, fileName + fileExtension);
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Export failed: {ex.Message}";
+                return RedirectToAction(nameof(Index), filter);
+            }
+        }
+
+        // API: Get Order Statistics
+        [HttpGet]
+        public async Task<IActionResult> GetOrderStats(OrderFilterViewModel filter)
+        {
+            try
+            {
+                var viewModel = await _orderManagementService.GetFilteredOrdersAsync(filter);
+                return Json(new { success = true, stats = viewModel.Stats });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        // API: Get filtered orders for AJAX
+        [HttpGet]
+        public async Task<IActionResult> GetFilteredOrders(OrderFilterViewModel filter)
+        {
+            try
+            {
+                var viewModel = await _orderManagementService.GetFilteredOrdersAsync(filter);
+                return Json(new { 
+                    success = true, 
+                    orders = viewModel.Orders,
+                    totalCount = viewModel.TotalCount,
+                    pageCount = viewModel.PageCount,
+                    stats = viewModel.Stats
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
         }
 
         // GET: Orders/Details/5
@@ -595,9 +657,9 @@ namespace AmplePack.Controllers
     public class OrderStatusChangeLog
     {
         public int OrderId { get; set; }
-        public string FromStatus { get; set; }
-        public string ToStatus { get; set; }
-        public string ChangedBy { get; set; }
+        public string FromStatus { get; set; } = string.Empty;
+        public string ToStatus { get; set; } = string.Empty;
+        public string ChangedBy { get; set; } = string.Empty;
         public DateTime Timestamp { get; set; }
     }
 }

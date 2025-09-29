@@ -1,21 +1,48 @@
 @using AmplePack.Helpers
-@model List<AmplePack.Models.Order>
+@using AmplePack.ViewModels
+@model OrderListViewModel
 @{
     ViewData["Title"] = "Orders Management";
+    var filter = Model.Filter;
 }
 
-<!-- Statistics Cards -->
+<!-- Enhanced Orders Management Header -->
 <div class="content-header">
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h1 class="m-0">Orders Management</h1>
+                <h1 class="m-0">
+                    <i class="fas fa-shopping-cart mr-2"></i>
+                    Orders Management
+                </h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Orders</li>
+                    </ol>
+                </nav>
             </div>
             <div class="col-sm-6">
                 <div class="float-sm-right">
-                    <a asp-action="CreateWorkflow" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> New Order
-                    </a>
+                    <div class="btn-group">
+                        <a asp-action="CreateWorkflow" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> New Order
+                        </a>
+                        <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown">
+                            <span class="sr-only">Toggle Dropdown</span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-right">
+                            <a class="dropdown-item" href="#" onclick="exportOrders('excel')">
+                                <i class="fas fa-file-excel mr-2"></i>Export to Excel
+                            </a>
+                            <a class="dropdown-item" href="#" onclick="exportOrders('pdf')">
+                                <i class="fas fa-file-pdf mr-2"></i>Export to PDF
+                            </a>
+                            <a class="dropdown-item" href="#" onclick="exportOrders('csv')">
+                                <i class="fas fa-file-csv mr-2"></i>Export to CSV
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -24,583 +51,690 @@
 
 <section class="content">
     <div class="container-fluid">
-        <!-- Statistics Cards -->
+        <!-- Enhanced Statistics Dashboard -->
+        <div class="row mb-4">
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="small-box bg-info">
+                    <div class="inner">
+                        <h3 id="totalOrdersCount">@Model.Stats.TotalOrders</h3>
+                        <p>Total Orders</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="small-box bg-warning">
+                    <div class="inner">
+                        <h3 id="pendingOrdersCount">@Model.Stats.PendingOrders</h3>
+                        <p>Pending</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="small-box bg-primary">
+                    <div class="inner">
+                        <h3 id="processingOrdersCount">@Model.Stats.ProcessingOrders</h3>
+                        <p>Processing</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="small-box bg-success">
+                    <div class="inner">
+                        <h3 id="completedOrdersCount">@Model.Stats.CompletedOrders</h3>
+                        <p>Completed</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="small-box bg-danger">
+                    <div class="inner">
+                        <h3 id="overdueOrdersCount">@Model.Stats.OverdueOrders</h3>
+                        <p>Overdue</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="small-box bg-dark">
+                    <div class="inner">
+                        <h3 id="monthlyRevenue">@CurrencyHelper.FormatCurrency(Model.Stats.MonthlyRevenue)</h3>
+                        <p>Monthly Revenue</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-money-bill"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Filters Panel -->
         <div class="row mb-3">
-          <div class="col-lg-3 col-6">
-            <div class="small-box bg-info">
-              <div class="inner">
-                <h3>@ViewBag.TotalOrders</h3>
-                <p>Total Orders</p>
-              </div>
-              <div class="icon">
-                <i class="fas fa-shopping-cart"></i>
-              </div>
+            <div class="col-12">
+                <div class="card card-outline card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-filter mr-2"></i>Advanced Filters
+                        </h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <form id="filterForm" method="get" asp-action="Index">
+                            <div class="row">
+                                <!-- Search Term -->
+                                <div class="col-md-3 mb-3">
+                                    <label for="searchTerm" class="form-label">Search Orders</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="searchTerm" name="SearchTerm" 
+                                               value="@filter.SearchTerm" placeholder="Order ID, Customer, Product...">
+                                        <div class="input-group-append">
+                                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Status Filter -->
+                                <div class="col-md-2 mb-3">
+                                    <label for="status" class="form-label">Status</label>
+                                    <select class="form-control" id="status" name="Status">
+                                        <option value="">All Statuses</option>
+                                        <option value="Pending" selected="@(filter.Status == "Pending")">Pending</option>
+                                        <option value="Processing" selected="@(filter.Status == "Processing")">Processing</option>
+                                        <option value="Completed" selected="@(filter.Status == "Completed")">Completed</option>
+                                        <option value="Cancelled" selected="@(filter.Status == "Cancelled")">Cancelled</option>
+                                    </select>
+                                </div>
+
+                                <!-- Customer Filter -->
+                                <div class="col-md-3 mb-3">
+                                    <label for="customerId" class="form-label">Customer</label>
+                                    <select class="form-control" id="customerId" name="CustomerId">
+                                        <option value="">All Customers</option>
+                                        @foreach (var customer in Model.Customers)
+                                        {
+                                            <option value="@customer.Id" selected="@(filter.CustomerId == customer.Id)">
+                                                @customer.Name
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+
+                                <!-- Date Period Quick Select -->
+                                <div class="col-md-2 mb-3">
+                                    <label for="datePeriod" class="form-label">Period</label>
+                                    <select class="form-control" id="datePeriod" name="DatePeriod">
+                                        <option value="">Custom Range</option>
+                                        <option value="thismonth" selected="@(filter.DatePeriod == "thismonth")">This Month</option>
+                                        <option value="lastmonth" selected="@(filter.DatePeriod == "lastmonth")">Last Month</option>
+                                        <option value="thisquarter" selected="@(filter.DatePeriod == "thisquarter")">This Quarter</option>
+                                        <option value="thisyear" selected="@(filter.DatePeriod == "thisyear")">This Year</option>
+                                        <option value="last30days" selected="@(filter.DatePeriod == "last30days")">Last 30 Days</option>
+                                        <option value="last90days" selected="@(filter.DatePeriod == "last90days")">Last 90 Days</option>
+                                    </select>
+                                </div>
+
+                                <!-- Quick Filter Buttons -->
+                                <div class="col-md-2 mb-3">
+                                    <label class="form-label">&nbsp;</label>
+                                    <div class="btn-group-vertical w-100">
+                                        <button type="button" class="btn btn-outline-warning btn-sm toggle-filter" 
+                                                data-filter="overdue" data-active="@filter.ShowOverdue">
+                                            <i class="fas fa-exclamation-triangle"></i> Overdue
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <!-- Start Date -->
+                                <div class="col-md-2 mb-3">
+                                    <label for="startDate" class="form-label">Start Date</label>
+                                    <input type="date" class="form-control" id="startDate" name="StartDate" 
+                                           value="@filter.StartDate?.ToString("yyyy-MM-dd")">
+                                </div>
+
+                                <!-- End Date -->
+                                <div class="col-md-2 mb-3">
+                                    <label for="endDate" class="form-label">End Date</label>
+                                    <input type="date" class="form-control" id="endDate" name="EndDate" 
+                                           value="@filter.EndDate?.ToString("yyyy-MM-dd")">
+                                </div>
+
+                                <!-- Primary Sort -->
+                                <div class="col-md-2 mb-3">
+                                    <label for="sortBy" class="form-label">Sort By</label>
+                                    <select class="form-control" id="sortBy" name="SortBy">
+                                        <option value="Date" selected="@(filter.SortBy == "Date")">Date</option>
+                                        <option value="Id" selected="@(filter.SortBy == "Id")">Order ID</option>
+                                        <option value="Customer" selected="@(filter.SortBy == "Customer")">Customer</option>
+                                        <option value="Status" selected="@(filter.SortBy == "Status")">Status</option>
+                                        <option value="TotalAmount" selected="@(filter.SortBy == "TotalAmount")">Amount</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-2 mb-3">
+                                    <label for="sortOrder" class="form-label">Order</label>
+                                    <select class="form-control" id="sortOrder" name="SortOrder">
+                                        <option value="asc" selected="@(filter.SortOrder == "asc")">Ascending</option>
+                                        <option value="desc" selected="@(filter.SortOrder == "desc")">Descending</option>
+                                    </select>
+                                </div>
+
+                                <!-- Secondary Sort -->
+                                <div class="col-md-2 mb-3">
+                                    <label for="secondarySortBy" class="form-label">Then By</label>
+                                    <select class="form-control" id="secondarySortBy" name="SecondarySortBy">
+                                        <option value="">None</option>
+                                        <option value="Date" selected="@(filter.SecondarySortBy == "Date")">Date</option>
+                                        <option value="Id" selected="@(filter.SecondarySortBy == "Id")">Order ID</option>
+                                        <option value="Customer" selected="@(filter.SecondarySortBy == "Customer")">Customer</option>
+                                        <option value="Status" selected="@(filter.SecondarySortBy == "Status")">Status</option>
+                                        <option value="TotalAmount" selected="@(filter.SecondarySortBy == "TotalAmount")">Amount</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-2 mb-3">
+                                    <label for="secondarySortOrder" class="form-label">Order</label>
+                                    <select class="form-control" id="secondarySortOrder" name="SecondarySortOrder">
+                                        <option value="asc" selected="@(filter.SecondarySortOrder == "asc")">Ascending</option>
+                                        <option value="desc" selected="@(filter.SecondarySortOrder == "desc")">Descending</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="btn-group">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-search"></i> Apply Filters
+                                        </button>
+                                        <button type="button" class="btn btn-secondary" onclick="clearFilters()">
+                                            <i class="fas fa-times"></i> Clear
+                                        </button>
+                                        <button type="button" class="btn btn-info" onclick="saveFilterPreset()">
+                                            <i class="fas fa-save"></i> Save Preset
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Hidden fields for pagination -->
+                            <input type="hidden" name="Page" value="@filter.Page" id="pageInput">
+                            <input type="hidden" name="PageSize" value="@filter.PageSize" id="pageSizeInput">
+                            <input type="hidden" name="ShowOverdue" value="@filter.ShowOverdue" id="showOverdueInput">
+                        </form>
+                    </div>
+                </div>
             </div>
-          </div>
-          <div class="col-lg-3 col-6">
-            <div class="small-box bg-warning">
-              <div class="inner">
-                <h3>@ViewBag.PendingOrders</h3>
-                <p>Pending Orders</p>
-              </div>
-              <div class="icon">
-                <i class="fas fa-clock"></i>
-              </div>
-            </div>
-          </div>
-          <div class="col-lg-3 col-6">
-            <div class="small-box bg-success">
-              <div class="inner">
-                <h3>@ViewBag.CompletedOrders</h3>
-                <p>Completed Orders</p>
-              </div>
-              <div class="icon">
-                <i class="fas fa-check-circle"></i>
-              </div>
-            </div>
-          </div>
-          <div class="col-lg-3 col-6">
-            <div class="small-box bg-danger">
-              <div class="inner">
-                <h3>@CurrencyHelper.FormatCurrency((decimal)ViewBag.MonthlyRevenue)</h3>
-                <p>Monthly Revenue</p>
-              </div>
-              <div class="icon">
-                <i class="fas fa-money-bill"></i>
-              </div>
-            </div>
-          </div>
         </div>
 
+        <!-- Orders Table -->
         <div class="row">
-          <div class="col-12">
-            <div class="card">
-              <div class="card-header">
-                <h3 class="card-title">
-                  <i class="fas fa-shopping-cart mr-2"></i>
-                  Orders Management
-                </h3>
-                <div class="card-tools">
-                  <a asp-action="CreateWorkflow" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> New Order
-                  </a>
-                </div>
-              </div>
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-list mr-2"></i>
+                            Orders List 
+                            <span class="badge badge-info ml-2">@Model.TotalCount total</span>
+                        </h3>
+                        <div class="card-tools">
+                            <div class="input-group input-group-sm" style="width: 150px;">
+                                <select class="form-control" id="pageSize" onchange="changePageSize(this.value)">
+                                    <option value="10" selected="@(filter.PageSize == 10)">10 per page</option>
+                                    <option value="25" selected="@(filter.PageSize == 25)">25 per page</option>
+                                    <option value="50" selected="@(filter.PageSize == 50)">50 per page</option>
+                                    <option value="100" selected="@(filter.PageSize == 100)">100 per page</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
 
-              <!-- View Toggle Buttons -->
-              <div class="card-body pb-2">
-                <div class="btn-group mb-3" role="group">
-                    <button type="button" class="btn btn-primary" id="showOrdersBtn">
-                        <i class="fas fa-shopping-cart"></i> All Orders
-                    </button>
-                    <button type="button" class="btn btn-outline-primary" id="showCustomersBtn">
-                        <i class="fas fa-users"></i> Customers & Orders
-                    </button>
-                </div>
-              </div>
-
-              <!-- Orders View (Default) -->
-              <div class="card-body pt-0" id="ordersView">
-                @if (Model.Any())
-                {
-                  <div class="table-responsive">
-                    <table id="ordersTable" class="table table-bordered table-hover table-striped">
-                      <thead class="thead-dark">
-                        <tr>
-                          <th>Order #</th>
-                          <th>Customer</th>
-                          <th>Date</th>
-                          <th>Items</th>
-                          <th>Total Amount</th>
-                          <th>Status</th>
-                          <th width="180px">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                      @foreach (var order in Model) 
-                      {
-                          <tr>
-                              <td>
-                                <strong>#@order.Id</strong>
-                              </td>
-                              <td>
-                                <div>
-                                  <strong>@order.Customer?.Name</strong><br>
-                                  <small class="text-muted">@order.Customer?.Email</small>
-                                </div>
-                              </td>
-                              <td>
-                                <div>
-                                  @order.Date.ToString("MMM dd, yyyy")<br>
-                                  <small class="text-muted">@order.Date.ToString("dddd")</small>
-                                </div>
-                              </td>
-                              <td>
-                                @if (order.OrderDetails?.Any() == true)
-                                {
-                                  <div class="order-items-summary">
-                                    @foreach (var detail in order.OrderDetails.Take(2))
+                    <div class="card-body table-responsive p-0">
+                        @if (Model.Orders.Any())
+                        {
+                            <table class="table table-hover text-nowrap">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th>
+                                            <a href="#" onclick="sortBy('Id')" class="text-white text-decoration-none">
+                                                Order #
+                                                @if (filter.SortBy == "Id")
+                                                {
+                                                    <i class="fas fa-sort-@(filter.SortOrder == "asc" ? "up" : "down")"></i>
+                                                }
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" onclick="sortBy('Customer')" class="text-white text-decoration-none">
+                                                Customer
+                                                @if (filter.SortBy == "Customer")
+                                                {
+                                                    <i class="fas fa-sort-@(filter.SortOrder == "asc" ? "up" : "down")"></i>
+                                                }
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" onclick="sortBy('Date')" class="text-white text-decoration-none">
+                                                Date
+                                                @if (filter.SortBy == "Date")
+                                                {
+                                                    <i class="fas fa-sort-@(filter.SortOrder == "asc" ? "up" : "down")"></i>
+                                                }
+                                            </a>
+                                        </th>
+                                        <th>Items</th>
+                                        <th>
+                                            <a href="#" onclick="sortBy('TotalAmount')" class="text-white text-decoration-none">
+                                                Total Amount
+                                                @if (filter.SortBy == "TotalAmount")
+                                                {
+                                                    <i class="fas fa-sort-@(filter.SortOrder == "asc" ? "up" : "down")"></i>
+                                                }
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="#" onclick="sortBy('Status')" class="text-white text-decoration-none">
+                                                Status
+                                                @if (filter.SortBy == "Status")
+                                                {
+                                                    <i class="fas fa-sort-@(filter.SortOrder == "asc" ? "up" : "down")"></i>
+                                                }
+                                            </a>
+                                        </th>
+                                        <th>Delivery</th>
+                                        <th width="200px">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var order in Model.Orders)
                                     {
-                                      <div class="item-line">
-                                        @if (detail.CustomerProduct != null)
-                                        {
-                                          <span class="badge badge-success">@detail.CustomerProduct.ProductName</span>
-                                          <small class="text-muted">@detail.Size (×@detail.Quantity)</small>
-                                        }
-                                        else
-                                        {
-                                          <span class="badge badge-light">@detail.BoxType</span>
-                                          <small class="text-muted">@detail.Size (×@detail.Quantity)</small>
-                                        }
-                                      </div>
+                                        <tr class="@(order.IsOverdue ? "table-warning" : "")">
+                                            <td>
+                                                <strong>#@order.Id</strong>
+                                                @if (order.IsOverdue)
+                                                {
+                                                    <span class="badge badge-warning ml-1">
+                                                        <i class="fas fa-exclamation-triangle"></i>
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <div>
+                                                    <strong>@order.CustomerName</strong><br>
+                                                    <small class="text-muted">@order.CustomerEmail</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div>
+                                                    @order.Date.ToString("MMM dd, yyyy")<br>
+                                                    <small class="text-muted">@order.Date.ToString("dddd")</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-primary">@order.ItemCount items</span><br>
+                                                <small class="text-muted">@order.ItemsSummary</small>
+                                            </td>
+                                            <td>
+                                                <strong class="text-success">@CurrencyHelper.FormatCurrency(order.TotalAmount)</strong>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-@GetStatusBadgeClass(order.Status)">
+                                                    @order.Status
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @if (order.DeliveryDate.HasValue)
+                                                {
+                                                    <div>
+                                                        @order.DeliveryDate.Value.ToString("MMM dd, yyyy")
+                                                        @if (order.IsOverdue)
+                                                        {
+                                                            <br><small class="text-danger">Overdue</small>
+                                                        }
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">Not set</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="@Url.Action("Details", new { id = order.Id })" 
+                                                       class="btn btn-outline-info" title="View Details">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="@Url.Action("DownloadInvoice", new { id = order.Id })" 
+                                                       class="btn btn-outline-primary" title="Download Invoice">
+                                                        <i class="fas fa-file-pdf"></i>
+                                                    </a>
+                                                    @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+                                                    {
+                                                        <a href="@Url.Action("Edit", new { id = order.Id })" 
+                                                           class="btn btn-outline-warning" title="Edit">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                    }
+                                                    @if (User.IsInRole("Admin"))
+                                                    {
+                                                        <a href="@Url.Action("Delete", new { id = order.Id })" 
+                                                           class="btn btn-outline-danger" title="Delete">
+                                                            <i class="fas fa-trash"></i>
+                                                        </a>
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
                                     }
-                                    @if (order.OrderDetails.Count() > 2)
-                                    {
-                                      <div class="item-line">
-                                        <small class="text-muted">... and @(order.OrderDetails.Count() - 2) more</small>
-                                      </div>
-                                    }
-                                  </div>
-                                }
-                                else
-                                {
-                                  <span class="badge badge-secondary">
-                                    0 items
-                                  </span>
-                                }
-                              </td>
-                              <td>
-                                <strong class="text-success">@CurrencyHelper.FormatCurrency(order.TotalAmount)</strong>
-                              </td>
-                              <td>
-                                <div class="dropdown">
-                                  <select class="form-control form-control-sm order-status-select" 
-                                          data-order-id="@order.Id" 
-                                          data-original-status="@order.Status"
-                                          onchange="updateOrderStatus(@order.Id, this.value, '@order.Status')">
-                                    <option value="Pending" selected="@(order.Status == "Pending")">Pending</option>
-                                    <option value="Processing" selected="@(order.Status == "Processing")">Processing</option>
-                                    <option value="Completed" selected="@(order.Status == "Completed")">Completed</option>
-                                    <option value="Cancelled" selected="@(order.Status == "Cancelled")">Cancelled</option>
-                                  </select>
-                                </div>
-                              </td>
-                              <td>
-                                <div class="btn-group d-flex" role="group">
-                                  <a href="@Url.Action("Details", new { id = order.Id })" class="btn btn-sm btn-outline-info" title="View Details">
-                                    <i class="fas fa-eye"></i>
-                                  </a>
-                                  <a href="@Url.Action("DownloadInvoice", new { id = order.Id })" class="btn btn-sm btn-outline-primary" title="Download Invoice PDF">
-                                    <i class="fas fa-file-pdf"></i>
-                                  </a>
-                                  @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
-                                  {
-                                    <a href="@Url.Action("Edit", new { id = order.Id })" class="btn btn-sm btn-outline-warning" title="Edit">
-                                      <i class="fas fa-edit"></i>
-                                    </a>
-                                  }
-                                  @if (User.IsInRole("Admin"))
-                                  {
-                                    <a href="@Url.Action("Delete", new { id = order.Id })" class="btn btn-sm btn-outline-danger" title="Delete">
-                                      <i class="fas fa-trash"></i>
-                                    </a>
-                                  }
-                                </div>
-                              </td>
-                          </tr>
-                      }
-                      </tbody>
-                    </table>
-                  </div>
-                }
-                else
-                {
-                  <div class="text-center py-5">
-                    <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
-                    <h4>No Orders Found</h4>
-                    <p class="text-muted">Get started by creating your first order.</p>
-                    <a asp-action="CreateWorkflow" class="btn btn-primary">
-                      <i class="fas fa-plus"></i> Create First Order
-                    </a>
-                  </div>
-                }
-              </div>
+                                </tbody>
+                            </table>
+                        }
+                        else
+                        {
+                            <div class="text-center py-5">
+                                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                                <h4>No Orders Found</h4>
+                                <p class="text-muted">Try adjusting your search criteria or filters.</p>
+                                <a asp-action="CreateWorkflow" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Create New Order
+                                </a>
+                            </div>
+                        }
+                    </div>
 
-              <!-- Customers View (Hidden by default) -->
-              <div class="card-body pt-0 d-none" id="customersView">
-                <div class="text-center py-4">
-                  <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
-                  <p>Loading customers and their orders...</p>
+                    <!-- Pagination -->
+                    @if (Model.PageCount > 1)
+                    {
+                        <div class="card-footer">
+                            <div class="row">
+                                <div class="col-sm-12 col-md-5">
+                                    <div class="dataTables_info">
+                                        Showing @((filter.Page - 1) * filter.PageSize + 1) to 
+                                        @(Math.Min(filter.Page * filter.PageSize, Model.TotalCount)) of 
+                                        @Model.TotalCount entries
+                                    </div>
+                                </div>
+                                <div class="col-sm-12 col-md-7">
+                                    <div class="dataTables_paginate paging_simple_numbers float-right">
+                                        <ul class="pagination">
+                                            @if (filter.Page > 1)
+                                            {
+                                                <li class="paginate_button page-item">
+                                                    <a href="#" onclick="goToPage(@(filter.Page - 1))" class="page-link">Previous</a>
+                                                </li>
+                                            }
+
+                                            @for (int i = Math.Max(1, filter.Page - 5); i <= Math.Min(Model.PageCount, filter.Page + 5); i++)
+                                            {
+                                                <li class="paginate_button page-item @(i == filter.Page ? "active" : "")">
+                                                    <a href="#" onclick="goToPage(@i)" class="page-link">@i</a>
+                                                </li>
+                                            }
+
+                                            @if (filter.Page < Model.PageCount)
+                                            {
+                                                <li class="paginate_button page-item">
+                                                    <a href="#" onclick="goToPage(@(filter.Page + 1))" class="page-link">Next</a>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
                 </div>
-              </div>
-              <!-- /.card-body -->
             </div>
-            <!-- /.card -->
-          </div>
-          <!-- /.col -->
         </div>
-        <!-- /.row -->
     </div>
 </section>
 
-<!-- Hidden form for status updates -->
-<form id="statusUpdateForm" method="post" action="@Url.Action("UpdateStatus")" style="display: none;">
-    <input type="hidden" name="id" id="statusOrderId" />
-    <input type="hidden" name="status" id="statusNewStatus" />
-    @Html.AntiForgeryToken()
-</form>
+@functions {
+    public string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Pending" => "warning",
+            "Processing" => "info",
+            "Completed" => "success",
+            "Cancelled" => "danger",
+            _ => "secondary"
+        };
+    }
+}
 
 @section Scripts {
-  <!-- DataTables CSS -->
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.11.4/css/dataTables.bootstrap4.min.css">
-  <!-- DataTables JS -->
-  <script src="https://cdn.datatables.net/1.11.4/js/jquery.dataTables.min.js"></script>
-  <script src="https://cdn.datatables.net/1.11.4/js/dataTables.bootstrap4.min.js"></script>
-  
-  <script>
-    $(function () {
-      // Initialize DataTables for orders
-      const ordersTable = $("#ordersTable").DataTable({
-        "responsive": true, 
-        "lengthChange": true, 
-        "autoWidth": false,
-        "pageLength": 25,
-        "order": [[ 0, "desc" ]], // Sort by Order # descending
-        "columnDefs": [
-          { "orderable": false, "targets": 6 } // Disable sorting on Actions column
-        ],
-        "language": {
-          "search": "Search orders:",
-          "lengthMenu": "Show _MENU_ orders per page",
-          "info": "Showing _START_ to _END_ of _TOTAL_ orders",
-          "paginate": {
-            "previous": "Previous",
-            "next": "Next"
-          }
+    <script>
+        $(document).ready(function() {
+            // Initialize Select2 for customer dropdown
+            $('#customerId').select2({
+                placeholder: 'Select a customer...',
+                allowClear: true
+            });
+
+            // Initialize date range picker functionality
+            initializeDateHandling();
+            
+            // Initialize quick filter toggles
+            initializeQuickFilters();
+        });
+
+        function initializeDateHandling() {
+            $('#datePeriod').on('change', function() {
+                const period = $(this).val();
+                const today = new Date();
+                
+                if (period) {
+                    let startDate, endDate;
+                    
+                    switch(period) {
+                        case 'thismonth':
+                            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                            endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                            break;
+                        case 'lastmonth':
+                            startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                            endDate = new Date(today.getFullYear(), today.getMonth(), 0);
+                            break;
+                        case 'thisquarter':
+                            const quarter = Math.floor(today.getMonth() / 3);
+                            startDate = new Date(today.getFullYear(), quarter * 3, 1);
+                            endDate = new Date(today.getFullYear(), quarter * 3 + 3, 0);
+                            break;
+                        case 'thisyear':
+                            startDate = new Date(today.getFullYear(), 0, 1);
+                            endDate = new Date(today.getFullYear(), 11, 31);
+                            break;
+                        case 'last30days':
+                            startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+                            endDate = today;
+                            break;
+                        case 'last90days':
+                            startDate = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
+                            endDate = today;
+                            break;
+                    }
+                    
+                    if (startDate && endDate) {
+                        $('#startDate').val(formatDate(startDate));
+                        $('#endDate').val(formatDate(endDate));
+                    }
+                }
+            });
         }
-      });
 
-      // View switching functionality
-      let customersTable = null;
-      let customersLoaded = false;
-
-      // Show Orders View
-      $('#showOrdersBtn').on('click', function() {
-        $('#showOrdersBtn').removeClass('btn-outline-primary').addClass('btn-primary');
-        $('#showCustomersBtn').removeClass('btn-primary').addClass('btn-outline-primary');
-        $('#ordersView').removeClass('d-none');
-        $('#customersView').addClass('d-none');
-        
-        // Redraw orders table to fix any display issues
-        if (ordersTable) {
-          ordersTable.columns.adjust().draw();
+        function initializeQuickFilters() {
+            $('.toggle-filter').on('click', function() {
+                const filter = $(this).data('filter');
+                const isActive = $(this).hasClass('btn-warning');
+                
+                if (isActive) {
+                    $(this).removeClass('btn-warning').addClass('btn-outline-warning');
+                    $(`#${filter}Input`).val('false');
+                } else {
+                    $(this).removeClass('btn-outline-warning').addClass('btn-warning');
+                    $(`#${filter}Input`).val('true');
+                }
+            });
         }
-      });
 
-      // Show Customers View
-      $('#showCustomersBtn').on('click', function() {
-        $('#showCustomersBtn').removeClass('btn-outline-primary').addClass('btn-primary');
-        $('#showOrdersBtn').removeClass('btn-primary').addClass('btn-outline-primary');
-        $('#ordersView').addClass('d-none');
-        $('#customersView').removeClass('d-none');
-        
-        // Load customers data if not already loaded
-        if (!customersLoaded) {
-          loadCustomersWithOrders();
-        } else if (customersTable) {
-          customersTable.columns.adjust().draw();
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
         }
-      });
 
-      // Load customers with orders
-      function loadCustomersWithOrders() {
-        // Show loading state
-        $('#customersView').html(`
-          <div class="text-center py-4">
-            <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
-            <p>Loading customers and their orders...</p>
-          </div>
-        `);
-
-        // Make AJAX call to get customers
-        $.ajax({
-          url: '@Url.Action("GetCustomersWithOrders")',
-          type: 'GET',
-          success: function(response) {
-            if (response.success && response.customers) {
-              renderCustomersView(response.customers);
-              customersLoaded = true;
-            } else {
-              showError('Failed to load customers data');
+        function sortBy(column) {
+            const currentSort = '@filter.SortBy';
+            const currentOrder = '@filter.SortOrder';
+            
+            let newOrder = 'asc';
+            if (currentSort === column && currentOrder === 'asc') {
+                newOrder = 'desc';
             }
-          },
-          error: function() {
-            showError('Error loading customers data');
-          }
-        });
-      }
-
-      // Render customers view
-      function renderCustomersView(customers) {
-        if (customers.length === 0) {
-          $('#customersView').html(`
-            <div class="text-center py-5">
-              <i class="fas fa-users fa-3x text-muted mb-3"></i>
-              <h4>No Customers Found</h4>
-              <p class="text-muted">Get started by adding your first customer.</p>
-              <a href="@Url.Action("Create", "Customers")" class="btn btn-success">
-                <i class="fas fa-user-plus"></i> Add First Customer
-              </a>
-            </div>
-          `);
-          return;
+            
+            $('#sortBy').val(column);
+            $('#sortOrder').val(newOrder);
+            $('#pageInput').val(1); // Reset to first page
+            $('#filterForm').submit();
         }
 
-        let tableHtml = `
-          <div class="table-responsive">
-            <table id="customersOrdersTable" class="table table-bordered table-hover table-striped">
-              <thead class="thead-dark">
-                <tr>
-                  <th>Customer</th>
-                  <th>Contact Info</th>
-                  <th>Orders</th>
-                  <th>Total Value</th>
-                  <th>Recent Orders</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-        `;
-
-        customers.forEach(customer => {
-          const lastOrderDate = customer.lastOrderDate ? new Date(customer.lastOrderDate).toLocaleDateString() : 'Never';
-          const recentOrdersHtml = customer.recentOrders.map(order => 
-            `<div class="small mb-1">
-              <strong>#${order.id}</strong> - ${new Date(order.date).toLocaleDateString()} 
-              <span class="badge badge-sm badge-${getStatusBadgeClass(order.status)}">${order.status}</span>
-              <br><small class="text-success">Rs.${order.totalAmount.toFixed(2)}</small>
-            </div>`
-          ).join('');
-
-          tableHtml += `
-            <tr>
-              <td>
-                <div>
-                  <strong>${customer.name}</strong><br>
-                  <small class="text-muted">ID: #${customer.id}</small>
-                </div>
-              </td>
-              <td>
-                <div>
-                  ${customer.email ? `<i class="fas fa-envelope mr-1"></i>${customer.email}<br>` : ''}
-                  ${customer.contact ? `<i class="fas fa-phone mr-1"></i>${customer.contact}` : '<span class="text-muted">No contact</span>'}
-                </div>
-              </td>
-              <td>
-                <span class="badge badge-primary">${customer.totalOrders} orders</span><br>
-                <small class="text-muted">Last: ${lastOrderDate}</small>
-              </td>
-              <td>
-                <strong class="text-success">Rs.${customer.totalValue.toFixed(2)}</strong>
-              </td>
-              <td>
-                <div class="recent-orders">
-                  ${recentOrdersHtml || '<small class="text-muted">No recent orders</small>'}
-                </div>
-              </td>
-              <td>
-                <div class="btn-group-vertical btn-group-sm">
-                  <a href="@Url.Action("Details", "Customers")/${customer.id}" class="btn btn-outline-info btn-sm">
-                    <i class="fas fa-eye"></i> View
-                  </a>
-                  <a href="@Url.Action("CreateWorkflow", "Orders")?customerId=${customer.id}" class="btn btn-outline-success btn-sm">
-                    <i class="fas fa-plus"></i> New Order
-                  </a>
-                </div>
-              </td>
-            </tr>
-          `;
-        });
-
-        tableHtml += `
-              </tbody>
-            </table>
-          </div>
-        `;
-
-        $('#customersView').html(tableHtml);
-
-        // Initialize DataTable for customers
-        customersTable = $('#customersOrdersTable').DataTable({
-          "responsive": true,
-          "lengthChange": true,
-          "autoWidth": false,
-          "pageLength": 15,
-          "order": [[ 0, "asc" ]],
-          "columnDefs": [
-            { "orderable": false, "targets": 5 }
-          ],
-          "language": {
-            "search": "Search customers:",
-            "lengthMenu": "Show _MENU_ customers per page",
-            "info": "Showing _START_ to _END_ of _TOTAL_ customers"
-          }
-        });
-      }
-
-      // Helper function to get status badge class
-      function getStatusBadgeClass(status) {
-        switch(status) {
-          case 'Pending': return 'warning';
-          case 'Processing': return 'info';
-          case 'Completed': return 'success';
-          case 'Cancelled': return 'danger';
-          default: return 'secondary';
+        function goToPage(page) {
+            $('#pageInput').val(page);
+            $('#filterForm').submit();
         }
-      }
 
-      // Show error message
-      function showError(message) {
-        $('#customersView').html(`
-          <div class="alert alert-danger" role="alert">
-            <i class="fas fa-exclamation-triangle mr-2"></i>
-            ${message}
-            <button type="button" class="btn btn-sm btn-outline-danger ml-3" onclick="loadCustomersWithOrders()">
-              <i class="fas fa-redo"></i> Retry
-            </button>
-          </div>
-        `);
-      }
-    });
+        function changePageSize(pageSize) {
+            $('#pageSizeInput').val(pageSize);
+            $('#pageInput').val(1); // Reset to first page
+            $('#filterForm').submit();
+        }
 
-    // Function to update order status
-    function updateOrderStatus(orderId, newStatus, originalStatus) {
-      if (newStatus === originalStatus) {
-        return; // No change
-      }
-      
-      if (confirm(`Are you sure you want to change the order status to ${newStatus}?`)) {
-        // Show loading state
-        $(`select[data-order-id="${orderId}"]`).prop('disabled', true);
+        function clearFilters() {
+            $('#filterForm')[0].reset();
+            $('#customerId').val(null).trigger('change');
+            window.location.href = '@Url.Action("Index")';
+        }
+
+        function exportOrders(format) {
+            // Get current filter values
+            const filterData = $('#filterForm').serialize();
+            const exportUrl = `@Url.Action("Export")?format=${format}&${filterData}`;
+            
+            // Show loading indicator
+            const exportBtn = $(event.target).closest('.btn-group').find('.btn-primary');
+            const originalText = exportBtn.html();
+            exportBtn.html('<i class="fas fa-spinner fa-spin"></i> Exporting...');
+            
+            // Create a temporary link to trigger download
+            const link = document.createElement('a');
+            link.href = exportUrl;
+            link.download = '';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Restore button text after a delay
+            setTimeout(() => {
+                exportBtn.html(originalText);
+            }, 2000);
+        }
+
+        function saveFilterPreset() {
+            const presetName = prompt('Enter a name for this filter preset:');
+            if (presetName) {
+                const filterData = $('#filterForm').serialize();
+                localStorage.setItem(`orderFilter_${presetName}`, filterData);
+                
+                // Show success message
+                toastr.success(`Filter preset "${presetName}" saved successfully!`);
+                
+                // Add to presets dropdown if it exists
+                updatePresetsDropdown();
+            }
+        }
+
+        function updatePresetsDropdown() {
+            // Implementation for managing saved presets
+            // This would show saved filter combinations
+        }
+
+        // Real-time search with debouncing
+        let searchTimeout;
+        $('#searchTerm').on('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if ($(this).val().length >= 3 || $(this).val().length === 0) {
+                    $('#pageInput').val(1);
+                    $('#filterForm').submit();
+                }
+            }, 500);
+        });
+
+        // Auto-submit on filter changes (optional)
+        $('#status, #customerId').on('change', function() {
+            $('#pageInput').val(1);
+            $('#filterForm').submit();
+        });
+    </script>
+
+    <style>
+        .table-warning {
+            background-color: rgba(255, 193, 7, 0.1) !important;
+        }
         
-        // Submit the form
-        document.getElementById('statusOrderId').value = orderId;
-        document.getElementById('statusNewStatus').value = newStatus;
-        document.getElementById('statusUpdateForm').submit();
-      } else {
-        // Reset the select to original value
-        $(`select[data-order-id="${orderId}"]`).val(originalStatus);
-      }
-    }
-
-    // Handle status change events
-    $(document).on('change', '.order-status-select', function() {
-      const orderId = $(this).data('order-id');
-      const newStatus = $(this).val();
-      const originalStatus = $(this).data('original-status');
-      
-      updateOrderStatus(orderId, newStatus, originalStatus);
-    });
-  </script>
-
-  <style>
-    .order-items-summary {
-      max-width: 200px;
-    }
+        .toggle-filter.btn-warning {
+            background-color: #ffc107;
+            border-color: #ffc107;
+            color: #212529;
+        }
+        
+        .card-outline.card-primary {
+            border-top: 3px solid #007bff;
+        }
+        
+        .badge {
+            font-size: 0.75em;
+        }
+        
+        .btn-group-sm > .btn {
+            margin: 0 1px;
+        }
+        
+        .text-decoration-none:hover {
+            text-decoration: none !important;
+        }
+        
+        .small-box .inner h3 {
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin: 0 0 10px 0;
+            white-space: nowrap;
+            padding: 0;
+        }
+        
+        /* Responsive styles */
+        .media-responsive {
+            /* This will be handled in the main CSS */
+        }
+    </style>
     
-    .item-line {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      margin-bottom: 2px;
-    }
-    
-    .item-line:last-child {
-      margin-bottom: 0;
-    }
-    
-    .badge-light {
-      color: #495057;
-      background-color: #f8f9fa;
-      border: 1px solid #dee2e6;
-    }
-    
-    .order-items-summary small {
-      font-size: 0.75rem;
-    }
-
-    .btn-group .btn {
-      margin: 0 1px;
-    }
-    
-    .table td {
-      vertical-align: middle;
-    }
-
-    /* Enhanced status select styling */
-    .order-status-select {
-      min-width: 120px;
-      font-size: 0.875rem;
-    }
-
-    .order-status-select:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    /* Toast container */
-    .toast-container {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 1055;
-    }
-
-    .toast {
-      min-width: 300px;
-    }
-
-    /* View toggle buttons */
-    .btn-group .btn {
-      transition: all 0.3s ease;
-    }
-
-    /* Customers view styling */
-    .recent-orders {
-      max-width: 200px;
-      max-height: 120px;
-      overflow-y: auto;
-    }
-
-    .recent-orders .small {
-      font-size: 0.75rem;
-      line-height: 1.2;
-    }
-
-    .btn-group-vertical .btn {
-      margin-bottom: 2px;
-    }
-
-    .btn-group-vertical .btn:last-child {
-      margin-bottom: 0;
-    }
-
-    /* Loading and error states */
-    .alert .btn {
-      float: right;
-    }
-
-    /* Responsive improvements */
-    @@media (max-width: 768px) {
-      .recent-orders {
-        max-width: 150px;
-        max-height: 80px;
-      }
-      
-      .btn-group-vertical .btn {
-        font-size: 0.75rem;
-        padding: 0.25rem 0.5rem;
-      }
-    }
-  </style>
+    <!-- Additional responsive CSS -->
+    <link rel="stylesheet" href="data:text/css;base64,QG1lZGlhIChtYXgtd2lkdGg6IDc2OHB4KSB7DQogICAgLnNtYWxsLWJveCAuaW5uZXIgaDMgew0KICAgICAgICBmb250LXNpemU6IDEuNnJlbTsNCiAgICB9DQogICAgDQogICAgLmJ0bi1ncm91cC1zbSA+IC5idG4gew0KICAgICAgICBwYWRkaW5nOiAwLjI1cmVtIDAuNXJlbTsNCiAgICAgICAgZm9udC1zaXplOiAwLjc1cmVtOw0KICAgIH0NCn0=">" />
 }

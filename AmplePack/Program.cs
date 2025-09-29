@@ -26,6 +26,7 @@ namespace AmplePack
 
             // Services
             builder.Services.AddScoped<InvoiceService>();
+            builder.Services.AddScoped<OrderManagementService>();
 
             // Identity
             builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
