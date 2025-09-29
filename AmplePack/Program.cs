@@ -4,6 +4,7 @@ using AmplePack.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Infrastructure;
+using OfficeOpenXml;
 
 namespace AmplePack
 {
@@ -15,6 +16,9 @@ namespace AmplePack
 
             // Configure QuestPDF
             QuestPDF.Settings.License = LicenseType.Community;
+
+            // Configure EPPlus license
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
             // Add services
             builder.Services.AddControllersWithViews();

@@ -18,8 +18,6 @@ namespace AmplePack.Services
         public OrderManagementService(AppDbContext context)
         {
             _context = context;
-            // Set EPPlus license context
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
         }
 
         public async Task<OrderListViewModel> GetFilteredOrdersAsync(OrderFilterViewModel filter)
