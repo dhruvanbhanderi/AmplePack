@@ -27,4 +27,9 @@ namespace AmplePack.Models
         
         public ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
     }
+
+    public class ChangeStatusRequest
+    {
+        public string Status { get; set; } = string.Empty;
+    }
 }

@@ -123,7 +123,17 @@
                                     <span class="info-box-icon bg-success"><i class="fas fa-rupee-sign"></i></span>
                                     <div class="info-box-content">
                                         <span class="info-box-text">Total Spent</span>
-                                        <span class="info-box-number">@CurrencyHelper.FormatCurrency(Model.Orders.Sum(o => o.TotalAmount))</span>
+                                        @{
+                                            var totalSpent = Model.Orders.Sum(o => o.TotalAmount);
+                                            var fullAmount = CurrencyHelper.FormatCurrency(totalSpent);
+                                            var compactAmount = CurrencyHelper.FormatCurrencyCompact(totalSpent);
+                                        }
+                                        <span class="info-box-number currency-full-display" 
+                                              title="Full Amount: @fullAmount @(fullAmount != compactAmount ? " | Compact: " + compactAmount : "")"
+                                              data-toggle="tooltip" 
+                                              data-placement="top">
+                                            @fullAmount
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -306,3 +316,38 @@
         </div>
     </div>
 </section>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize tooltips for currency display
+            $('[data-toggle="tooltip"]').tooltip();
+            
+            // Optional: Add click-to-toggle between full and compact format for very large amounts
+            $('.currency-full-display').on('click', function() {
+                var $this = $(this);
+                var originalText = $this.text();
+                var tooltipTitle = $this.attr('title');
+                
+                // If there's a compact format in the tooltip, allow toggling
+                if (tooltipTitle && tooltipTitle.includes('Compact:')) {
+                    var compactText = tooltipTitle.split('Compact: ')[1];
+                    var fullText = tooltipTitle.split(' | Compact:')[0].replace('Full Amount: ', '');
+                    
+                    if (originalText.includes('Cr') || originalText.includes('L') || originalText.includes('K')) {
+                        // Currently showing compact, switch to full
+                        $this.text(fullText);
+                        $this.attr('title', 'Click to show compact format: ' + compactText);
+                    } else {
+                        // Currently showing full, switch to compact
+                        $this.text(compactText);
+                        $this.attr('title', 'Click to show full format: ' + fullText);
+                    }
+                    
+                    // Refresh tooltip
+                    $this.tooltip('dispose').tooltip();
+                }
+            });
+        });
+    </script>
+}

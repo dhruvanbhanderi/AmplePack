@@ -7,7 +7,7 @@ namespace AmplePack.Helpers
     /// </summary>
     public static class CurrencyHelper
     {
-        // Indian Rupee prefix
+        // Indian Rupee prefix - using Rs. for better compatibility
         private const string CURRENCY_SYMBOL = "Rs.";
         
         /// <summary>
@@ -86,6 +86,42 @@ namespace AmplePack.Helpers
         public static decimal RoundCurrency(decimal amount)
         {
             return Math.Round(amount, 2, MidpointRounding.AwayFromZero);
+        }
+        
+        /// <summary>
+        /// Formats a decimal amount as currency with compact display for large amounts
+        /// </summary>
+        /// <param name="amount">The amount to format</param>
+        /// <returns>Formatted currency string with compact notation for large amounts</returns>
+        public static string FormatCurrencyCompact(decimal amount)
+        {
+            if (amount >= 10000000) // 1 crore
+            {
+                return $"{CURRENCY_SYMBOL}{amount / 10000000:N2}Cr";
+            }
+            else if (amount >= 100000) // 1 lakh
+            {
+                return $"{CURRENCY_SYMBOL}{amount / 100000:N2}L";
+            }
+            else if (amount >= 1000) // 1 thousand
+            {
+                return $"{CURRENCY_SYMBOL}{amount / 1000:N2}K";
+            }
+            else
+            {
+                return $"{CURRENCY_SYMBOL}{amount:N2}";
+            }
+        }
+        
+        /// <summary>
+        /// Formats a decimal amount as currency for display in UI elements with proper formatting
+        /// </summary>
+        /// <param name="amount">The amount to format</param>
+        /// <param name="compact">Whether to use compact notation for large amounts</param>
+        /// <returns>Formatted currency string</returns>
+        public static string FormatCurrencyForDisplay(decimal amount, bool compact = false)
+        {
+            return compact ? FormatCurrencyCompact(amount) : FormatCurrency(amount);
         }
     }
 }

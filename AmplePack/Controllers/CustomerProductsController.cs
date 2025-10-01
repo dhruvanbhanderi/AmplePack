@@ -21,50 +21,66 @@ namespace AmplePack.Controllers
             _context = context;
         }
 
-        // GET: CustomerProducts - Show customers first, then products when customer selected
-        public async Task<IActionResult> Index(int? customerId, string searchTerm)
+        // GET: CustomerProducts
+        public async Task<IActionResult> Index(int? customerId, string? category, string? searchTerm)
         {
-            // If no customer is selected, show all customers with their product counts
-            if (!customerId.HasValue)
-            {
-                var customers = await _context.Customers
-                    .Include(c => c.CustomerProducts)
-                    .OrderBy(c => c.Name)
-                    .ToListAsync();
-
-                return View("CustomerList", customers);
-            }
-
-            // If customer is selected, show their products
-            var selectedCustomer = await _context.Customers
-                .FirstOrDefaultAsync(c => c.Id == customerId.Value);
-
-            if (selectedCustomer == null)
-            {
-                return NotFound();
-            }
-
-            var customerProductsQuery = _context.CustomerProducts
+            var query = _context.CustomerProducts
                 .Include(cp => cp.Customer)
-                .Where(cp => cp.CustomerId == customerId.Value);
+                .AsQueryable();
 
-            // Filter by search term if provided
+            // Apply filters
+            if (customerId.HasValue)
+            {
+                query = query.Where(cp => cp.CustomerId == customerId.Value);
+            }
+
+            if (!string.IsNullOrEmpty(category))
+            {
+                query = query.Where(cp => cp.Category == category);
+            }
+
             if (!string.IsNullOrEmpty(searchTerm))
             {
-                customerProductsQuery = customerProductsQuery.Where(cp => 
+                query = query.Where(cp => 
                     cp.ProductName.Contains(searchTerm) ||
-                    cp.Description.Contains(searchTerm));
+                    cp.Description.Contains(searchTerm) ||
+                    (cp.Customer != null && cp.Customer.Name.Contains(searchTerm)));
             }
 
-            var customerProducts = await customerProductsQuery
-                .OrderBy(cp => cp.ProductName)
+            var customerProducts = await query
+                .OrderBy(cp => cp.Customer != null ? cp.Customer.Name : "")
+                .ThenBy(cp => cp.ProductName)
                 .ToListAsync();
 
-            ViewBag.SelectedCustomer = selectedCustomer;
-            ViewBag.CustomerProducts = customerProducts;
+            // Get statistics for dashboard
+            var allProducts = await _context.CustomerProducts.Include(cp => cp.Customer).ToListAsync();
+            ViewBag.TotalProducts = allProducts.Count;
+            ViewBag.ActiveProducts = allProducts.Count(cp => cp.IsActive);
+            ViewBag.TotalCustomers = await _context.Customers.CountAsync();
+            ViewBag.UniqueCategories = allProducts
+                .Where(cp => !string.IsNullOrEmpty(cp.Category))
+                .Select(cp => cp.Category)
+                .Distinct()
+                .Count();
+
+            // Get customers and categories for filter dropdowns
+            ViewBag.Customers = await _context.Customers
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+
+            ViewBag.Categories = allProducts
+                .Where(cp => !string.IsNullOrEmpty(cp.Category))
+                .Select(cp => cp.Category)
+                .Distinct()
+                .OrderBy(c => c)
+                .ToList();
+
+            // Pass filter values back to view
+            ViewBag.CustomerFilter = customerId;
+            ViewBag.CategoryFilter = category;
             ViewBag.SearchTerm = searchTerm;
 
-            return View("CustomerProducts", selectedCustomer);
+            return View(customerProducts);
         }
 
         // GET: CustomerProducts/Details/5

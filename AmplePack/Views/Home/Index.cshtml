@@ -1,178 +1,152 @@
-﻿@using AmplePack.Helpers
-@{
+﻿@{
     ViewData["Title"] = "Dashboard";
 }
 
+<!-- Content Header -->
 <div class="content-header">
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h1 class="m-0">Dashboard</h1>
+                <h1 class="m-0">
+                    <i class="fas fa-tachometer-alt mr-2"></i>
+                    Dashboard
+                </h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item active">Dashboard</li>
+                </ol>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Main content -->
 <section class="content">
     <div class="container-fluid">
-        <!-- Main Stats Cards -->
+        
+        <!-- Stats Row -->
         <div class="row">
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-info">
                     <div class="inner">
-                        <h3>@ViewBag.TotalOrders</h3>
+                        <h3 id="totalOrdersCount">@ViewBag.TotalOrders</h3>
                         <p>Total Orders</p>
                     </div>
                     <div class="icon">
                         <i class="fas fa-shopping-cart"></i>
                     </div>
-                    <a href="@Url.Action("Index", "Orders")" class="small-box-footer">
-                        More info <i class="fas fa-arrow-circle-right"></i>
+                    <a asp-controller="Orders" asp-action="Index" class="small-box-footer">
+                        View Orders <i class="fas fa-arrow-circle-right"></i>
                     </a>
                 </div>
             </div>
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-success">
                     <div class="inner">
-                        <h3>@ViewBag.TotalCustomers</h3>
+                        <h3 id="totalCustomersCount">@ViewBag.TotalCustomers</h3>
                         <p>Total Customers</p>
                     </div>
                     <div class="icon">
                         <i class="fas fa-users"></i>
                     </div>
-                    <a href="@Url.Action("Index", "Customers")" class="small-box-footer">
-                        More info <i class="fas fa-arrow-circle-right"></i>
+                    <a asp-controller="Customers" asp-action="Index" class="small-box-footer">
+                        View Customers <i class="fas fa-arrow-circle-right"></i>
                     </a>
                 </div>
             </div>
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-warning">
                     <div class="inner">
-                        <h3>@CurrencyHelper.FormatCurrency(ViewBag.TotalRevenue)</h3>
-                        <p>Total Revenue</p>
+                        <h3 id="lowStockCount">@ViewBag.LowStockCount</h3>
+                        <p>Low Stock Items</p>
                     </div>
                     <div class="icon">
-                        <i class="fas fa-money-bill"></i>
+                        <i class="fas fa-exclamation-triangle"></i>
                     </div>
-                    <a href="@Url.Action("Index", "Reports")" class="small-box-footer">
-                        More info <i class="fas fa-arrow-circle-right"></i>
+                    <a asp-controller="Inventory" asp-action="Index" class="small-box-footer">
+                        View Inventory <i class="fas fa-arrow-circle-right"></i>
                     </a>
                 </div>
             </div>
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-danger">
                     <div class="inner">
-                        <h3>@ViewBag.LowStockCount</h3>
-                        <p>Low Stock Items</p>
+                        <h3 id="totalRevenue">@AmplePack.Helpers.CurrencyHelper.FormatCurrency(ViewBag.TotalRevenue)</h3>
+                        <p>Total Revenue</p>
                     </div>
                     <div class="icon">
-                        <i class="fas fa-exclamation-triangle"></i>
+                        <i class="fas fa-rupee-sign"></i>
                     </div>
-                    <a href="@Url.Action("Index", "Inventory")" class="small-box-footer">
-                        More info <i class="fas fa-arrow-circle-right"></i>
+                    <a asp-controller="Reports" asp-action="Index" class="small-box-footer">
+                        View Reports <i class="fas fa-arrow-circle-right"></i>
                     </a>
                 </div>
             </div>
         </div>
 
-        <!-- Quick Actions & Recent Activity -->
+        <!-- Charts Row -->
         <div class="row">
-            <!-- Quick Actions -->
-            <div class="col-lg-6">
+            <div class="col-md-8">
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <i class="fas fa-bolt mr-2"></i>
-                            Quick Actions
+                            <i class="fas fa-chart-line mr-2"></i>
+                            Monthly Revenue & Orders Trend (Last 12 Months)
                         </h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" onclick="refreshRevenueChart()" title="Refresh Chart">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <button type="button" class="btn btn-tool" data-card-widget="maximize">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <a href="@Url.Action("CreateWorkflow", "Orders")" class="btn btn-primary btn-block">
-                                    <i class="fas fa-plus mr-2"></i>
-                                    Create New Order
-                                </a>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <a href="@Url.Action("Create", "Customers")" class="btn btn-success btn-block">
-                                    <i class="fas fa-user-plus mr-2"></i>
-                                    Add Customer
-                                </a>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <a href="@Url.Action("Create", "Inventory")" class="btn btn-info btn-block">
-                                    <i class="fas fa-boxes mr-2"></i>
-                                    Add Inventory
-                                </a>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <a href="@Url.Action("Create", "CustomerProducts")" class="btn btn-warning btn-block">
-                                    <i class="fas fa-cube mr-2"></i>
-                                    Create Product
-                                </a>
-                            </div>
+                        <div class="chart">
+                            <canvas id="revenueChart" style="min-height: 300px; height: 300px; max-height: 300px; max-width: 100%;"></canvas>
+                        </div>
+                        <div class="mt-2 text-center">
+                            <small class="text-muted">Data automatically updates every 5 minutes</small>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Order Status Overview -->
-            <div class="col-lg-6">
+            
+            <div class="col-md-4">
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">
                             <i class="fas fa-chart-pie mr-2"></i>
-                            Order Status Overview
+                            Current Order Status Distribution
                         </h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" onclick="refreshStatusChart()" title="Refresh Chart">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-6">
-                                <div class="info-box">
-                                    <span class="info-box-icon bg-warning">
-                                        <i class="fas fa-clock"></i>
-                                    </span>
-                                    <div class="info-box-content">
-                                        <span class="info-box-text">Pending</span>
-                                        <span class="info-box-number">@ViewBag.PendingOrders</span>
-                                    </div>
-                                </div>
+                        <canvas id="orderStatusChart" style="min-height: 300px; height: 300px; max-height: 300px;"></canvas>
+                        <div class="mt-2">
+                            <div class="d-flex justify-content-between">
+                                <small class="text-muted">
+                                    <span class="badge badge-warning">Pending: @ViewBag.PendingOrders</span>
+                                    <span class="badge badge-info">Processing: @ViewBag.ProcessingOrders</span>
+                                </small>
                             </div>
-                            <div class="col-6">
-                                <div class="info-box">
-                                    <span class="info-box-icon bg-info">
-                                        <i class="fas fa-cog"></i>
-                                    </span>
-                                    <div class="info-box-content">
-                                        <span class="info-box-text">Processing</span>
-                                        <span class="info-box-number">@ViewBag.ProcessingOrders</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-6">
-                                <div class="info-box">
-                                    <span class="info-box-icon bg-success">
-                                        <i class="fas fa-check"></i>
-                                    </span>
-                                    <div class="info-box-content">
-                                        <span class="info-box-text">Completed</span>
-                                        <span class="info-box-number">@ViewBag.CompletedOrders</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="info-box">
-                                    <span class="info-box-icon bg-secondary">
-                                        <i class="fas fa-ban"></i>
-                                    </span>
-                                    <div class="info-box-content">
-                                        <span class="info-box-text">Cancelled</span>
-                                        <span class="info-box-number">@ViewBag.CancelledOrders</span>
-                                    </div>
-                                </div>
+                            <div class="d-flex justify-content-between mt-1">
+                                <small class="text-muted">
+                                    <span class="badge badge-success">Completed: @ViewBag.CompletedOrders</span>
+                                    <span class="badge badge-danger">Cancelled: @ViewBag.CancelledOrders</span>
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -180,143 +154,219 @@
             </div>
         </div>
 
-        <!-- Recent Activity & Alerts -->
+        <!-- Recent Activity Row -->
         <div class="row">
-            <!-- Recent Orders -->
-            <div class="col-lg-8">
+            <div class="col-md-6">
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <i class="fas fa-history mr-2"></i>
+                            <i class="fas fa-clock mr-2"></i>
                             Recent Orders
                         </h3>
                         <div class="card-tools">
-                            <a href="@Url.Action("Index", "Orders")" class="btn btn-tool">
-                                <i class="fas fa-eye"></i> View All
+                            <a asp-controller="Orders" asp-action="Index" class="btn btn-tool" title="View All Orders">
+                                <i class="fas fa-external-link-alt"></i>
                             </a>
                         </div>
                     </div>
                     <div class="card-body p-0">
-                        @if (ViewBag.RecentOrders != null && ((List<AmplePack.Models.Order>)ViewBag.RecentOrders).Any())
-                        {
-                            <div class="table-responsive">
-                                <table class="table table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>Order #</th>
-                                            <th>Customer</th>
-                                            <th>Date</th>
-                                            <th>Amount</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var order in (List<AmplePack.Models.Order>)ViewBag.RecentOrders)
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Order</th>
+                                        <th>Customer</th>
+                                        <th>Status</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (ViewBag.RecentOrders != null && ((List<AmplePack.Models.Order>)ViewBag.RecentOrders).Any())
+                                    {
+                                        @foreach (var order in ViewBag.RecentOrders as List<AmplePack.Models.Order>)
                                         {
                                             <tr>
                                                 <td>
-                                                    <a href="@Url.Action("Details", "Orders", new { id = order.Id })">
-                                                        #@order.Id
+                                                    <a asp-controller="Orders" asp-action="Details" asp-route-id="@order.Id" class="text-decoration-none">
+                                                        <strong>#@order.Id.ToString("D4")</strong>
+                                                    </a>
+                                                    <br>
+                                                    <small class="text-muted">@order.Date.ToString("MMM dd, yyyy")</small>
+                                                </td>
+                                                <td>
+                                                    <a asp-controller="Customers" asp-action="Details" asp-route-id="@order.CustomerId" class="text-decoration-none">
+                                                        @(order.Customer?.Name ?? "Unknown Customer")
                                                     </a>
                                                 </td>
-                                                <td>@order.Customer?.Name</td>
-                                                <td>@order.Date.ToString("MMM dd, yyyy")</td>
-                                                <td>@CurrencyHelper.FormatCurrency(order.TotalAmount)</td>
                                                 <td>
-                                                    @if (order.Status == "Pending")
+                                                    <span class="badge badge-@(order.Status.ToLower() switch 
                                                     {
-                                                        <span class="badge badge-warning">@order.Status</span>
-                                                    }
-                                                    else if (order.Status == "Processing")
-                                                    {
-                                                        <span class="badge badge-info">@order.Status</span>
-                                                    }
-                                                    else if (order.Status == "Completed")
-                                                    {
-                                                        <span class="badge badge-success">@order.Status</span>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="badge badge-secondary">@order.Status</span>
-                                                    }
+                                                        "pending" => "warning",
+                                                        "processing" => "info", 
+                                                        "completed" => "success",
+                                                        "delivered" => "primary",
+                                                        "cancelled" => "danger",
+                                                        _ => "secondary"
+                                                    })">@order.Status</span>
                                                 </td>
+                                                <td class="currency">@AmplePack.Helpers.CurrencyHelper.FormatCurrency(order.TotalAmount)</td>
                                             </tr>
                                         }
-                                    </tbody>
-                                </table>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="text-center py-4">
-                                <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
-                                <h5>No Recent Orders</h5>
-                                <p class="text-muted">Start by creating your first order.</p>
-                                <a href="@Url.Action("CreateWorkflow", "Orders")" class="btn btn-primary">
-                                    <i class="fas fa-plus"></i> Create Order
-                                </a>
-                            </div>
-                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-4">
+                                                <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                                                No recent orders found
+                                                <br>
+                                                <a asp-controller="Orders" asp-action="CreateWorkflow" class="btn btn-sm btn-primary mt-2">
+                                                    Create First Order
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Alerts & Notifications -->
-            <div class="col-lg-4">
+            <div class="col-md-6">
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <i class="fas fa-bell mr-2"></i>
-                            Alerts & Notifications
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            Low Stock Alerts
+                        </h3>
+                        <div class="card-tools">
+                            <span class="badge badge-danger">@ViewBag.LowStockCount items</span>
+                            <a asp-controller="Inventory" asp-action="Index" class="btn btn-tool" title="View All Inventory">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Current</th>
+                                        <th>Reorder</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (ViewBag.LowStockItems != null && ((List<AmplePack.Models.Inventory>)ViewBag.LowStockItems).Any())
+                                    {
+                                        @foreach (var item in ViewBag.LowStockItems as List<AmplePack.Models.Inventory>)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <a asp-controller="Inventory" asp-action="Details" asp-route-id="@item.Id" class="text-decoration-none">
+                                                        <strong>@item.ItemName</strong>
+                                                    </a>
+                                                    @if (!string.IsNullOrEmpty(item.Category))
+                                                    {
+                                                        <br><small class="text-muted">@item.Category</small>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <span class="badge @(item.AvailableQuantity <= 0 ? "badge-danger" : item.AvailableQuantity <= item.ReorderLevel / 2 ? "badge-danger" : "badge-warning")">
+                                                        @item.AvailableQuantity.ToString("F1") @item.Unit
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted">@item.ReorderLevel.ToString("F1") @item.Unit</small>
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-success quick-add" 
+                                                            data-item-id="@item.Id" 
+                                                            data-item-name="@item.ItemName"
+                                                            title="Quick Add Stock">
+                                                        <i class="fas fa-plus"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-4">
+                                                <i class="fas fa-check-circle fa-2x mb-2 d-block text-success"></i>
+                                                All items are well stocked
+                                                <br>
+                                                <small>No immediate action required</small>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions Row -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-rocket mr-2"></i>
+                            Quick Actions
                         </h3>
                     </div>
                     <div class="card-body">
-                        @if (ViewBag.LowStockItems != null && ((List<AmplePack.Models.Inventory>)ViewBag.LowStockItems).Any())
-                        {
-                            <div class="alert alert-warning">
-                                <h6><i class="fas fa-exclamation-triangle"></i> Low Stock Alert</h6>
-                                <p class="mb-0">@ViewBag.LowStockCount items are running low on stock.</p>
+                        <!-- Quick Actions remain the same -->
+                        <div class="row">
+                            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 mb-4">
+                                <button onclick="location.href='@Url.Action("CreateWorkflow", "Orders")'" class="btn btn-app-enhanced btn-primary">
+                                    <div class="btn-app-icon">
+                                        <i class="fas fa-plus-circle"></i>
+                                    </div>
+                                    <div class="btn-app-text">
+                                        <span class="btn-app-title">Add Order</span>
+                                        <span class="btn-app-desc">Create new order</span>
+                                    </div>
+                                </button>
                             </div>
-                            
-                            @foreach (var item in ((List<AmplePack.Models.Inventory>)ViewBag.LowStockItems).Take(3))
-                            {
-                                <div class="alert alert-warning alert-dismissible">
-                                    <h6 class="mb-1">@item.ItemName</h6>
-                                    <small>Only @item.AvailableQuantity @item.Unit remaining (Reorder at @item.ReorderLevel)</small>
-                                </div>
-                            }
-
-                            @if (((List<AmplePack.Models.Inventory>)ViewBag.LowStockItems).Count > 3)
-                            {
-                                <div class="text-center">
-                                    <a href="@Url.Action("Index", "Inventory")" class="btn btn-warning btn-sm">
-                                        View All Low Stock Items
-                                    </a>
-                                </div>
-                            }
-                        }
-                        else
-                        {
-                            <div class="alert alert-success">
-                                <h6><i class="fas fa-check-circle"></i> All Good!</h6>
-                                <p class="mb-0">No critical alerts at this time. All inventory levels are adequate.</p>
+                            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 mb-4">
+                                <button onclick="location.href='@Url.Action("Create", "Customers")'" class="btn btn-app-enhanced btn-success">
+                                    <div class="btn-app-icon">
+                                        <i class="fas fa-user-plus"></i>
+                                    </div>
+                                    <div class="btn-app-text">
+                                        <span class="btn-app-title">Add Customer</span>
+                                        <span class="btn-app-desc">Register new customer</span>
+                                    </div>
+                                </button>
                             </div>
-                        }
-
-                        <!-- System Status -->
-                        <div class="mt-3">
-                            <h6>System Status</h6>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span>Database</span>
-                                <span class="badge badge-success">Online</span>
+                            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 mb-4">
+                                <button onclick="location.href='@Url.Action("Create", "CustomerProducts")'" class="btn btn-app-enhanced btn-warning">
+                                    <div class="btn-app-icon">
+                                        <i class="fas fa-cube"></i>
+                                    </div>
+                                    <div class="btn-app-text">
+                                        <span class="btn-app-title">Add Product</span>
+                                        <span class="btn-app-desc">New customer product</span>
+                                    </div>
+                                </button>
                             </div>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span>Application</span>
-                                <span class="badge badge-success">Running</span>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span>Last Updated</span>
-                                <small class="text-muted">@DateTime.Now.ToString("MMM dd, yyyy HH:mm")</small>
+                            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 mb-4">
+                                <button onclick="location.href='@Url.Action("Create", "Inventory")'" class="btn btn-app-enhanced btn-info">
+                                    <div class="btn-app-icon">
+                                        <i class="fas fa-boxes"></i>
+                                    </div>
+                                    <div class="btn-app-text">
+                                        <span class="btn-app-title">Add Inventory</span>
+                                        <span class="btn-app-desc">Stock management</span>
+                                    </div>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -325,3 +375,460 @@
         </div>
     </div>
 </section>
+
+@section Scripts {
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        let revenueChart, statusChart;
+        
+        $(document).ready(function() {
+            initializeCharts();
+            setupQuickActions();
+            
+            // Auto-refresh charts every 5 minutes
+            setInterval(function() {
+                refreshRevenueChart();
+                refreshStatusChart();
+            }, 300000);
+        });
+
+        async function initializeCharts() {
+            await loadRevenueChart();
+            await loadStatusChart();
+        }
+
+        async function loadRevenueChart() {
+            try {
+                const response = await fetch('/Reports/GetChartData?chartType=monthlyrevenue');
+                const result = await response.json();
+                
+                const ctx = document.getElementById('revenueChart').getContext('2d');
+                
+                if (revenueChart) {
+                    revenueChart.destroy();
+                }
+                
+                revenueChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: result.data.map(d => d.month),
+                        datasets: [{
+                            label: 'Revenue (₹)',
+                            data: result.data.map(d => d.revenue),
+                            borderColor: 'rgb(54, 162, 235)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            yAxisID: 'y'
+                        }, {
+                            label: 'Orders Count',
+                            data: result.data.map(d => d.orderCount),
+                            borderColor: 'rgb(255, 99, 132)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4,
+                            yAxisID: 'y1'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top'
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        if (context.datasetIndex === 0) {
+                                            return 'Revenue: ₹' + context.parsed.y.toLocaleString('en-IN');
+                                        } else {
+                                            return 'Orders: ' + context.parsed.y;
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: 'Month'
+                                }
+                            },
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'Revenue (₹)'
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        return '₹' + value.toLocaleString('en-IN');
+                                    }
+                                }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'Orders Count'
+                                },
+                                grid: {
+                                    drawOnChartArea: false,
+                                }
+                            }
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to load revenue chart:', error);
+                document.getElementById('revenueChart').parentElement.innerHTML = 
+                    '<div class="text-center py-4"><i class="fas fa-chart-line fa-3x text-muted mb-3"></i><br>Unable to load chart data</div>';
+            }
+        }
+
+        async function loadStatusChart() {
+            try {
+                const response = await fetch('/Reports/GetChartData?chartType=orderstatus');
+                const result = await response.json();
+                
+                const ctx = document.getElementById('orderStatusChart').getContext('2d');
+                
+                if (statusChart) {
+                    statusChart.destroy();
+                }
+                
+                statusChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: result.labels,
+                        datasets: [{
+                            data: result.data,
+                            backgroundColor: [
+                                '#ffc107', // Pending - Warning
+                                '#17a2b8', // Processing - Info
+                                '#28a745', // Completed - Success
+                                '#007bff', // Delivered - Primary
+                                '#dc3545'  // Cancelled - Danger
+                            ],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 15,
+                                    usePointStyle: true
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                        return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to load status chart:', error);
+                document.getElementById('orderStatusChart').parentElement.innerHTML = 
+                    '<div class="text-center py-4"><i class="fas fa-chart-pie fa-3x text-muted mb-3"></i><br>Unable to load chart data</div>';
+            }
+        }
+
+        async function refreshRevenueChart() {
+            const refreshBtn = event?.target?.closest('button') || document.querySelector('[onclick="refreshRevenueChart()"]');
+            if (refreshBtn) {
+                refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            }
+            
+            await loadRevenueChart();
+            
+            if (refreshBtn) {
+                refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+            }
+        }
+
+        async function refreshStatusChart() {
+            const refreshBtn = event?.target?.closest('button') || document.querySelector('[onclick="refreshStatusChart()"]');
+            if (refreshBtn) {
+                refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            }
+            
+            await loadStatusChart();
+            
+            if (refreshBtn) {
+                refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+            }
+        }
+
+        function setupQuickActions() {
+            // Quick add functionality for low stock items with real API integration
+            $(document).on('click', '.quick-add', function(e) {
+                e.preventDefault();
+                const itemId = $(this).data('item-id');
+                const itemName = $(this).data('item-name');
+                
+                Swal.fire({
+                    title: 'Quick Stock Add',
+                    html: `
+                        <p>Add stock for: <strong>${itemName}</strong></p>
+                        <div class="form-group text-left">
+                            <label for="addQuantity">Quantity to Add:</label>
+                            <input type="number" class="form-control" id="addQuantity" min="0.01" step="0.01" value="10">
+                        </div>
+                        <div class="form-group text-left">
+                            <label for="addReason">Reason:</label>
+                            <input type="text" class="form-control" id="addReason" placeholder="Stock replenishment">
+                        </div>
+                    `,
+                    showCancelButton: true,
+                    confirmButtonText: 'Add Stock',
+                    cancelButtonText: 'Cancel',
+                    preConfirm: () => {
+                        const quantity = document.getElementById('addQuantity').value;
+                        const reason = document.getElementById('addReason').value;
+                        
+                        if (!quantity || quantity <= 0) {
+                            Swal.showValidationMessage('Please enter a valid quantity');
+                            return false;
+                        }
+                        
+                        return { quantity: parseFloat(quantity), reason: reason || 'Stock replenishment' };
+                    }
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        try {
+                            // Show loading
+                            Swal.fire({
+                                title: 'Adding Stock...',
+                                text: 'Please wait while we update the inventory.',
+                                icon: 'info',
+                                showConfirmButton: false,
+                                allowOutsideClick: false
+                            });
+
+                            // Make actual API call
+                            const response = await fetch('/Inventory/AdjustStock', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                                },
+                                body: JSON.stringify({
+                                    itemId: itemId,
+                                    quantity: result.value.quantity,
+                                    action: 'add',
+                                    reason: result.value.reason
+                                })
+                            });
+
+                            const data = await response.json();
+
+                            if (data.success) {
+                                Swal.fire({
+                                    title: 'Success!',
+                                    text: data.message,
+                                    icon: 'success',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                                
+                                // Refresh the page after 2 seconds
+                                setTimeout(() => {
+                                    location.reload();
+                                }, 2000);
+                            } else {
+                                Swal.fire({
+                                    title: 'Error!',
+                                    text: data.message || 'Failed to add stock',
+                                    icon: 'error'
+                                });
+                            }
+                        } catch (error) {
+                            Swal.fire({
+                                title: 'Error!',
+                                text: 'Failed to add stock. Please try again.',
+                                icon: 'error'
+                            });
+                        }
+                    }
+                });
+            });
+        }
+    </script>
+}
+
+@section Styles {
+    <style>
+        /* Enhanced Quick Action Buttons - Keep existing styles */
+        .btn-app-enhanced {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            height: 80px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            border: none;
+            text-decoration: none;
+            color: white;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn-app-enhanced:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            text-decoration: none;
+            color: white;
+        }
+
+        .btn-app-enhanced:active {
+            transform: translateY(0);
+        }
+
+        .btn-app-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .btn-app-icon i {
+            font-size: 18px;
+        }
+
+        .btn-app-text {
+            flex: 1;
+            text-align: left;
+        }
+
+        .btn-app-title {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.2;
+            margin-bottom: 2px;
+        }
+
+        .btn-app-desc {
+            display: block;
+            font-size: 11px;
+            opacity: 0.9;
+            line-height: 1.2;
+        }
+
+        /* Color Variants */
+        .btn-app-enhanced.btn-primary {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+        }
+
+        .btn-app-enhanced.btn-success {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+        }
+
+        .btn-app-enhanced.btn-warning {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #212529;
+        }
+
+        .btn-app-enhanced.btn-info {
+            background: linear-gradient(135deg, #17a2b8, #117a8b);
+        }
+
+        .currency {
+            font-weight: 600;
+            color: #28a745;
+        }
+
+        .card-body .table {
+            margin-bottom: 0;
+        }
+
+        /* Add hover effects for table rows */
+        .table tbody tr:hover {
+            background-color: rgba(0,123,255,.075);
+        }
+
+        /* Badge enhancements */
+        .badge {
+            font-size: 0.75em;
+        }
+
+        /* Enhanced small boxes */
+        .small-box {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .small-box .inner h3 {
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin: 0 0 10px 0;
+            white-space: nowrap;
+            padding: 0;
+        }
+
+        /* Responsive adjustments */
+        @@media (max-width: 768px) {
+            .btn-app-enhanced {
+                height: 70px;
+                padding: 10px 15px;
+            }
+            
+            .btn-app-icon {
+                width: 35px;
+                height: 35px;
+                margin-right: 12px;
+            }
+            
+            .btn-app-icon i {
+                font-size: 16px;
+            }
+            
+            .btn-app-title {
+                font-size: 13px;
+            }
+            
+            .btn-app-desc {
+                font-size: 10px;
+            }
+        }
+    </style>
+}
+
+@Html.AntiForgeryToken()

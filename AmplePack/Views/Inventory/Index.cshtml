@@ -1,176 +1,303 @@
-@using AmplePack.Helpers
-@model List<AmplePack.Models.Inventory>
+@model IEnumerable<AmplePack.Models.Inventory>
 @{
     ViewData["Title"] = "Inventory Management";
 }
 
+<!-- Content Header -->
 <div class="content-header">
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h1 class="m-0">Inventory Management</h1>
+                <h1 class="m-0">
+                    <i class="fas fa-warehouse mr-2"></i>
+                    Inventory Management
+                </h1>
             </div>
             <div class="col-sm-6">
-                <div class="float-sm-right">
-                    <a asp-action="Create" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Add New Item
-                    </a>
-                </div>
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Inventory</li>
+                </ol>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Main content -->
 <section class="content">
     <div class="container-fluid">
+        
+        <!-- Real-Time Stats Row -->
+        <div class="row">
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-info">
+                    <div class="inner">
+                        <h3 id="totalItemsCount">@ViewBag.TotalItems</h3>
+                        <p>Total Items</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-boxes"></i>
+                    </div>
+                    <a asp-action="Create" class="small-box-footer">
+                        Add New Item <i class="fas fa-arrow-circle-right"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-success">
+                    <div class="inner">
+                        <h3 id="inStockCount">@ViewBag.InStockItems</h3>
+                        <p>In Stock</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <a href="?stockStatus=instock" class="small-box-footer">
+                        View Items <i class="fas fa-arrow-circle-right"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-warning">
+                    <div class="inner">
+                        <h3 id="lowStockCount">@ViewBag.LowStockItems</h3>
+                        <p>Low Stock</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <a href="?stockStatus=lowstock" class="small-box-footer">
+                        View Alerts <i class="fas fa-arrow-circle-right"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-danger">
+                    <div class="inner">
+                        <h3 id="outOfStockCount">@ViewBag.OutOfStockItems</h3>
+                        <p>Out of Stock</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <a href="?stockStatus=outofstock" class="small-box-footer">
+                        Urgent Action <i class="fas fa-arrow-circle-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Stats Row -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="info-box">
+                    <span class="info-box-icon bg-gradient-success">
+                        <i class="fas fa-rupee-sign"></i>
+                    </span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Total Inventory Value</span>
+                        <span class="info-box-number">@AmplePack.Helpers.CurrencyHelper.FormatCurrency(ViewBag.TotalInventoryValue)</span>
+                        <div class="progress">
+                            <div class="progress-bar bg-success" style="width: 100%"></div>
+                        </div>
+                        <span class="progress-description">Current market value</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="info-box">
+                    <span class="info-box-icon bg-gradient-info">
+                        <i class="fas fa-percentage"></i>
+                    </span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Stock Health</span>
+                        <span class="info-box-number">
+                            @{
+                                var healthPercentage = ViewBag.TotalItems > 0 ? 
+                                    Math.Round((double)ViewBag.InStockItems / (int)ViewBag.TotalItems * 100, 1) : 0;
+                            }
+                            @healthPercentage%
+                        </span>
+                        <div class="progress">
+                            <div class="progress-bar bg-@(healthPercentage >= 80 ? "success" : healthPercentage >= 60 ? "warning" : "danger")" 
+                                 style="width: @healthPercentage%"></div>
+                        </div>
+                        <span class="progress-description">Items in good stock</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Row -->
         <div class="row">
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <i class="fas fa-boxes mr-2"></i>
-                            Inventory Items
+                            <i class="fas fa-filter mr-2"></i>
+                            Filters & Search
                         </h3>
                         <div class="card-tools">
-                            <button type="button" class="btn btn-tool" data-bs-toggle="tooltip" title="Quick adjust inventory levels">
-                                <i class="fas fa-info-circle"></i>
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
                             </button>
                         </div>
                     </div>
                     <div class="card-body">
-                        @{
-                            var frequentItems = Model.Any() ? Model.Where(i => i.IsLowStock || i.Category == "Frequent").Take(5) : Enumerable.Empty<AmplePack.Models.Inventory>();
-                        }
-                        
+                        <form method="get" class="row">
+                            <div class="col-md-3 mb-3">
+                                <label for="category" class="form-label">Category</label>
+                                <select name="category" id="category" class="form-control">
+                                    <option value="">All Categories</option>
+                                    @if (ViewBag.Categories != null)
+                                    {
+                                        @foreach (var cat in ViewBag.Categories as List<string>)
+                                        {
+                                            var isSelected = ViewBag.CategoryFilter as string == cat;
+                                            <option value="@cat" selected="@isSelected">@cat</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="stockStatus" class="form-label">Stock Status</label>
+                                <select name="stockStatus" id="stockStatus" class="form-control">
+                                    <option value="">All Items</option>
+                                    @{
+                                        var statusFilter = ViewBag.StockStatusFilter as string;
+                                    }
+                                    <option value="instock" selected="@(statusFilter == "instock")">In Stock (@ViewBag.InStockItems)</option>
+                                    <option value="lowstock" selected="@(statusFilter == "lowstock")">Low Stock (@ViewBag.LowStockItems)</option>
+                                    <option value="outofstock" selected="@(statusFilter == "outofstock")">Out of Stock (@ViewBag.OutOfStockItems)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="searchTerm" class="form-label">Search</label>
+                                <input type="text" name="searchTerm" id="searchTerm" class="form-control" 
+                                       placeholder="Search by item name, product, or category..."
+                                       value="@ViewBag.SearchTerm">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">&nbsp;</label>
+                                <div class="d-flex flex-column gap-2">
+                                    <button type="submit" class="btn btn-primary btn-block">
+                                        <i class="fas fa-search mr-1"></i>
+                                        Filter
+                                    </button>
+                                    <a href="@Url.Action("Index")" class="btn btn-secondary btn-block">
+                                        <i class="fas fa-times mr-1"></i>
+                                        Clear
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory Table -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-list mr-2"></i>
+                            Inventory Items (@Model.Count() items)
+                        </h3>
+                        <div class="card-tools">
+                            <a asp-action="Create" class="btn btn-primary btn-sm">
+                                <i class="fas fa-plus mr-1"></i>
+                                Add Item
+                            </a>
+                            <button type="button" class="btn btn-info btn-sm ml-1" onclick="refreshInventoryData()">
+                                <i class="fas fa-sync-alt mr-1"></i>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
                         @if (Model.Any())
                         {
-                            @if (frequentItems.Any())
-                            {
-                                <div class="alert alert-info">
-                                    <h6><i class="fas fa-bolt"></i> Quick Adjust - Frequent Items</h6>
-                                    <div class="row">
-                                        @foreach (var item in frequentItems)
-                                        {
-                                            <div class="col-md-6 col-lg-4 mb-2">
-                                                <div class="d-flex align-items-center justify-content-between p-2 bg-light rounded">
-                                                    <div>
-                                                        <strong>@item.ItemName</strong><br>
-                                                        <small class="text-muted">@item.AvailableQuantity.ToString("N2") @item.Unit</small>
-                                                    </div>
-                                                    <div class="btn-group">
-                                                        <button class="btn btn-sm btn-success quick-add" 
-                                                                data-item-id="@item.Id" 
-                                                                data-item-name="@item.ItemName"
-                                                                title="Quick Add Stock">
-                                                            <i class="fas fa-plus"></i>
-                                                        </button>
-                                                        <button class="btn btn-sm btn-warning quick-remove" 
-                                                                data-item-id="@item.Id" 
-                                                                data-item-name="@item.ItemName"
-                                                                title="Quick Remove Stock">
-                                                            <i class="fas fa-minus"></i>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        }
-                                    </div>
-                                </div>
-                            }
-
                             <div class="table-responsive">
-                                <table id="inventoryTable" class="table table-bordered table-hover table-striped">
+                                <table class="table table-bordered table-striped table-hover data-table inventory-table">
                                     <thead class="thead-dark">
                                         <tr>
                                             <th>Item Name</th>
                                             <th>Category</th>
-                                            <th>Available Qty</th>
-                                            <th>Unit</th>
+                                            <th>Available Quantity</th>
                                             <th>Unit Price</th>
                                             <th>Total Value</th>
+                                            <th>Reorder Level</th>
                                             <th>Status</th>
-                                            <th width="200px">Actions</th>
+                                            <th class="no-sort">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach (var item in Model)
                                         {
-                                            <tr class="@(item.IsLowStock ? "table-warning" : "") inventory-item-row" data-item-id="@item.Id">
+                                            <tr data-item-id="@item.Id" class="inventory-row">
                                                 <td>
                                                     <strong>@item.ItemName</strong>
+                                                    @if (!string.IsNullOrEmpty(item.Category))
+                                                    {
+                                                        <br><small class="text-muted">@item.Category</small>
+                                                    }
                                                 </td>
                                                 <td>
                                                     @if (!string.IsNullOrEmpty(item.Category))
                                                     {
-                                                        <span class="badge badge-info">@item.Category</span>
+                                                        <span class="badge badge-secondary">@item.Category</span>
                                                     }
                                                     else
                                                     {
-                                                        <span class="badge badge-secondary">Uncategorized</span>
+                                                        <span class="text-muted"><em>Uncategorized</em></span>
                                                     }
                                                 </td>
-                                                <td class="quantity-cell">
-                                                    <span class="badge @(item.IsLowStock ? "badge-warning" : "badge-success")">
-                                                        @item.AvailableQuantity.ToString("N2")
+                                                <td class="available-quantity">
+                                                    <span class="badge @(item.AvailableQuantity <= 0 ? "badge-danger" : item.AvailableQuantity <= item.ReorderLevel ? "badge-warning" : "badge-success")">
+                                                        @item.AvailableQuantity.ToString("F2") @item.Unit
                                                     </span>
                                                 </td>
-                                                <td>@item.Unit</td>
-                                                <td>@CurrencyHelper.FormatCurrency(item.UnitPrice)</td>
+                                                <td>@AmplePack.Helpers.CurrencyHelper.FormatCurrency(item.UnitPrice)</td>
+                                                <td class="text-success font-weight-bold">@AmplePack.Helpers.CurrencyHelper.FormatCurrency(item.AvailableQuantity * item.UnitPrice)</td>
+                                                <td>@item.ReorderLevel.ToString("F2") @item.Unit</td>
                                                 <td>
-                                                    <strong class="text-success">@CurrencyHelper.FormatCurrency(item.TotalValue)</strong>
+                                                    <span class="badge stock-status @(item.AvailableQuantity <= 0 ? "badge-danger" : item.AvailableQuantity <= item.ReorderLevel ? "badge-warning" : "badge-success")">
+                                                        @(item.AvailableQuantity <= 0 ? "Out of Stock" : item.AvailableQuantity <= item.ReorderLevel ? "Low Stock" : "In Stock")
+                                                    </span>
                                                 </td>
                                                 <td>
-                                                    @if (item.IsLowStock)
-                                                    {
-                                                        <span class="badge badge-warning">
-                                                            <i class="fas fa-exclamation-triangle"></i> Low Stock
-                                                        </span>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="badge badge-success">
-                                                            <i class="fas fa-check"></i> In Stock
-                                                        </span>
-                                                    }
-                                                </td>
-                                                <td class="actions-cell">
-                                                    <!-- Quick Adjust Controls -->
-                                                    <div class="btn-group quick-adjust mr-2" role="group">
-                                                        <button class="btn btn-sm btn-success quick-add" 
-                                                                data-item-id="@item.Id" 
-                                                                data-item-name="@item.ItemName"
-                                                                title="Quick Add Stock"
-                                                                aria-label="Quick add stock for @item.ItemName">
-                                                            <i class="fas fa-plus"></i>
-                                                        </button>
-                                                        <button class="btn btn-sm btn-warning quick-remove" 
-                                                                data-item-id="@item.Id" 
-                                                                data-item-name="@item.ItemName"
-                                                                title="Quick Remove Stock"
-                                                                aria-label="Quick remove stock for @item.ItemName">
-                                                            <i class="fas fa-minus"></i>
-                                                        </button>
-                                                    </div>
-
-                                                    <!-- Standard Actions -->
                                                     <div class="btn-group" role="group">
-                                                        <a href="@Url.Action("Details", new { id = item.Id })" class="btn btn-sm btn-outline-info" title="View Details">
+                                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm" title="View Details">
                                                             <i class="fas fa-eye"></i>
                                                         </a>
-                                                        <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-sm btn-outline-warning" title="Edit">
-                                                            <i class="fas fa-edit"></i>
-                                                        </a>
+                                                        @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+                                                        {
+                                                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm" title="Edit">
+                                                                <i class="fas fa-edit"></i>
+                                                            </a>
+                                                            <button type="button" class="btn btn-success btn-sm quick-add" 
+                                                                    data-item-id="@item.Id" 
+                                                                    data-item-name="@item.ItemName" 
+                                                                    title="Quick Add Stock">
+                                                                <i class="fas fa-plus"></i>
+                                                            </button>
+                                                            <button type="button" class="btn btn-outline-danger btn-sm quick-remove" 
+                                                                    data-item-id="@item.Id" 
+                                                                    data-item-name="@item.ItemName" 
+                                                                    title="Quick Remove Stock"
+                                                                    @(item.AvailableQuantity <= 0 ? "disabled" : "")>
+                                                                <i class="fas fa-minus"></i>
+                                                            </button>
+                                                        }
                                                         @if (User.IsInRole("Admin"))
                                                         {
-                                                            <a href="@Url.Action("Delete", new { id = item.Id })" class="btn btn-sm btn-outline-danger" title="Delete">
+                                                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm" title="Delete" 
+                                                               onclick="return confirmDelete(@item.Id, '@item.ItemName');">
                                                                 <i class="fas fa-trash"></i>
                                                             </a>
                                                         }
-                                                        <button class="btn btn-sm btn-outline-secondary" 
-                                                                onclick="showAuditLog('inventory', @item.Id)" 
-                                                                title="View Audit Log">
-                                                            <i class="fas fa-history"></i>
-                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -182,12 +309,18 @@
                         else
                         {
                             <div class="text-center py-5">
-                                <i class="fas fa-boxes fa-3x text-muted mb-3"></i>
-                                <h4>No Inventory Items Found</h4>
-                                <p class="text-muted">Get started by adding your first inventory item.</p>
-                                <a asp-action="Create" class="btn btn-primary">
-                                    <i class="fas fa-plus"></i> Add First Item
-                                </a>
+                                <i class="fas fa-boxes fa-4x text-muted mb-3"></i>
+                                <h4 class="text-muted">No Inventory Items Found</h4>
+                                @if (!string.IsNullOrEmpty(ViewBag.CategoryFilter) || !string.IsNullOrEmpty(ViewBag.StockStatusFilter) || !string.IsNullOrEmpty(ViewBag.SearchTerm))
+                                {
+                                    <p class="text-muted">Try adjusting your filters or search terms.</p>
+                                    <a href="@Url.Action("Index")" class="btn btn-primary">Clear Filters</a>
+                                }
+                                else
+                                {
+                                    <p class="text-muted">Get started by adding your first inventory item.</p>
+                                    <a asp-action="Create" class="btn btn-primary">Add First Item</a>
+                                }
                             </div>
                         }
                     </div>
@@ -197,444 +330,166 @@
     </div>
 </section>
 
-<!-- CSRF Token for AJAX requests -->
-@Html.AntiForgeryToken()
-
-<!-- Quick Add Modal -->
-<div class="modal fade" id="quickAddModal" tabindex="-1" role="dialog" aria-labelledby="quickAddModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="quickAddModalLabel">
-                    <i class="fas fa-plus text-success"></i> Quick Add Stock
-                </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="quickAddForm">
-                    <input type="hidden" id="addItemId">
-                    <div class="form-group">
-                        <label for="addItemName">Item:</label>
-                        <input type="text" class="form-control" id="addItemName" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label for="addQuantity">Quantity to Add: <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control" id="addQuantity" 
-                               min="0.01" step="0.01" required aria-describedby="addQuantityHelp">
-                        <small id="addQuantityHelp" class="form-text text-muted">Enter the amount to add to current stock</small>
-                    </div>
-                    <div class="form-group">
-                        <label for="addReason">Reason (Optional):</label>
-                        <textarea class="form-control" id="addReason" rows="2" 
-                                  placeholder="e.g., New stock delivery, Returned items, Stock adjustment"></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-success" id="confirmQuickAdd">
-                    <i class="fas fa-plus"></i> Add Stock
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Quick Remove Modal -->
-<div class="modal fade" id="quickRemoveModal" tabindex="-1" role="dialog" aria-labelledby="quickRemoveModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="quickRemoveModalLabel">
-                    <i class="fas fa-minus text-warning"></i> Quick Remove Stock
-                </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="quickRemoveForm">
-                    <input type="hidden" id="removeItemId">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="removeItemName">Item:</label>
-                                <input type="text" class="form-control" id="removeItemName" readonly>
-                            </div>
-                            <div class="form-group">
-                                <label for="removeQuantity">Quantity to Remove: <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="removeQuantity" 
-                                       min="0.01" step="0.01" required aria-describedby="removeQuantityHelp">
-                                <small id="removeQuantityHelp" class="form-text text-muted">Enter the amount to remove from current stock</small>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="removeCustomer">Associated Customer (Optional):</label>
-                                <select class="form-control" id="removeCustomer" aria-describedby="removeCustomerHelp">
-                                    <option value="">Select Customer</option>
-                                </select>
-                                <small id="removeCustomerHelp" class="form-text text-muted">Link this removal to a specific customer</small>
-                            </div>
-                            <div class="form-group">
-                                <label for="removeOrder">Associated Order (Optional):</label>
-                                <select class="form-control" id="removeOrder" disabled aria-describedby="removeOrderHelp">
-                                    <option value="">Select Order</option>
-                                </select>
-                                <small id="removeOrderHelp" class="form-text text-muted">Link this removal to a specific order</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="removeReason">Reason: <span class="text-danger">*</span></label>
-                        <textarea class="form-control" id="removeReason" rows="3" required
-                                  placeholder="e.g., Used for order, Damaged goods, Quality control, Stock adjustment"
-                                  aria-describedby="removeReasonHelp"></textarea>
-                        <small id="removeReasonHelp" class="form-text text-muted">Provide a clear reason for this inventory removal</small>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-warning" id="confirmQuickRemove">
-                    <i class="fas fa-minus"></i> Remove Stock
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 @section Scripts {
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.4/css/dataTables.bootstrap4.min.css">
-    <script src="https://cdn.datatables.net/1.11.4/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.11.4/js/dataTables.bootstrap4.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <script>
         $(document).ready(function() {
-            // Initialize DataTables
-            $('#inventoryTable').DataTable({
-                "responsive": true,
-                "lengthChange": true,
-                "autoWidth": false,
-                "pageLength": 25,
-                "order": [[ 0, "asc" ]],
-                "columnDefs": [
-                    { "orderable": false, "targets": 7 }
-                ],
-                "language": {
-                    "search": "Search inventory:",
-                    "lengthMenu": "Show _MENU_ items per page",
-                    "info": "Showing _START_ to _END_ of _TOTAL_ items"
-                }
-            });
-
-            // Initialize tooltips
-            $('[data-bs-toggle="tooltip"]').tooltip();
-
-            // Initialize inventory quick adjust functionality
-            if (window.AmplePack) {
-                window.inventoryQuickAdjust = new AmplePack.InventoryQuickAdjust();
-            }
-
-            // Quick add button event handler
-            $(document).on('click', '.quick-add', function() {
-                const itemId = $(this).data('item-id');
-                const itemName = $(this).data('item-name');
-                
-                $('#addItemId').val(itemId);
-                $('#addItemName').val(itemName);
-                $('#addQuantity').val('');
-                $('#addReason').val('');
-                
-                $('#quickAddModal').modal('show');
-            });
-
-            // Quick remove button event handler
-            $(document).on('click', '.quick-remove', function() {
-                const itemId = $(this).data('item-id');
-                const itemName = $(this).data('item-name');
-                
-                $('#removeItemId').val(itemId);
-                $('#removeItemName').val(itemName);
-                $('#removeQuantity').val('');
-                $('#removeCustomer').val('');
-                $('#removeOrder').val('').prop('disabled', true);
-                $('#removeReason').val('');
-                
-                // Load customers
-                loadCustomers();
-                
-                $('#quickRemoveModal').modal('show');
-            });
-
-            // Customer selection change handler
-            $('#removeCustomer').on('change', function() {
-                const customerId = $(this).val();
-                if (customerId) {
-                    loadCustomerOrders(customerId);
-                } else {
-                    $('#removeOrder').empty().append('<option value="">Select Order</option>').prop('disabled', true);
-                }
-            });
-
-            // Confirm quick add
-            $('#confirmQuickAdd').on('click', function() {
-                processQuickAdd();
-            });
-
-            // Confirm quick remove
-            $('#confirmQuickRemove').on('click', function() {
-                processQuickRemove();
-            });
+            // Auto-refresh stats every 30 seconds
+            setInterval(refreshInventoryStats, 30000);
         });
 
-        // Load customers for remove modal
-        async function loadCustomers() {
-            try {
-                const response = await fetch('/api/customers');
-                const data = await response.json();
-                
-                if (data.success) {
-                    const $select = $('#removeCustomer');
-                    $select.empty().append('<option value="">Select Customer</option>');
-                    
-                    data.customers.forEach(customer => {
-                        $select.append(`<option value="${customer.id}">${customer.name}</option>`);
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading customers:', error);
-                AmplePack.showToast('Error loading customers', 'error');
-            }
+        function refreshInventoryStats() {
+            fetch('/api/inventory/current-stock')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateInventoryStats(data.data);
+                    }
+                })
+                .catch(error => console.error('Error refreshing stats:', error));
         }
 
-        // Load customer orders
-        async function loadCustomerOrders(customerId) {
-            try {
-                const response = await fetch(`/api/customer-orders/${customerId}`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    const $select = $('#removeOrder');
-                    $select.empty().append('<option value="">Select Order</option>');
-                    
-                    data.orders.forEach(order => {
-                        const orderDate = new Date(order.date).toLocaleDateString();
-                        $select.append(`<option value="${order.id}">Order #${order.id} - ${orderDate}</option>`);
-                    });
-                    
-                    $select.prop('disabled', false);
-                }
-            } catch (error) {
-                console.error('Error loading customer orders:', error);
-                AmplePack.showToast('Error loading customer orders', 'error');
-            }
+        function updateInventoryStats(inventoryData) {
+            let totalItems = inventoryData.length;
+            let inStock = inventoryData.filter(i => i.stockStatus === 'In Stock').length;
+            let lowStock = inventoryData.filter(i => i.stockStatus === 'Low Stock').length;
+            let outOfStock = inventoryData.filter(i => i.stockStatus === 'Out of Stock').length;
+
+            document.getElementById('totalItemsCount').textContent = totalItems;
+            document.getElementById('inStockCount').textContent = inStock;
+            document.getElementById('lowStockCount').textContent = lowStock;
+            document.getElementById('outOfStockCount').textContent = outOfStock;
         }
 
-        // Process quick add
-        async function processQuickAdd() {
-            const formData = {
-                itemId: parseInt($('#addItemId').val()),
-                quantity: parseFloat($('#addQuantity').val()),
-                reason: $('#addReason').val()
-            };
+        function refreshInventoryData() {
+            const refreshBtn = event.target.closest('button');
+            const originalContent = refreshBtn.innerHTML;
             
-            if (!formData.quantity || formData.quantity <= 0) {
-                AmplePack.showToast('Please enter a valid quantity', 'error');
-                return;
-            }
+            refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Refreshing...';
+            refreshBtn.disabled = true;
             
-            try {
-                AmplePack.showLoading('#confirmQuickAdd');
-                
-                const response = await fetch('/api/inventory/quick-add', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                    },
-                    body: JSON.stringify(formData)
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    $('#quickAddModal').modal('hide');
-                    AmplePack.showToast(result.message || `Successfully added ${formData.quantity} units`, 'success');
-                    updateInventoryDisplay(formData.itemId, result.newQuantity);
-                } else {
-                    AmplePack.showToast(result.message || 'Failed to add inventory', 'error');
-                }
-            } catch (error) {
-                console.error('Error adding inventory:', error);
-                AmplePack.showToast('Error adding inventory', 'error');
-            } finally {
-                AmplePack.hideLoading('#confirmQuickAdd');
-            }
-        }
-
-        // Process quick remove
-        async function processQuickRemove() {
-            const formData = {
-                itemId: parseInt($('#removeItemId').val()),
-                quantity: parseFloat($('#removeQuantity').val()),
-                customerId: $('#removeCustomer').val() ? parseInt($('#removeCustomer').val()) : null,
-                orderId: $('#removeOrder').val() ? parseInt($('#removeOrder').val()) : null,
-                reason: $('#removeReason').val()
-            };
-            
-            if (!formData.quantity || formData.quantity <= 0) {
-                AmplePack.showToast('Please enter a valid quantity', 'error');
-                return;
-            }
-            
-            if (!formData.reason.trim()) {
-                AmplePack.showToast('Please provide a reason for the removal', 'error');
-                return;
-            }
-            
-            try {
-                AmplePack.showLoading('#confirmQuickRemove');
-                
-                const response = await fetch('/api/inventory/quick-remove', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                    },
-                    body: JSON.stringify(formData)
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    $('#quickRemoveModal').modal('hide');
-                    AmplePack.showToast(result.message || `Successfully removed ${formData.quantity} units`, 'success');
-                    updateInventoryDisplay(formData.itemId, result.newQuantity);
-                } else {
-                    AmplePack.showToast(result.message || 'Failed to remove inventory', 'error');
-                }
-            } catch (error) {
-                console.error('Error removing inventory:', error);
-                AmplePack.showToast('Error removing inventory', 'error');
-            } finally {
-                AmplePack.hideLoading('#confirmQuickRemove');
-            }
-        }
-
-        // Update inventory display
-        function updateInventoryDisplay(itemId, newQuantity) {
-            const $row = $(`.inventory-item-row[data-item-id="${itemId}"]`);
-            const $quantityCell = $row.find('.quantity-cell');
-            
-            // Determine badge class based on low stock status
-            const isLowStock = newQuantity < 10; // You might want to make this configurable
-            const badgeClass = isLowStock ? 'badge-warning' : 'badge-success';
-            
-            $quantityCell.html(`<span class="badge ${badgeClass}">${newQuantity.toFixed(2)}</span>`);
-            
-            // Add flash effect
-            $quantityCell.addClass('inventory-update-success');
             setTimeout(() => {
-                $quantityCell.removeClass('inventory-update-success');
-            }, 2000);
-
-            // Update row styling if low stock status changed
-            if (isLowStock) {
-                $row.addClass('table-warning');
-            } else {
-                $row.removeClass('table-warning');
-            }
+                location.reload();
+            }, 1000);
         }
 
-        // Show audit log function
-        window.showAuditLog = function(type, entityId) {
-            // This would typically show a modal with audit log entries
-            AmplePack.showToast(`Audit log for ${type} #${entityId} - Feature coming soon!`, 'info');
-        };
+        function confirmDelete(itemId, itemName) {
+            event.preventDefault();
+            
+            Swal.fire({
+                title: 'Delete Inventory Item?',
+                html: `Are you sure you want to delete "<strong>${itemName}</strong>"?<br><br>
+                       <div class="alert alert-warning">
+                           <i class="fas fa-exclamation-triangle mr-2"></i>
+                           This action cannot be undone and will remove all associated data.
+                       </div>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = `/Inventory/Delete/${itemId}`;
+                }
+            });
+            
+            return false;
+        }
     </script>
+}
 
+@section Styles {
     <style>
-        /* Quick adjust styling */
-        .quick-adjust .btn {
-            margin: 0 1px;
+        .inventory-update-success {
+            animation: pulse 2s ease-in-out;
+        }
+        
+        .gap-2 {
+            gap: 0.5rem;
         }
         
         .btn-group .btn {
-            margin: 0 1px;
+            margin-right: 2px;
         }
         
-        .table td {
-            vertical-align: middle;
+        .btn-group .btn:last-child {
+            margin-right: 0;
+        }
+        
+        .table th {
+            border-top: none;
+            font-weight: 600;
         }
         
         .badge {
             font-size: 0.75em;
         }
-
-        /* Quick actions alert */
-        .alert-info .btn-group {
-            white-space: nowrap;
+        
+        .info-box {
+            box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+            border-radius: 0.25rem;
+            background: #fff;
+            display: flex;
+            margin-bottom: 1rem;
+            min-height: 80px;
+            padding: 10px;
+            position: relative;
+            width: 100%;
         }
-
-        .alert-info .d-flex {
-            border: 1px solid #b8daff;
-            background: white;
+        
+        .info-box .info-box-icon {
+            border-radius: 0.25rem;
+            align-items: center;
+            display: flex;
+            font-size: 1.875rem;
+            justify-content: center;
+            text-align: center;
+            width: 70px;
+            color: rgba(255,255,255,.8);
+            margin-right: 15px;
         }
-
-        /* Enhanced inventory styling */
-        .inventory-item-row.table-warning {
-            background-color: rgba(255, 193, 7, 0.1) !important;
+        
+        .info-box .info-box-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            line-height: 1.8;
+            flex: 1;
         }
-
-        .inventory-update-success {
-            background-color: #d4edda !important;
-            color: #155724 !important;
-            transition: background-color 2s ease;
+        
+        .info-box .info-box-number {
+            display: block;
+            font-weight: 700;
+            font-size: 18px;
         }
-
-        /* Quick add/remove button styling */
-        .quick-add, .quick-remove {
-            transition: all 0.3s ease;
+        
+        .info-box .progress {
+            background: rgba(0,0,0,.125);
+            height: 2px;
+            margin: 5px 0;
         }
-
-        .quick-add:hover {
-            transform: scale(1.1);
-            box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+        
+        .info-box .progress .progress-bar {
+            background: #007bff;
         }
-
-        .quick-remove:hover {
-            transform: scale(1.1);
-            box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+        
+        .info-box .progress-description {
+            color: #6c757d;
+            font-size: 12px;
         }
-
-        /* Modal enhancements */
-        .modal-lg {
-            max-width: 900px;
+        
+        .bg-gradient-success {
+            background: linear-gradient(87deg, #2dce89 0, #2dcecc 100%);
         }
-
-        .form-text {
-            font-size: 0.875rem;
-        }
-
-        /* Accessibility improvements */
-        .quick-add:focus,
-        .quick-remove:focus {
-            outline: 2px solid #007bff;
-            outline-offset: 2px;
-        }
-
-        /* Loading states */
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .spinner-border-sm {
-            width: 1rem;
-            height: 1rem;
+        
+        .bg-gradient-info {
+            background: linear-gradient(87deg, #11cdef 0, #1171ef 100%);
         }
     </style>
 }
+
+@Html.AntiForgeryToken()

@@ -23,7 +23,10 @@ namespace AmplePack.Controllers
         // GET: Customers
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Customers.Include(c => c.Orders).ToListAsync());
+            return View(await _context.Customers
+                .Include(c => c.Orders)
+                .Include(c => c.CustomerProducts)
+                .ToListAsync());
         }
 
         // GET: Customers/Details/5

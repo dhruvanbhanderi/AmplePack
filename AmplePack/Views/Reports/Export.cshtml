@@ -1,0 +1,964 @@
+﻿@model AmplePack.Models.EnhancedReportsViewModel
+@{
+    ViewData["Title"] = "Advanced Reports & Export";
+}
+
+<!-- Content Header -->
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Advanced Reports & Export</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Home</a></li>
+                    <li class="breadcrumb-item"><a href="@Url.Action("Index", "Reports")">Reports</a></li>
+                    <li class="breadcrumb-item active">Export</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid">
+        
+        <!-- Quick Stats Row -->
+        <div class="row mb-4">
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-primary">
+                    <div class="inner">
+                        <h3>@AmplePack.Helpers.CurrencyHelper.FormatCurrency(Model.CurrentPeriodRevenue)</h3>
+                        <p>This Month Revenue</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-success">
+                    <div class="inner">
+                        <h3>@Model.CurrentPeriodOrders</h3>
+                        <p>Orders This Month</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-warning">
+                    <div class="inner">
+                        <h3>@Model.NewCustomers</h3>
+                        <p>New Customers</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-danger">
+                    <div class="inner">
+                        <h3>@Model.LowStockItems</h3>
+                        <p>Low Stock Alerts</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Configuration Card -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-cogs mr-2"></i>
+                            Export Configuration
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="exportForm">
+                            <div class="row">
+                                <!-- Report Type Selection -->
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="exportType">
+                                            <i class="fas fa-file-alt mr-1"></i>
+                                            Report Type
+                                        </label>
+                                        <select class="form-control" id="exportType" name="exportType" required>
+                                            <option value="">Select Report Type</option>
+                                            <option value="orders">Orders Report</option>
+                                            <option value="customers">Customers Report</option>
+                                            <option value="inventory">Inventory Report</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Date Range Selection -->
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="quickDateRange">
+                                            <i class="fas fa-calendar-alt mr-1"></i>
+                                            Date Range
+                                        </label>
+                                        <select class="form-control" id="quickDateRange" name="quickDateRange">
+                                            <option value="thismonth">This Month</option>
+                                            <option value="lastmonth">Last Month</option>
+                                            <option value="thisquarter">This Quarter</option>
+                                            <option value="custom">Custom Range</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Format Selection -->
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="exportFormat">
+                                            <i class="fas fa-file-pdf mr-1"></i>
+                                            Export Format
+                                        </label>
+                                        <select class="form-control" id="exportFormat" name="exportFormat">
+                                            <option value="pdf">PDF Document</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Custom Date Range (Hidden by default) -->
+                            <div class="row" id="customDateRange" style="display: none;">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="dateFrom">From Date</label>
+                                        <input type="date" class="form-control" id="dateFrom" name="dateFrom" value="@Model.Filter.DateFrom?.ToString("yyyy-MM-dd")">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="dateTo">To Date</label>
+                                        <input type="date" class="form-control" id="dateTo" name="dateTo" value="@Model.Filter.DateTo?.ToString("yyyy-MM-dd")">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Filters Section -->
+                            <div class="row">
+                                <div class="col-12">
+                                    <h5 class="mt-3 mb-3">
+                                        <i class="fas fa-filter mr-2"></i>
+                                        Additional Filters
+                                    </h5>
+                                </div>
+                            </div>
+
+                            <!-- Dynamic Filters (Based on Report Type) -->
+                            <div id="filtersSection">
+                                <!-- Orders Filters -->
+                                <div class="report-filters" id="ordersFilters" style="display: none;">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="orderStatus">
+                                                    <i class="fas fa-tags mr-1"></i>
+                                                    Order Status
+                                                </label>
+                                                <select class="form-control" id="orderStatus" name="orderStatus" multiple size="5">
+                                                    <option value="Pending">🟡 Pending</option>
+                                                    <option value="Processing">🔵 Processing</option>
+                                                    <option value="Completed">🟢 Completed</option>
+                                                    <option value="Delivered">📦 Delivered</option>
+                                                    <option value="Cancelled">🔴 Cancelled</option>
+                                                </select>
+                                                <small class="form-text text-muted">
+                                                    <i class="fas fa-info-circle mr-1"></i>
+                                                    Hold Ctrl/Cmd to select multiple statuses
+                                                </small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="customerId">
+                                                    <i class="fas fa-user mr-1"></i>
+                                                    Customer
+                                                </label>
+                                                <select class="form-control" id="customerId" name="customerId">
+                                                    <option value="">All Customers</option>
+                                                    @if (Model.Customers != null)
+                                                    {
+                                                        @foreach (var customer in Model.Customers)
+                                                        {
+                                                            <option value="@customer.Id">@customer.Name</option>
+                                                        }
+                                                    }
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="productType">
+                                                    <i class="fas fa-cube mr-1"></i>
+                                                    Product Type
+                                                </label>
+                                                <select class="form-control" id="productType" name="productType">
+                                                    <option value="">All Products</option>
+                                                    @if (Model.ProductTypes != null)
+                                                    {
+                                                        @foreach (var product in Model.ProductTypes)
+                                                        {
+                                                            <option value="@product">@product</option>
+                                                        }
+                                                    }
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Customers Filters -->
+                                <div class="report-filters" id="customersFilters" style="display: none;">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="customerStatus">Customer Status</label>
+                                                <select class="form-control" id="customerStatus" name="customerStatus">
+                                                    <option value="">All Customers</option>
+                                                    <option value="Active">Active</option>
+                                                    <option value="Inactive">Inactive</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="minOrders">Minimum Orders</label>
+                                                <input type="number" class="form-control" id="minOrders" name="minOrders" min="0" placeholder="0">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Inventory Filters -->
+                                <div class="report-filters" id="inventoryFilters" style="display: none;">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="category">Category</label>
+                                                <select class="form-control" id="category" name="category">
+                                                    <option value="">All Categories</option>
+                                                    @if (Model.Categories != null)
+                                                    {
+                                                        @foreach (var category in Model.Categories)
+                                                        {
+                                                            <option value="@category">@category</option>
+                                                        }
+                                                    }
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="stockStatus">Stock Status</label>
+                                                <select class="form-control" id="stockStatus" name="stockStatus">
+                                                    <option value="">All Items</option>
+                                                    <option value="InStock">In Stock</option>
+                                                    <option value="LowStock">Low Stock</option>
+                                                    <option value="OutOfStock">Out of Stock</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="minValue">Minimum Value</label>
+                                                <input type="number" class="form-control" id="minValue" name="minValue" min="0" step="0.01" placeholder="0.00">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Export Options -->
+                            <div class="row">
+                                <div class="col-12">
+                                    <h5 class="mt-3 mb-3">
+                                        <i class="fas fa-wrench mr-2"></i>
+                                        Export Options
+                                    </h5>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" class="custom-control-input" id="includeSummary" name="includeSummary" checked>
+                                            <label class="custom-control-label" for="includeSummary">
+                                                Include Summary Statistics
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" class="custom-control-input" id="includeCharts" name="includeCharts">
+                                            <label class="custom-control-label" for="includeCharts">
+                                                Include Charts and Graphs
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <div class="btn-group btn-group-lg">
+                                        <button type="button" class="btn btn-info" onclick="previewData()">
+                                            <i class="fas fa-eye mr-2"></i>
+                                            Preview Data
+                                        </button>
+                                        <button type="button" class="btn btn-success" onclick="exportReport()">
+                                            <i class="fas fa-download mr-2"></i>
+                                            Generate & Download Report
+                                        </button>
+                                        <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                                            <i class="fas fa-redo mr-2"></i>
+                                            Reset Form
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview Section -->
+        <div class="row" id="previewSection" style="display: none;">
+            <div class="col-12">
+                <div class="card card-info">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-eye mr-2"></i>
+                            Data Preview
+                        </h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" onclick="hidePreview()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="previewContent">
+                            <!-- Dynamic preview content will be loaded here -->
+                        </div>
+                        <div class="text-center mt-3">
+                            <small class="text-muted">Showing first 10 records. Full report will contain all matching records.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <!-- Select2 -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        $(document).ready(function() {
+            initializeExportPage();
+        });
+
+        function initializeExportPage() {
+            // Setup event handlers
+            $('#exportType').on('change', handleReportTypeChange);
+            $('#quickDateRange').on('change', handleDateRangeChange);
+            
+            // Initialize dropdowns
+            initializeDropdowns();
+
+            // Set default date range
+            handleDateRangeChange();
+            
+            // Trigger initial report type change to show proper filters
+            setTimeout(() => {
+                $('#exportType').trigger('change');
+            }, 100);
+        }
+
+        function initializeDropdowns() {
+            // Try to initialize Select2 if available
+            if (typeof $.fn.select2 !== 'undefined') {
+                try {
+                    // Initialize multiselect for order status with Bootstrap 4 theme
+                    $('#orderStatus').select2({
+                        theme: 'bootstrap4',
+                        placeholder: 'Select order statuses',
+                        allowClear: true,
+                        width: '100%',
+                        closeOnSelect: false,
+                        tags: false
+                    });
+
+                    // Initialize select2 for other selects
+                    $('#customerId, #productType, #category, #customerStatus, #stockStatus').select2({
+                        theme: 'bootstrap4',
+                        allowClear: true,
+                        width: '100%'
+                    });
+                    
+                    // Initialize export type and date range selects
+                    $('#exportType, #quickDateRange, #exportFormat').select2({
+                        theme: 'bootstrap4',
+                        width: '100%',
+                        minimumResultsForSearch: Infinity
+                    });
+                    
+                    console.log('Select2 initialized successfully');
+                } catch (error) {
+                    console.warn('Select2 initialization failed, using fallback:', error);
+                    initializeFallbackDropdowns();
+                }
+            } else {
+                console.warn('Select2 not available, using fallback functionality');
+                initializeFallbackDropdowns();
+            }
+        }
+
+        function initializeFallbackDropdowns() {
+            // Enhanced fallback for order status dropdown
+            const $orderStatus = $('#orderStatus');
+            
+            // Add visual enhancement for multi-select
+            $orderStatus.addClass('form-control-enhanced');
+            
+            // Add change handler to show selected values
+            $orderStatus.on('change', function() {
+                updateOrderStatusDisplay();
+            });
+            
+            // Add keyboard navigation help
+            $orderStatus.after(`
+                <div class="mt-2 p-2 bg-light border rounded" id="orderStatusHelp">
+                    <small class="text-muted">
+                        <i class="fas fa-keyboard mr-1"></i>
+                        <strong>Multi-select instructions:</strong><br>
+                        • Hold <kbd>Ctrl</kbd> (Windows) or <kbd>Cmd</kbd> (Mac) and click to select multiple<br>
+                        • Click without holding keys to select only one<br>
+                        • Selected: <span id="selectedStatuses" class="font-weight-bold text-primary">None</span>
+                    </small>
+                </div>
+            `);
+            
+            updateOrderStatusDisplay();
+        }
+
+        function updateOrderStatusDisplay() {
+            const selected = $('#orderStatus').val() || [];
+            const display = selected.length > 0 ? selected.join(', ') : 'None';
+            $('#selectedStatuses').text(display);
+            
+            // Update the visual appearance
+            const $orderStatus = $('#orderStatus');
+            if (selected.length > 0) {
+                $orderStatus.removeClass('is-invalid').addClass('is-valid');
+            } else {
+                $orderStatus.removeClass('is-valid is-invalid');
+            }
+        }
+
+        function handleReportTypeChange() {
+            const reportType = $('#exportType').val();
+            
+            // Hide all filter sections
+            $('.report-filters').hide();
+            
+            // Show relevant filter section with animation
+            if (reportType) {
+                $(`#${reportType}Filters`).slideDown(300);
+                
+                // Focus on the first filter element for better UX
+                setTimeout(() => {
+                    if (reportType === 'orders') {
+                        $('#orderStatus').focus();
+                        // Show a helpful tooltip for first-time users
+                        showFilterHelp(reportType);
+                    }
+                }, 350);
+            }
+        }
+
+        function showFilterHelp(reportType) {
+            if (reportType === 'orders' && !sessionStorage.getItem('orderFilterHelpShown')) {
+                const $orderStatus = $('#orderStatus');
+                
+                // Create a temporary tooltip
+                $orderStatus.tooltip({
+                    title: 'Select one or more order statuses to filter your report',
+                    placement: 'bottom',
+                    trigger: 'manual'
+                });
+                
+                $orderStatus.tooltip('show');
+                
+                // Hide tooltip after 3 seconds
+                setTimeout(() => {
+                    $orderStatus.tooltip('hide');
+                    $orderStatus.tooltip('dispose');
+                }, 3000);
+                
+                // Mark as shown for this session
+                sessionStorage.setItem('orderFilterHelpShown', 'true');
+            }
+        }
+
+        function handleDateRangeChange() {
+            const dateRange = $('#quickDateRange').val();
+            
+            if (dateRange === 'custom') {
+                $('#customDateRange').show();
+            } else {
+                $('#customDateRange').hide();
+                setQuickDateRange(dateRange);
+            }
+        }
+
+        function setQuickDateRange(range) {
+            const today = new Date();
+            let fromDate, toDate;
+
+            switch (range) {
+                case 'thismonth':
+                    fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                    toDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                    break;
+                case 'lastmonth':
+                    fromDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    toDate = new Date(today.getFullYear(), today.getMonth(), 0);
+                    break;
+                case 'thisquarter':
+                    const quarter = Math.floor(today.getMonth() / 3);
+                    fromDate = new Date(today.getFullYear(), quarter * 3, 1);
+                    toDate = new Date(today.getFullYear(), (quarter + 1) * 3, 0);
+                    break;
+                default:
+                    fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                    toDate = today;
+            }
+
+            $('#dateFrom').val(formatDate(fromDate));
+            $('#dateTo').val(formatDate(toDate));
+        }
+
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        async function previewData() {
+            const reportType = $('#exportType').val();
+            
+            if (!reportType) {
+                showAlert('Please select a report type first', 'warning');
+                return;
+            }
+
+            const button = event.target;
+            const originalText = button.innerHTML;
+            
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Loading Preview...';
+            button.disabled = true;
+
+            try {
+                const params = new URLSearchParams();
+                params.append('exportType', reportType);
+                params.append('dateFrom', $('#dateFrom').val());
+                params.append('dateTo', $('#dateTo').val());
+
+                // Add filters based on report type
+                if (reportType === 'orders') {
+                    const statuses = $('#orderStatus').val();
+                    if (statuses && statuses.length > 0) {
+                        params.append('status', statuses.join(','));
+                    }
+                    
+                    const customerId = $('#customerId').val();
+                    if (customerId) {
+                        params.append('customerId', customerId);
+                    }
+                } else if (reportType === 'inventory') {
+                    const category = $('#category').val();
+                    if (category) {
+                        params.append('category', category);
+                    }
+                    
+                    const stockStatus = $('#stockStatus').val();
+                    if (stockStatus) {
+                        params.append('stockStatus', stockStatus);
+                    }
+                } else if (reportType === 'customers') {
+                    const customerId = $('#customerId').val();
+                    if (customerId) {
+                        params.append('customerId', customerId);
+                    }
+                }
+
+                const response = await fetch(`/Reports/GetReportPreview?${params}`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load preview');
+                }
+
+                const data = await response.json();
+                displayPreview(data, reportType);
+                
+            } catch (error) {
+                console.error('Preview failed:', error);
+                showAlert('Failed to load preview data', 'error');
+            } finally {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        }
+
+        function displayPreview(data, reportType) {
+            const previewContent = $('#previewContent');
+            
+            if (!data || data.length === 0) {
+                previewContent.html(`
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        No data found for the selected criteria.
+                    </div>
+                `);
+            } else {
+                let tableHtml = createPreviewTable(data, reportType);
+                previewContent.html(tableHtml);
+            }
+            
+            $('#previewSection').show();
+            
+            // Scroll to preview section
+            $('html, body').animate({
+                scrollTop: $('#previewSection').offset().top - 100
+            }, 500);
+        }
+
+        function createPreviewTable(data, reportType) {
+            let headers, rows;
+
+            switch (reportType) {
+                case 'orders':
+                    headers = ['Order ID', 'Customer', 'Date', 'Status', 'Total Amount'];
+                    rows = data.map(item => [
+                        `#${item.orderId.toString().padStart(3, '0')}`,
+                        item.customerName || 'Unknown',
+                        new Date(item.orderDate).toLocaleDateString(),
+                        `<span class="badge badge-${getStatusBadgeClass(item.status)}">${item.status}</span>`,
+                        `Rs.${item.totalAmount.toLocaleString()}`
+                    ]);
+                    break;
+                case 'customers':
+                    headers = ['Customer ID', 'Name', 'Email', 'Total Orders', 'Total Spent'];
+                    rows = data.map(item => [
+                        item.customerId,
+                        item.name,
+                        item.email || 'N/A',
+                        item.totalOrders,
+                        `Rs.${item.totalSpent.toLocaleString()}`
+                    ]);
+                    break;
+                case 'inventory':
+                    headers = ['Item ID', 'Name', 'Category', 'Available Qty', 'Unit Price', 'Stock Status'];
+                    rows = data.map(item => [
+                        item.itemId,
+                        item.itemName,
+                        item.category || 'Uncategorized',
+                        `${item.availableQuantity} ${item.unit}`,
+                        `Rs.${item.unitPrice.toLocaleString()}`,
+                        `<span class="badge badge-${getStockBadgeClass(item.stockStatus)}">${item.stockStatus}</span>`
+                    ]);
+                    break;
+                default:
+                    return '<div class="alert alert-warning">Unknown report type</div>';
+            }
+
+            let tableHtml = `
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered">
+                        <thead class="thead-dark">
+                            <tr>
+                                ${headers.map(h => `<th>${h}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            return tableHtml;
+        }
+
+        function getStatusBadgeClass(status) {
+            const classes = {
+                'Pending': 'warning',
+                'Processing': 'info',
+                'Completed': 'success',
+                'Delivered': 'primary',
+                'Cancelled': 'danger'
+            };
+            return classes[status] || 'secondary';
+        }
+
+        function getStockBadgeClass(status) {
+            const classes = {
+                'In Stock': 'success',
+                'Low Stock': 'warning',
+                'Out of Stock': 'danger'
+            };
+            return classes[status] || 'secondary';
+        }
+
+        function hidePreview() {
+            $('#previewSection').hide();
+        }
+
+        async function exportReport() {
+            const reportType = $('#exportType').val();
+            
+            if (!reportType) {
+                showAlert('Please select a report type first', 'warning');
+                return;
+            }
+
+            const button = event.target;
+            const originalText = button.innerHTML;
+            
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generating Report...';
+            button.disabled = true;
+
+            try {
+                const formData = getFormData();
+                
+                const response = await fetch('/Reports/ExportData', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Export failed');
+                }
+
+                // Download the file
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `${reportType}_report_${new Date().getTime()}.pdf`;
+                
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                showAlert('Report generated and downloaded successfully!', 'success');
+
+            } catch (error) {
+                console.error('Export failed:', error);
+                showAlert(`Export failed: ${error.message}`, 'error');
+            } finally {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        }
+
+        function getFormData() {
+            const formData = {
+                exportType: $('#exportType').val(),
+                quickDateRange: $('#quickDateRange').val(),
+                dateFrom: $('#dateFrom').val(),
+                dateTo: $('#dateTo').val(),
+                includeSummary: $('#includeSummary').is(':checked'),
+                includeCharts: $('#includeCharts').is(':checked'),
+                selectedColumns: [] // Will be populated based on report type
+            };
+
+            // Add report-specific filters
+            const reportType = $('#exportType').val();
+            if (reportType === 'orders') {
+                formData.orderStatus = $('#orderStatus').val();
+                formData.customerId = $('#customerId').val() ? parseInt($('#customerId').val()) : null;
+                formData.productType = $('#productType').val();
+            } else if (reportType === 'customers') {
+                formData.customerStatus = $('#customerStatus').val();
+                formData.minOrders = $('#minOrders').val() ? parseInt($('#minOrders').val()) : null;
+            } else if (reportType === 'inventory') {
+                formData.category = $('#category').val();
+                formData.stockStatus = $('#stockStatus').val();
+                formData.minValue = $('#minValue').val() ? parseFloat($('#minValue').val()) : null;
+            }
+
+            return formData;
+        }
+
+        function resetForm() {
+            document.getElementById('exportForm').reset();
+            $('#orderStatus').val(null).trigger('change');
+            $('#customerId').val(null).trigger('change');
+            $('#productType').val(null).trigger('change');
+            $('#category').val(null).trigger('change');
+            $('.report-filters').hide();
+            $('#previewSection').hide();
+            $('#quickDateRange').trigger('change');
+        }
+
+        function showAlert(message, type = 'info') {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: type.charAt(0).toUpperCase() + type.slice(1),
+                    text: message,
+                    icon: type,
+                    confirmButtonText: 'OK'
+                });
+            } else {
+                alert(message);
+            }
+        }
+
+        function debugDropdown() {
+            console.log('=== Dropdown Debug Info ===');
+            console.log('Order Status Element:', $('#orderStatus')[0]);
+            console.log('Order Status Options:', $('#orderStatus option').length);
+            console.log('Selected Values:', $('#orderStatus').val());
+            console.log('Select2 Available:', typeof $.fn.select2 !== 'undefined');
+            console.log('jQuery Version:', $.fn.jquery);
+            
+            $('#orderStatus option').each(function(index) {
+                console.log(`Option ${index}:`, $(this).val(), $(this).text());
+            });
+            
+            // Test selection
+            $('#orderStatus').val(['Pending', 'Processing']).trigger('change');
+            console.log('After test selection:', $('#orderStatus').val());
+        }
+
+        // Add debug button (remove in production)
+        $(document).ready(function() {
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                $('body').append(`
+                    <div style="position: fixed; bottom: 10px; right: 10px; z-index: 9999;">
+                        <button class="btn btn-sm btn-secondary" onclick="debugDropdown()">
+                            <i class="fas fa-bug"></i> Debug
+                        </button>
+                    </div>
+                `);
+            }
+        });
+    </script>
+}
+
+@section Styles {
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap4-theme@1.0.0/dist/select2-bootstrap4.min.css" rel="stylesheet" />
+    
+    <style>
+        .select2-container--bootstrap4 .select2-selection--multiple {
+            min-height: 38px;
+            border: 1px solid #ced4da;
+        }
+        
+        .select2-container--bootstrap4 .select2-selection--multiple .select2-selection__choice {
+            background-color: #007bff;
+            border-color: #007bff;
+            color: white;
+            padding: 0 8px;
+            margin-top: 4px;
+        }
+        
+        .select2-container--bootstrap4 .select2-selection--multiple .select2-selection__choice__remove {
+            color: white;
+            margin-right: 5px;
+        }
+        
+        .select2-container--bootstrap4 .select2-selection--multiple .select2-selection__choice__remove:hover {
+            color: #ff6b6b;
+        }
+        
+        .report-filters {
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #f8f9fa;
+        }
+        
+        .report-filters .form-group label {
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .btn-group-lg .btn {
+            margin-right: 10px;
+        }
+        
+        .btn-group-lg .btn:last-child {
+            margin-right: 0;
+        }
+        
+        #previewContent .table th {
+            background-color: #343a40;
+            color: white;
+            border-color: #454d55;
+        }
+        
+        .card-primary .card-header {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        
+        .card-info .card-header {
+            background-color: #17a2b8;
+            border-color: #17a2b8;
+        }
+
+        .form-control-enhanced {
+            border: 2px solid #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        
+        .form-control-enhanced:focus {
+            border-color: #0056b3;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.5);
+        }
+        
+        kbd {
+            background-color: #343a40;
+            color: white;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 0.8em;
+        }
+    </style>
+}
+
+@Html.AntiForgeryToken()

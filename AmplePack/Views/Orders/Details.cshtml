@@ -244,7 +244,7 @@
                         </h3>
                     </div>
                     <div class="card-body">
-                        <a asp-action="DownloadInvoice" asp-route-id="@Model.Id" class="btn btn-primary btn-block">
+                        <a href="#" onclick="generateInvoice(@Model.Id)" class="btn btn-primary btn-block">
                             <i class="fas fa-file-pdf"></i> Download Invoice (PDF)
                         </a>
                         
@@ -253,28 +253,24 @@
                             <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning btn-block">
                                 <i class="fas fa-edit"></i> Edit Order
                             </a>
+                            
+                            <button type="button" class="btn btn-info btn-block" onclick="changeOrderStatusDetailed(@Model.Id, '@Model.Status')">
+                                <i class="fas fa-exchange-alt"></i> Change Status
+                            </button>
                         }
                         
-                        @if (Model.Status != "Completed" && (User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Staff")))
+                        @if (Model.Status == "Completed" && (User.IsInRole("Admin") || User.IsInRole("Manager")))
                         {
-                            <form asp-action="UpdateStatus" method="post" class="d-inline">
-                                <input type="hidden" name="id" value="@Model.Id" />
-                                <input type="hidden" name="status" value="Completed" />
-                                <button type="submit" class="btn btn-success btn-block" onclick="return confirm('Mark this order as completed?')">
-                                    <i class="fas fa-check"></i> Mark as Completed
-                                </button>
-                            </form>
+                            <button type="button" class="btn btn-outline-warning btn-block" onclick="reverseCompletedOrder(@Model.Id)">
+                                <i class="fas fa-undo"></i> Reverse to Processing
+                            </button>
                         }
                         
-                        @if (Model.Status == "Pending" && (User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Staff")))
+                        @if (Model.Status == "Completed")
                         {
-                            <form asp-action="UpdateStatus" method="post" class="d-inline">
-                                <input type="hidden" name="id" value="@Model.Id" />
-                                <input type="hidden" name="status" value="Processing" />
-                                <button type="submit" class="btn btn-info btn-block" onclick="return confirm('Start processing this order?')">
-                                    <i class="fas fa-cog"></i> Start Processing
-                                </button>
-                            </form>
+                            <button type="button" class="btn btn-outline-success btn-block" onclick="reorderFromDetails(@Model.Id)">
+                                <i class="fas fa-redo"></i> Reorder
+                            </button>
                         }
                         
                         <a href="mailto:@Model.Customer?.Email" class="btn btn-outline-primary btn-block">
@@ -315,3 +311,222 @@
         </div>
     </div>
 </section>
+
+@section Scripts {
+    <script>
+        function generateInvoice(orderId) {
+            window.open(`/Orders/GenerateInvoice/${orderId}`, '_blank');
+        }
+
+        function changeOrderStatusDetailed(orderId, currentStatus) {
+            const statusOptions = ['Pending', 'Processing', 'Completed', 'Delivered', 'Cancelled'];
+            let optionsHtml = statusOptions.map(status => 
+                `<option value="${status}" ${status === currentStatus ? 'selected' : ''}>${status}</option>`
+            ).join('');
+
+            const modalHtml = `
+                <div class="modal fade" id="statusChangeModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-exchange-alt mr-2"></i>Change Order Status
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="newStatus" class="form-label">Select New Status:</label>
+                                    <select id="newStatus" class="form-control">
+                                        ${optionsHtml}
+                                    </select>
+                                </div>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    <strong>Current status:</strong> ${currentStatus}
+                                </div>
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                                    <strong>Note:</strong> This will update the order status and may affect reporting and workflow.
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-primary" onclick="updateOrderStatusDetailed(${orderId})">
+                                    <i class="fas fa-check mr-1"></i>Update Status
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            $('#statusChangeModal').remove();
+            $('body').append(modalHtml);
+            $('#statusChangeModal').modal('show');
+        }
+
+        function reverseCompletedOrder(orderId) {
+            const modalHtml = `
+                <div class="modal fade" id="reverseOrderModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-warning">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-undo mr-2"></i>Reverse Completed Order
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                                    <strong>Warning:</strong> You are about to reverse a completed order back to "Processing" status.
+                                </div>
+                                <p>This action will:</p>
+                                <ul>
+                                    <li>Change order status from "Completed" to "Processing"</li>
+                                    <li>Make the order appear in active orders list</li>
+                                    <li>Remove it from completed orders</li>
+                                    <li>May affect revenue reporting</li>
+                                </ul>
+                                <div class="form-group">
+                                    <label for="reverseReason">Reason for reversal (optional):</label>
+                                    <textarea id="reverseReason" class="form-control" rows="3" placeholder="Enter reason for reversing this order..."></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-warning" onclick="confirmReverseOrder(${orderId})">
+                                    <i class="fas fa-undo mr-1"></i>Reverse Order
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            $('#reverseOrderModal').remove();
+            $('body').append(modalHtml);
+            $('#reverseOrderModal').modal('show');
+        }
+
+        function confirmReverseOrder(orderId) {
+            const reason = $('#reverseReason').val();
+            const button = $('.modal-footer .btn-warning');
+            
+            button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Reversing...');
+
+            fetch(`/Orders/ChangeStatus/${orderId}`, {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    status: 'Processing',
+                    reason: reason 
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    $('#reverseOrderModal').modal('hide');
+                    showToast('Order successfully reversed to Processing status', 'success');
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    showToast('Failed to reverse order: ' + data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                showToast('Error reversing order: ' + error.message, 'danger');
+            })
+            .finally(() => {
+                button.prop('disabled', false).html('<i class="fas fa-undo mr-1"></i>Reverse Order');
+            });
+        }
+
+        function updateOrderStatusDetailed(orderId) {
+            const newStatus = $('#newStatus').val();
+            const button = $('.modal-footer .btn-primary');
+            
+            button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Updating...');
+
+            fetch(`/Orders/ChangeStatus/${orderId}`, {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: newStatus })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    $('#statusChangeModal').modal('hide');
+                    showToast(data.message, 'success');
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    showToast('Failed to change status: ' + data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                showToast('Error changing status: ' + error.message, 'danger');
+            })
+            .finally(() => {
+                button.prop('disabled', false).html('<i class="fas fa-check mr-1"></i>Update Status');
+            });
+        }
+
+        function reorderFromDetails(orderId) {
+            if (confirm('Create a new order based on this completed order?')) {
+                fetch(`/Orders/Reorder/${orderId}`, {
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('Reorder created successfully!', 'success');
+                        setTimeout(() => {
+                            window.location.href = `/Orders/Edit/${data.newOrderId}`;
+                        }, 1500);
+                    } else {
+                        showToast('Failed to create reorder: ' + data.message, 'danger');
+                    }
+                })
+                .catch(error => {
+                    showToast('Error creating reorder: ' + error.message, 'danger');
+                });
+            }
+        }
+
+        function showToast(message, type) {
+            const toastHtml = `
+                <div class="toast align-items-center text-white bg-${type} border-0" role="alert" style="min-width: 350px;">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} mr-2"></i>
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+            
+            if (!$('.toast-container').length) {
+                $('body').append('<div class="toast-container position-fixed top-0 end-0 p-3"></div>');
+            }
+            
+            $('.toast-container').append(toastHtml);
+            $('.toast:last').toast('show');
+            
+            setTimeout(() => {
+                $('.toast:first').remove();
+            }, 5000);
+        }
+    </script>
+}
+
+@Html.AntiForgeryToken()

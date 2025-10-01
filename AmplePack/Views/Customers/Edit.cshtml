@@ -1,0 +1,197 @@
+@model AmplePack.Models.Customer
+@{
+    ViewData["Title"] = "Edit Customer";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Edit Customer</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a asp-action="Index">Customers</a></li>
+                    <li class="breadcrumb-item active">Edit</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="card card-warning">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-user-edit mr-2"></i>
+                            Edit Customer: @Model.Name
+                        </h3>
+                    </div>
+                    
+                    <form asp-action="Edit" method="post">
+                        <div class="card-body">
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                            
+                            <input type="hidden" asp-for="Id" />
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="Name" class="control-label">Customer Name *</label>
+                                        <input asp-for="Name" class="form-control" placeholder="Enter customer name" />
+                                        <span asp-validation-for="Name" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="Contact" class="control-label">Contact Number</label>
+                                        <input asp-for="Contact" class="form-control" placeholder="Enter contact number" />
+                                        <span asp-validation-for="Contact" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label asp-for="Email" class="control-label">Email Address</label>
+                                <input asp-for="Email" class="form-control" type="email" placeholder="Enter email address" />
+                                <span asp-validation-for="Email" class="text-danger"></span>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label asp-for="Address" class="control-label">Address</label>
+                                <textarea asp-for="Address" class="form-control" rows="3" placeholder="Enter customer address"></textarea>
+                                <span asp-validation-for="Address" class="text-danger"></span>
+                            </div>
+                            
+                            @if (Model.Orders?.Count > 0 || Model.CustomerProducts?.Count > 0)
+                            {
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-info-circle"></i> Customer Information</h6>
+                                    <div class="row">
+                                        @if (Model.Orders?.Count > 0)
+                                        {
+                                            <div class="col-md-6">
+                                                <strong>Total Orders:</strong> @Model.Orders.Count<br>
+                                                <small class="text-muted">
+                                                    <a asp-controller="Orders" asp-action="Index" asp-route-customerId="@Model.Id">
+                                                        View Order History
+                                                    </a>
+                                                </small>
+                                            </div>
+                                        }
+                                        @if (Model.CustomerProducts?.Count > 0)
+                                        {
+                                            <div class="col-md-6">
+                                                <strong>Saved Products:</strong> @Model.CustomerProducts.Count<br>
+                                                <small class="text-muted">
+                                                    <a asp-controller="CustomerProducts" asp-action="Index" asp-route-customerId="@Model.Id">
+                                                        View Products
+                                                    </a>
+                                                </small>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-save"></i> Update Customer
+                            </button>
+                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-info ml-2">
+                                <i class="fas fa-eye"></i> View Details
+                            </a>
+                            <a asp-action="Index" class="btn btn-secondary ml-2">
+                                <i class="fas fa-arrow-left"></i> Back to List
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Quick Actions Card -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-tools"></i> Quick Actions
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <a asp-controller="Orders" asp-action="CreateWorkflow" asp-route-customerId="@Model.Id" class="btn btn-primary btn-block">
+                                    <i class="fas fa-plus"></i> New Order
+                                </a>
+                            </div>
+                            <div class="col-md-4">
+                                <a asp-controller="CustomerProducts" asp-action="Create" asp-route-customerId="@Model.Id" class="btn btn-info btn-block">
+                                    <i class="fas fa-cube"></i> Add Product
+                                </a>
+                            </div>
+                            <div class="col-md-4">
+                                @if (!string.IsNullOrEmpty(Model.Email))
+                                {
+                                    <a href="mailto:@Model.Email" class="btn btn-secondary btn-block">
+                                        <i class="fas fa-envelope"></i> Send Email
+                                    </a>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-secondary btn-block" disabled>
+                                        <i class="fas fa-envelope"></i> No Email
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.Contact))
+                        {
+                            <div class="row mt-2">
+                                <div class="col-md-12">
+                                    <a href="tel:@Model.Contact" class="btn btn-success btn-block">
+                                        <i class="fas fa-phone"></i> Call Customer: @Model.Contact
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        $(document).ready(function() {
+            // Auto-focus on the name field
+            $('#Name').focus();
+            
+            // Form validation feedback
+            $('form').on('submit', function() {
+                var submitBtn = $(this).find('button[type="submit"]');
+                submitBtn.prop('disabled', true);
+                submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+                
+                // Re-enable button after 3 seconds in case of validation errors
+                setTimeout(function() {
+                    submitBtn.prop('disabled', false);
+                    submitBtn.html('<i class="fas fa-save"></i> Update Customer');
+                }, 3000);
+            });
+            
+            // Phone number formatting
+            $('#Contact').on('input', function() {
+                var value = $(this).val().replace(/\D/g, '');
+                if (value.length >= 10) {
+                    var formatted = value.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
+                    $(this).val(formatted);
+                }
+            });
+        });
+    </script>
+}

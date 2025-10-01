@@ -1,20 +1,32 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@ViewData["Title"] - AmplePack</title>
-    
+
+    <!-- Google Font: Source Sans Pro -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- AdminLTE CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Select2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+    <!-- Theme style -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+    <!-- Custom styles - consolidated -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    
+    @await RenderSectionAsync("Styles", required: false)
 </head>
-<body class="@(User.Identity?.IsAuthenticated == true ? "hold-transition sidebar-mini layout-fixed" : "hold-transition login-page")">
+<body class="@(User.Identity?.IsAuthenticated == true ? "hold-transition sidebar-mini layout-fixed layout-navbar-fixed" : "hold-transition login-page")">
     @if (User.Identity?.IsAuthenticated == true)
     {
         <div class="wrapper">
+            <!-- Preloader -->
+            <div class="preloader flex-column justify-content-center align-items-center">
+                <div class="brand-image animation__shake"></div>
+            </div>
+
             <!-- Navbar -->
             <nav class="main-header navbar navbar-expand navbar-white navbar-light">
                 <!-- Left navbar links -->
@@ -25,35 +37,60 @@
                     <li class="nav-item d-none d-sm-inline-block">
                         <a asp-controller="Home" asp-action="Index" class="nav-link">Home</a>
                     </li>
+                    <li class="nav-item d-none d-sm-inline-block">
+                        <a asp-controller="Orders" asp-action="Index" class="nav-link">Orders</a>
+                    </li>
                 </ul>
 
                 <!-- Right navbar links -->
                 <ul class="navbar-nav ml-auto">
-                    <!-- User Dropdown -->
+                    <!-- User Menu -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-user"></i>
-                            @if (User.Identity?.Name != null)
-                            {
-                                @User.Identity.Name
-                            }
+                        <a class="nav-link" data-toggle="dropdown" href="#">
+                            <div class="img-circle elevation-2" alt="@User.Identity?.Name"></div>
                         </a>
-                        <div class="dropdown-menu dropdown-menu-end">
+                        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+                            <div class="dropdown-item dropdown-header">
+                                @User.Identity?.Name
+                                <br>
+                                <small>
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <span class="badge badge-danger">Administrator</span>
+                                    }
+                                    else if (User.IsInRole("Manager"))
+                                    {
+                                        <span class="badge badge-primary">Manager</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-secondary">User</span>
+                                    }
+                                </small>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <a href="#" class="dropdown-item" onclick="showProfileModal()">
+                                <i class="fas fa-user mr-2"></i> My Profile
+                            </a>
+                            <a href="#" class="dropdown-item" onclick="showChangePasswordModal()">
+                                <i class="fas fa-key mr-2"></i> Change Password
+                            </a>
+                            <div class="dropdown-divider"></div>
                             @if (User.IsInRole("Admin"))
                             {
                                 <a class="dropdown-item" asp-controller="UserManagement" asp-action="Index">
-                                    <i class="fas fa-users-cog me-2"></i>Manage Users
+                                    <i class="fas fa-users-cog mr-2"></i> User Management
                                 </a>
                                 <div class="dropdown-divider"></div>
                             }
                             <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
                                 <button type="submit" class="dropdown-item">
-                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                    <i class="fas fa-sign-out-alt mr-2"></i> Logout
                                 </button>
                             </form>
                         </div>
                     </li>
-                    
+
                     <li class="nav-item">
                         <a class="nav-link" data-widget="fullscreen" href="#" role="button">
                             <i class="fas fa-expand-arrows-alt"></i>
@@ -66,7 +103,7 @@
             <aside class="main-sidebar sidebar-dark-primary elevation-4">
                 <!-- Brand Logo -->
                 <a asp-controller="Home" asp-action="Index" class="brand-link">
-                    <i class="fas fa-box brand-image" style="opacity: .8; font-size: 1.8rem; margin-right: 0.5rem; color: white;"></i>
+                    <div class="brand-image img-circle elevation-3"></div>
                     <span class="brand-text font-weight-light">AmplePack</span>
                 </a>
 
@@ -75,15 +112,10 @@
                     <!-- Sidebar user panel -->
                     <div class="user-panel mt-3 pb-3 mb-3 d-flex">
                         <div class="image">
-                            <i class="fas fa-user-circle fa-2x text-white"></i>
+                            <div class="img-circle elevation-2" alt="@User.Identity?.Name"></div>
                         </div>
                         <div class="info">
-                            <a href="#" class="d-block text-white">
-                                @if (User.Identity?.Name != null)
-                                {
-                                    @User.Identity.Name
-                                }
-                            </a>
+                            <a href="#" class="d-block">@User.Identity?.Name</a>
                         </div>
                     </div>
 
@@ -91,67 +123,98 @@
                     <nav class="mt-2">
                         <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                             <li class="nav-item">
-                                <a asp-controller="Home" asp-action="Index" class="nav-link">
+                                <a asp-controller="Home" asp-action="Index" class="nav-link" data-controller="home" data-action="index">
                                     <i class="nav-icon fas fa-tachometer-alt"></i>
                                     <p>Dashboard</p>
                                 </a>
                             </li>
-                            
+
+                            <li class="nav-header">ORDER MANAGEMENT</li>
                             <li class="nav-item">
-                                <a asp-controller="Orders" asp-action="Index" class="nav-link">
+                                <a href="#" class="nav-link" data-section="orders">
                                     <i class="nav-icon fas fa-shopping-cart"></i>
-                                    <p>Orders</p>
+                                    <p>
+                                        Orders
+                                        <i class="fas fa-angle-left right"></i>
+                                    </p>
                                 </a>
+                                <ul class="nav nav-treeview">
+                                    <li class="nav-item">
+                                        <a asp-controller="Orders" asp-action="Index" class="nav-link" data-controller="orders" data-action="index">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Active Orders</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a asp-controller="Orders" asp-action="Completed" class="nav-link" data-controller="orders" data-action="completed">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Completed Orders</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a asp-controller="Orders" asp-action="CreateWorkflow" class="nav-link" data-controller="orders" data-action="createworkflow">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Create Order</p>
+                                        </a>
+                                    </li>
+                                </ul>
                             </li>
-                            
+
+                            <li class="nav-header">MANAGEMENT</li>
                             <li class="nav-item">
-                                <a asp-controller="Customers" asp-action="Index" class="nav-link">
+                                <a asp-controller="Customers" asp-action="Index" class="nav-link" data-controller="customers" data-action="index">
                                     <i class="nav-icon fas fa-users"></i>
                                     <p>Customers</p>
                                 </a>
                             </li>
-                            
                             <li class="nav-item">
-                                <a asp-controller="Inventory" asp-action="Index" class="nav-link">
+                                <a asp-controller="Inventory" asp-action="Index" class="nav-link" data-controller="inventory" data-action="index">
                                     <i class="nav-icon fas fa-boxes"></i>
                                     <p>Inventory</p>
                                 </a>
                             </li>
-                            
                             <li class="nav-item">
-                                <a asp-controller="CustomerProducts" asp-action="Index" class="nav-link">
+                                <a asp-controller="CustomerProducts" asp-action="Index" class="nav-link" data-controller="customerproducts" data-action="index">
                                     <i class="nav-icon fas fa-cube"></i>
                                     <p>Customer Products</p>
                                 </a>
                             </li>
-                            
+
+                            <li class="nav-header">ANALYTICS</li>
                             <li class="nav-item">
-                                <a asp-controller="Reports" asp-action="Index" class="nav-link">
-                                    <i class="nav-icon fas fa-chart-bar"></i>
-                                    <p>Reports</p>
+                                <a href="#" class="nav-link" data-section="reports">
+                                    <i class="nav-icon fas fa-chart-line"></i>
+                                    <p>
+                                        Reports
+                                        <i class="fas fa-angle-left right"></i>
+                                    </p>
                                 </a>
+                                <ul class="nav nav-treeview">
+                                    <li class="nav-item">
+                                        <a asp-controller="Reports" asp-action="Index" class="nav-link" data-controller="reports" data-action="index">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Dashboard</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a asp-controller="Reports" asp-action="Export" class="nav-link" data-controller="reports" data-action="export">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Export Data</p>
+                                        </a>
+                                    </li>
+                                </ul>
                             </li>
 
                             @if (User.IsInRole("Admin"))
                             {
                                 <li class="nav-header">ADMINISTRATION</li>
                                 <li class="nav-item">
-                                    <a asp-controller="UserManagement" asp-action="Index" class="nav-link">
+                                    <a asp-controller="UserManagement" asp-action="Index" class="nav-link" data-controller="usermanagement" data-action="index">
                                         <i class="nav-icon fas fa-users-cog"></i>
                                         <p>User Management</p>
                                     </a>
                                 </li>
                             }
-                            
-                            <li class="nav-header">USER</li>
-                            <li class="nav-item">
-                                <form asp-controller="Account" asp-action="Logout" method="post" class="nav-link">
-                                    <button type="submit" class="btn btn-link text-left p-0 text-white" style="text-decoration: none;">
-                                        <i class="nav-icon fas fa-sign-out-alt"></i>
-                                        <p>Logout</p>
-                                    </button>
-                                </form>
-                            </li>
                         </ul>
                     </nav>
                 </div>
@@ -164,12 +227,93 @@
 
             <!-- Footer -->
             <footer class="main-footer">
-                <strong>Copyright &copy; 2025 <a href="#">AmplePack</a>.</strong>
+                <strong>Copyright &copy; 2024 <a href="#">AmplePack</a>.</strong>
                 All rights reserved.
                 <div class="float-right d-none d-sm-inline-block">
                     <b>Version</b> 1.0.0
                 </div>
             </footer>
+
+            <!-- Control Sidebar -->
+            <aside class="control-sidebar control-sidebar-dark">
+                <!-- Control sidebar content goes here -->
+            </aside>
+        </div>
+
+        <!-- Profile Modal -->
+        <div class="modal fade" id="profileModal" tabindex="-1" role="dialog" aria-labelledby="profileModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="profileModalLabel">
+                            <i class="fas fa-user mr-2"></i>My Profile
+                        </h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="profileForm">
+                            <div class="form-group">
+                                <label for="profileName">Full Name</label>
+                                <input type="text" class="form-control" id="profileName" value="@User.Identity?.Name">
+                            </div>
+                            <div class="form-group">
+                                <label for="profileEmail">Email</label>
+                                <input type="email" class="form-control" id="profileEmail">
+                            </div>
+                            <div class="form-group">
+                                <label for="profilePhone">Phone</label>
+                                <input type="tel" class="form-control" id="profilePhone">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="updateProfile()">
+                            <i class="fas fa-save mr-1"></i>Update Profile
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Change Password Modal -->
+        <div class="modal fade" id="changePasswordModal" tabindex="-1" role="dialog" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="changePasswordModalLabel">
+                            <i class="fas fa-key mr-2"></i>Change Password
+                        </h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="changePasswordForm">
+                            <div class="form-group">
+                                <label for="currentPassword">Current Password</label>
+                                <input type="password" class="form-control" id="currentPassword" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="newPassword">New Password</label>
+                                <input type="password" class="form-control" id="newPassword" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="confirmPassword">Confirm New Password</label>
+                                <input type="password" class="form-control" id="confirmPassword" required>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="changePassword()">
+                            <i class="fas fa-save mr-1"></i>Change Password
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     }
     else
@@ -177,12 +321,73 @@
         @RenderBody()
     }
 
-    <!-- Scripts -->
+    <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery UI -->
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
+    <script>
+        $.widget.bridge('uibutton', $.ui.button)
+    </script>
+    <!-- Bootstrap 4 -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- AdminLTE App -->
     <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Consolidated App Script -->
     <script src="~/js/site.js" asp-append-version="true"></script>
-    
+
+    <script>
+        function showProfileModal() {
+            $('#profileModal').modal('show');
+        }
+
+        function showChangePasswordModal() {
+            $('#changePasswordModal').modal('show');
+        }
+
+        function updateProfile() {
+            Swal.fire({
+                icon: 'info',
+                title: 'Feature Coming Soon',
+                text: 'Profile update functionality will be available soon!'
+            });
+        }
+
+        function changePassword() {
+            const currentPassword = $('#currentPassword').val();
+            const newPassword = $('#newPassword').val();
+            const confirmPassword = $('#confirmPassword').val();
+
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Information',
+                    text: 'Please fill in all password fields'
+                });
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Password Mismatch',
+                    text: 'New passwords do not match'
+                });
+                return;
+            }
+
+            Swal.fire({
+                icon: 'info',
+                title: 'Feature Coming Soon',
+                text: 'Change password functionality will be available soon!'
+            });
+        }
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
