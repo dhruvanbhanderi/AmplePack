@@ -188,7 +188,7 @@
                                                 <td>
                                                     <div class="d-flex flex-column">
                                                         <strong>@product.ProductName</strong>
-                                                        <small class="text-muted">ID: #CP@product.Id.ToString("D3")</small>
+                                                        <small class="text-muted">ID: @($"#CP{product.Id:D3}")</small>
                                                         <small class="text-muted">@(string.IsNullOrEmpty(product.Description) ? "No description" : product.Description)</small>
                                                     </div>
                                                 </td>
