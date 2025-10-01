@@ -171,6 +171,22 @@
                                 <i class="fas fa-plus mr-1"></i>
                                 New Order
                             </a>
+                            <div class="btn-group ml-1">
+                                <button type="button" class="btn btn-info btn-sm dropdown-toggle" data-toggle="dropdown">
+                                    <i class="fas fa-download mr-1"></i>Export
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right">
+                                    <a class="dropdown-item" href="javascript:void(0)" onclick="exportOrders('pdf')">
+                                        <i class="fas fa-file-pdf mr-2"></i>Export as PDF
+                                    </a>
+                                    <a class="dropdown-item" href="javascript:void(0)" onclick="exportOrders('csv')">
+                                        <i class="fas fa-file-csv mr-2"></i>Export as CSV
+                                    </a>
+                                    <a class="dropdown-item" href="javascript:void(0)" onclick="exportOrders('excel')">
+                                        <i class="fas fa-file-excel mr-2"></i>Export as Excel
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="card-body">
@@ -431,19 +447,101 @@
             if (typeof window.OrderManager !== 'undefined' && window.OrderManager.generateInvoice) {
                 window.OrderManager.generateInvoice(orderId);
             } else {
-                // Fallback implementation
+                // Enhanced fallback implementation
+                const button = event?.target?.closest('a, button');
+                
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Generating Invoice...',
+                        text: 'Please wait while we prepare your PDF invoice.',
+                        icon: 'info',
+                        showConfirmButton: false,
+                        timer: 1500,
+                        timerProgressBar: true
+                    });
+                }
+                
+                if (button) {
+                    const originalText = button.innerHTML;
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Generating...';
+                    button.disabled = true;
+                    
+                    setTimeout(() => {
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                    }, 3000);
+                }
+                
+                // Open invoice in new tab - using both endpoints for compatibility
+                const invoiceUrl = `/Orders/GenerateInvoice/${orderId}`;
+                window.open(invoiceUrl, '_blank');
+            }
+        }
+        
+        function exportOrders(format) {
+            const button = event?.target?.closest('a, button');
+            const originalText = button?.innerHTML || 'Export';
+            
+            if (button) {
+                button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Generating...';
+                button.disabled = true;
+            }
+            
+            // Get current filter values
+            const params = new URLSearchParams();
+            
+            const customerFilter = document.getElementById('customerFilter')?.value;
+            const statusFilter = document.getElementById('statusFilter')?.value;
+            const startDate = document.getElementById('startDate')?.value;
+            const endDate = document.getElementById('endDate')?.value;
+            const searchTerm = document.getElementById('searchTerm')?.value;
+            
+            if (customerFilter) params.append('customerFilter', customerFilter);
+            if (statusFilter) params.append('statusFilter', statusFilter);
+            if (startDate) params.append('startDate', startDate);
+            if (endDate) params.append('endDate', endDate);
+            if (searchTerm) params.append('searchTerm', searchTerm);
+            params.append('format', format);
+            
+            const exportUrl = `/Orders/Export?${params.toString()}`;
+            
+            if (typeof Swal !== 'undefined') {
                 Swal.fire({
-                    title: 'Generating Invoice...',
-                    text: 'Please wait while we prepare your invoice.',
+                    title: 'Generating Export...',
+                    text: `Please wait while we prepare your ${format.toUpperCase()} file.`,
                     icon: 'info',
                     showConfirmButton: false,
-                    timer: 1500
+                    timer: 2000
                 });
-                
-                setTimeout(() => {
-                    window.open(`/Orders/DownloadInvoice/${orderId}`, '_blank');
-                }, 1500);
             }
+            
+            // Create a temporary link to trigger download
+            const link = document.createElement('a');
+            link.href = exportUrl;
+            link.download = `orders_export_${new Date().getTime()}.${format === 'excel' ? 'xlsx' : format}`;
+            link.style.display = 'none';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Restore button after delay
+            setTimeout(() => {
+                if (button) {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+                
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Export Complete!',
+                        text: `Your ${format.toUpperCase()} file has been downloaded.`,
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+            }, 2500);
         }
     </script>
 }

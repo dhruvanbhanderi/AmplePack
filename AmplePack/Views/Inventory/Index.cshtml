@@ -336,9 +336,198 @@
     
     <script>
         $(document).ready(function() {
+            // Initialize inventory management
+            initializeInventoryManagement();
+            
             // Auto-refresh stats every 30 seconds
             setInterval(refreshInventoryStats, 30000);
         });
+
+        function initializeInventoryManagement() {
+            // Handle quick add buttons
+            $(document).on('click', '.quick-add', function(e) {
+                e.preventDefault();
+                const $btn = $(this);
+                const itemId = $btn.data('item-id');
+                const itemName = $btn.data('item-name');
+                showStockAdjustmentModal('Add Stock', itemId, itemName, 'add');
+            });
+
+            // Handle quick remove buttons
+            $(document).on('click', '.quick-remove', function(e) {
+                e.preventDefault();
+                const $btn = $(this);
+                const itemId = $btn.data('item-id');
+                const itemName = $btn.data('item-name');
+                showStockAdjustmentModal('Remove Stock', itemId, itemName, 'remove');
+            });
+        }
+
+        function showStockAdjustmentModal(title, itemId, itemName, action) {
+            const modalHtml = `
+                <div class="modal fade" id="stockAdjustModal" tabindex="-1" role="dialog">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header bg-${action === 'add' ? 'success' : 'warning'}">
+                                <h5 class="modal-title text-white">
+                                    <i class="fas fa-${action === 'add' ? 'plus' : 'minus'} mr-2"></i>${title}
+                                </h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true" class="text-white">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    <strong>Item:</strong> ${itemName}
+                                </div>
+                                <form id="stockAdjustForm">
+                                    <div class="form-group">
+                                        <label for="adjustQuantity" class="font-weight-bold">
+                                            <i class="fas fa-sort-numeric-up mr-1"></i>Quantity to ${action === 'add' ? 'Add' : 'Remove'}
+                                        </label>
+                                        <input type="number" class="form-control" id="adjustQuantity" 
+                                               min="0.01" step="0.01" required placeholder="Enter quantity">
+                                        <small class="form-text text-muted">Use decimal values for precise measurements</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="adjustReason" class="font-weight-bold">
+                                            <i class="fas fa-comment mr-1"></i>Reason for ${action === 'add' ? 'Addition' : 'Removal'}
+                                        </label>
+                                        <textarea class="form-control" id="adjustReason" rows="3" required
+                                                  placeholder="Enter reason for this stock ${action}..."></textarea>
+                                        <small class="form-text text-muted">This will be logged for audit purposes</small>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                                    <i class="fas fa-times mr-1"></i>Cancel
+                                </button>
+                                <button type="button" class="btn btn-${action === 'add' ? 'success' : 'warning'}" 
+                                        onclick="processStockAdjustment('${action}', ${itemId})">
+                                    <i class="fas fa-${action === 'add' ? 'plus' : 'minus'} mr-1"></i>${title}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Remove existing modal if any
+            $('#stockAdjustModal').remove();
+            $('body').append(modalHtml);
+            $('#stockAdjustModal').modal('show');
+            
+            // Focus on quantity input
+            $('#stockAdjustModal').on('shown.bs.modal', function() {
+                $('#adjustQuantity').focus();
+            });
+        }
+
+        function processStockAdjustment(action, itemId) {
+            const quantity = $('#adjustQuantity').val();
+            const reason = $('#adjustReason').val().trim();
+
+            // Validation
+            if (!quantity || parseFloat(quantity) <= 0) {
+                showToast('Please enter a valid quantity', 'error');
+                $('#adjustQuantity').focus();
+                return;
+            }
+
+            if (!reason) {
+                showToast('Please enter a reason for the adjustment', 'error');
+                $('#adjustReason').focus();
+                return;
+            }
+
+            const data = {
+                itemId: itemId,
+                quantity: parseFloat(quantity),
+                reason: reason,
+                action: action
+            };
+
+            const $submitBtn = $('#stockAdjustModal .modal-footer .btn-' + (action === 'add' ? 'success' : 'warning'));
+            const originalText = $submitBtn.html();
+            
+            // Show loading state
+            $submitBtn.html('<i class="fas fa-spinner fa-spin mr-1"></i>Processing...').prop('disabled', true);
+
+            // Make AJAX request
+            $.ajax({
+                url: '/Inventory/AdjustStock',
+                method: 'POST',
+                data: JSON.stringify(data),
+                contentType: 'application/json',
+                headers: {
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showToast(response.message, 'success');
+                        $('#stockAdjustModal').modal('hide');
+                        
+                        // Update the specific row
+                        updateInventoryRow(itemId, response.newQuantity, response.stockStatus);
+                        
+                        // Refresh stats
+                        refreshInventoryStats();
+                    } else {
+                        showToast(response.message || 'Operation failed', 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Inventory adjustment error:', error);
+                    let errorMessage = 'An error occurred. Please try again.';
+                    
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+                    
+                    showToast(errorMessage, 'error');
+                },
+                complete: function() {
+                    // Restore button state
+                    $submitBtn.html(originalText).prop('disabled', false);
+                }
+            });
+        }
+
+        function updateInventoryRow(itemId, newQuantity, stockStatus) {
+            const $row = $(`.inventory-table tbody tr[data-item-id="${itemId}"]`);
+            if ($row.length) {
+                // Update quantity display
+                const $quantityCell = $row.find('.available-quantity');
+                $quantityCell.find('.badge')
+                    .removeClass('badge-success badge-warning badge-danger')
+                    .addClass(stockStatus === 'In Stock' ? 'badge-success' : 
+                             stockStatus === 'Low Stock' ? 'badge-warning' : 'badge-danger')
+                    .text(newQuantity);
+
+                // Update status display
+                const $statusCell = $row.find('.stock-status');
+                $statusCell.removeClass('badge-success badge-warning badge-danger')
+                    .addClass(stockStatus === 'In Stock' ? 'badge-success' : 
+                             stockStatus === 'Low Stock' ? 'badge-warning' : 'badge-danger')
+                    .text(stockStatus);
+
+                // Add visual feedback
+                $row.addClass('table-success');
+                setTimeout(() => {
+                    $row.removeClass('table-success');
+                }, 2000);
+
+                // Update remove button state
+                const $removeBtn = $row.find('.quick-remove');
+                if (stockStatus === 'Out of Stock') {
+                    $removeBtn.prop('disabled', true);
+                } else {
+                    $removeBtn.prop('disabled', false);
+                }
+            }
+        }
 
         function refreshInventoryStats() {
             fetch('/api/inventory/current-stock')
@@ -398,6 +587,29 @@
             });
             
             return false;
+        }
+
+        function showToast(message, type = 'info') {
+            if (typeof Swal !== 'undefined') {
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        toast.addEventListener('mouseenter', Swal.stopTimer)
+                        toast.addEventListener('mouseleave', Swal.resumeTimer)
+                    }
+                });
+
+                Toast.fire({
+                    icon: type,
+                    title: message
+                });
+            } else {
+                alert(message);
+            }
         }
     </script>
 }

@@ -18,11 +18,13 @@ namespace AmplePack.Controllers
     {
         private readonly AppDbContext _context;
         private readonly InvoiceService _invoiceService;
+        private readonly OrderManagementService _orderManagementService;
 
-        public OrdersController(AppDbContext context, InvoiceService invoiceService)
+        public OrdersController(AppDbContext context, InvoiceService invoiceService, OrderManagementService orderManagementService)
         {
             _context = context;
             _invoiceService = invoiceService;
+            _orderManagementService = orderManagementService;
         }
 
         // GET: Orders
@@ -96,6 +98,84 @@ namespace AmplePack.Controllers
             ViewBag.SearchTerm = searchTerm;
 
             return View(orders);
+        }
+
+        // GET: Orders/Export (for future enhancement)
+        public async Task<IActionResult> Export(string? customerFilter, string? statusFilter, DateTime? startDate, DateTime? endDate, string? searchTerm, string format = "excel")
+        {
+            try
+            {
+                var filter = new OrderFilterViewModel
+                {
+                    CustomerFilter = customerFilter,
+                    StatusFilter = statusFilter,
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    SearchTerm = searchTerm
+                };
+
+                var data = await _orderManagementService.ExportOrdersAsync(filter, format);
+                
+                var fileName = $"Orders_Export_{DateTime.Now:yyyyMMdd_HHmmss}";
+                var contentType = format.ToLower() switch
+                {
+                    "excel" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "csv" => "text/csv",
+                    "pdf" => "application/pdf",
+                    _ => "application/octet-stream"
+                };
+                
+                var fileExtension = format.ToLower() switch
+                {
+                    "excel" => ".xlsx",
+                    "csv" => ".csv",
+                    "pdf" => ".pdf",
+                    _ => ".bin"
+                };
+
+                return File(data, contentType, fileName + fileExtension);
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Export failed: {ex.Message}";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // API: Get Order Statistics
+        [HttpGet]
+        public async Task<IActionResult> GetOrderStats(OrderFilterViewModel filter)
+        {
+            try
+            {
+                var viewModel = await _orderManagementService.GetFilteredOrdersAsync(filter);
+                return Json(new { success = true, stats = viewModel.Stats });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        // API: Get filtered orders for AJAX
+        [HttpGet]
+        public async Task<IActionResult> GetFilteredOrders(OrderFilterViewModel filter)
+        {
+            try
+            {
+                var viewModel = await _orderManagementService.GetFilteredOrdersAsync(filter);
+                return Json(new { 
+                    success = true, 
+                    orders = viewModel.Orders,
+                    totalCount = viewModel.TotalCount,
+                    pageCount = viewModel.PageCount,
+                    stats = viewModel.Stats
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
         }
 
         // GET: Orders/Completed
@@ -558,12 +638,8 @@ namespace AmplePack.Controllers
                 var fileName = $"Invoice_Order_{order.Id}.pdf";
 
                 // Set proper content type and headers for PDF download
-                Response.Headers.Add("Content-Disposition", $"attachment; filename=\"{fileName}\"");
-                // Set content type header
-                if (Response.Headers.ContainsKey("Content-Type"))
-                    Response.Headers["Content-Type"] = "application/pdf";
-                else
-                    Response.Headers.Append("Content-Type", "application/pdf");
+                Response.Headers["Content-Disposition"] = $"attachment; filename=\"{fileName}\"";
+                Response.Headers["Content-Type"] = "application/pdf";
                     
                 return File(pdfBytes, "application/pdf", fileName);
             }
@@ -577,6 +653,12 @@ namespace AmplePack.Controllers
                 TempData["ErrorMessage"] = $"Failed to generate invoice PDF: {ex.Message}";
                 return RedirectToAction(nameof(Details), new { id });
             }
+        }
+
+        // GET: Orders/GenerateInvoice/5 (Alias for DownloadInvoice - for backward compatibility)
+        public async Task<IActionResult> GenerateInvoice(int? id)
+        {
+            return await DownloadInvoice(id);
         }
 
         // POST: Orders/ChangeStatus
