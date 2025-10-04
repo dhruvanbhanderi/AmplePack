@@ -4,6 +4,7 @@ using AmplePack.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Infrastructure;
+using System.Text;
 
 namespace AmplePack
 {
@@ -11,6 +12,9 @@ namespace AmplePack
     {
         public static async Task Main(string[] args)
         {
+            // Ensure UTF-8 encoding for console output
+            Console.OutputEncoding = Encoding.UTF8;
+            
             var builder = WebApplication.CreateBuilder(args);
 
             // Configure QuestPDF
@@ -18,6 +22,14 @@ namespace AmplePack
 
             // Add services
             builder.Services.AddControllersWithViews();
+            
+            // Configure request localization for proper encoding
+            builder.Services.Configure<RequestLocalizationOptions>(options =>
+            {
+                options.DefaultRequestCulture = new Microsoft.AspNetCore.Localization.RequestCulture("en-US");
+                options.SupportedCultures = new[] { new System.Globalization.CultureInfo("en-US") };
+                options.SupportedUICultures = new[] { new System.Globalization.CultureInfo("en-US") };
+            });
 
             // Database
             builder.Services.AddDbContext<AppDbContext>(options =>
@@ -28,6 +40,7 @@ namespace AmplePack
             builder.Services.AddScoped<InvoiceService>();
             builder.Services.AddScoped<EnhancedReportService>();
             builder.Services.AddScoped<OrderManagementService>();
+            builder.Services.AddScoped<BoxPriceCalculatorService>();
 
             // Identity
             builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -74,6 +87,10 @@ namespace AmplePack
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
+            
+            // Use request localization
+            app.UseRequestLocalization();
+            
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();

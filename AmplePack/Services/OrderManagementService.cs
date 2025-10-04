@@ -3,6 +3,10 @@ using AmplePack.Data;
 using AmplePack.Models;
 using AmplePack.ViewModels;
 using System.Linq.Expressions;
+using System.Text;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 
 namespace AmplePack.Services
 {
@@ -278,14 +282,22 @@ namespace AmplePack.Services
         {
             try
             {
-                var orders = await GetFilteredOrdersAsync(filter);
+                var query = _context.Orders
+                    .Include(o => o.Customer)
+                    .Include(o => o.OrderDetails)
+                        .ThenInclude(od => od.CustomerProduct)
+                    .AsQueryable();
+
+                query = ApplyFilters(query, filter);
+                query = ApplySorting(query, filter.SortBy, filter.SortOrder);
+
+                var orders = await query.ToListAsync();
                 
                 return format.ToLower() switch
                 {
-                    "excel" => await ExportToExcelAsync(orders.Orders),
-                    "csv" => await ExportToCsvAsync(orders.Orders),
-                    "pdf" => await ExportToPdfAsync(orders.Orders),
-                    _ => throw new ArgumentException($"Unsupported export format: {format}")
+                    "csv" => await ExportToCsvAsync(orders),
+                    "pdf" => await ExportToPdfAsync(orders),
+                    _ => throw new ArgumentException($"Unsupported export format: {format}. Use 'csv' or 'pdf'.")
                 };
             }
             catch (Exception ex)
@@ -295,37 +307,173 @@ namespace AmplePack.Services
             }
         }
 
-        private async Task<byte[]> ExportToExcelAsync(List<Order> orders)
-        {
-            // This would require a library like EPPlus or ClosedXML
-            // For now, return CSV format as bytes
-            var csv = await ExportToCsvAsync(orders);
-            return csv;
-        }
-
         private async Task<byte[]> ExportToCsvAsync(List<Order> orders)
         {
             await Task.CompletedTask; // Make async
             
-            var csv = new System.Text.StringBuilder();
-            csv.AppendLine("Order ID,Customer,Date,Status,Total Amount,Items");
+            var csvContent = new StringBuilder();
+            csvContent.AppendLine("Order ID,Customer Name,Customer Contact,Order Date,Status,Total Amount (Rs.),Box Type,Size,Quantity,Price per Box (Rs.),Delivery Date,Notes");
             
             foreach (var order in orders)
             {
-                var items = string.Join("; ", order.OrderDetails?.Select(od => $"{od.BoxType} ({od.Quantity})") ?? new string[0]);
-                csv.AppendLine($"{order.Id},{order.Customer?.Name ?? "N/A"},{order.Date:yyyy-MM-dd},{order.Status},{order.TotalAmount:C},\"{items}\"");
+                if (order.OrderDetails?.Any() == true)
+                {
+                    foreach (var detail in order.OrderDetails)
+                    {
+                        var line = string.Format(
+                            "CP{0:D3},\"{1}\",\"{2}\",{3},{4},Rs.{5:F2},\"{6}\",\"{7}\",{8},Rs.{9:F2},\"{10}\",\"{11}\"",
+                            order.Id,
+                            EscapeCsvField(order.Customer?.Name ?? "N/A"),
+                            EscapeCsvField(order.Customer?.Contact ?? "N/A"),
+                            order.Date.ToString("dd-MM-yyyy"), // Indian date format
+                            order.Status,
+                            order.TotalAmount,
+                            EscapeCsvField(detail.BoxType ?? ""),
+                            EscapeCsvField(detail.Size ?? ""),
+                            detail.Quantity,
+                            detail.PricePerBox,
+                            detail.DeliveryDate?.ToString("dd-MM-yyyy") ?? "N/A",
+                            EscapeCsvField(detail.Notes ?? "")
+                        );
+                        csvContent.AppendLine(line);
+                    }
+                }
+                else
+                {
+                    var line = string.Format(
+                        "CP{0:D3},\"{1}\",\"{2}\",{3},{4},Rs.{5:F2},\"No items\",\"\",\"\",\"\",\"\",\"\"",
+                        order.Id,
+                        EscapeCsvField(order.Customer?.Name ?? "N/A"),
+                        EscapeCsvField(order.Customer?.Contact ?? "N/A"),
+                        order.Date.ToString("dd-MM-yyyy"),
+                        order.Status,
+                        order.TotalAmount
+                    );
+                    csvContent.AppendLine(line);
+                }
             }
             
-            return System.Text.Encoding.UTF8.GetBytes(csv.ToString());
+            // Add summary
+            csvContent.AppendLine("");
+            csvContent.AppendLine("Summary:");
+            csvContent.AppendLine($"Total Orders:,{orders.Count}");
+            csvContent.AppendLine($"Total Value:,Rs.{orders.Sum(o => o.TotalAmount):F2}");
+            csvContent.AppendLine($"Export Date:,{DateTime.Now:dd-MM-yyyy HH:mm}");
+            
+            return Encoding.UTF8.GetBytes(csvContent.ToString());
+        }
+
+        private string EscapeCsvField(string field)
+        {
+            if (string.IsNullOrEmpty(field))
+                return "";
+                
+            // Escape quotes and handle special characters
+            return field.Replace("\"", "\"\"");
         }
 
         private async Task<byte[]> ExportToPdfAsync(List<Order> orders)
         {
             await Task.CompletedTask; // Make async
             
-            // This would require a PDF library like QuestPDF or iTextSharp
-            // For now, return empty bytes
-            return new byte[0];
+            try
+            {
+                var document = Document.Create(container =>
+                {
+                    container.Page(page =>
+                    {
+                        page.Size(PageSizes.A4.Landscape());
+                        page.Margin(2, Unit.Centimetre);
+                        page.DefaultTextStyle(x => x.FontSize(10));
+
+                        page.Header()
+                            .AlignCenter()
+                            .Text("AmplePack - Orders Report")
+                            .SemiBold().FontSize(16).FontColor(Colors.Blue.Medium);
+
+                        page.Content()
+                            .PaddingVertical(1, Unit.Centimetre)
+                            .Table(table =>
+                            {
+                                // Define columns
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.RelativeColumn(1); // Order ID
+                                    columns.RelativeColumn(2); // Customer
+                                    columns.RelativeColumn(1.5f); // Date
+                                    columns.RelativeColumn(1); // Status
+                                    columns.RelativeColumn(1.5f); // Amount
+                                    columns.RelativeColumn(2); // Items
+                                });
+
+                                // Header
+                                table.Header(header =>
+                                {
+                                    header.Cell().Element(HeaderStyle).Text("Order ID");
+                                    header.Cell().Element(HeaderStyle).Text("Customer");
+                                    header.Cell().Element(HeaderStyle).Text("Date");
+                                    header.Cell().Element(HeaderStyle).Text("Status");
+                                    header.Cell().Element(HeaderStyle).Text("Amount (Rs.)");
+                                    header.Cell().Element(HeaderStyle).Text("Items");
+                                });
+
+                                // Data rows
+                                foreach (var order in orders.Take(100)) // Limit for PDF performance
+                                {
+                                    var items = order.OrderDetails?.Any() == true
+                                        ? string.Join(", ", order.OrderDetails.Select(od => $"{od.BoxType} ({od.Quantity})"))
+                                        : "No items";
+
+                                    table.Cell().Element(CellStyle).Text($"CP{order.Id:D3}");
+                                    table.Cell().Element(CellStyle).Text(order.Customer?.Name ?? "N/A");
+                                    table.Cell().Element(CellStyle).Text(order.Date.ToString("dd-MM-yyyy"));
+                                    table.Cell().Element(CellStyle).Text(order.Status);
+                                    table.Cell().Element(CellStyle).Text($"Rs.{order.TotalAmount:F2}");
+                                    table.Cell().Element(CellStyle).Text(items);
+                                }
+
+                                static IContainer HeaderStyle(IContainer container)
+                                {
+                                    return container
+                                        .DefaultTextStyle(x => x.SemiBold().FontSize(9))
+                                        .PaddingVertical(8)
+                                        .BorderBottom(1)
+                                        .BorderColor(Colors.Black)
+                                        .AlignCenter();
+                                }
+
+                                static IContainer CellStyle(IContainer container)
+                                {
+                                    return container
+                                        .BorderBottom(1)
+                                        .BorderColor(Colors.Grey.Lighten2)
+                                        .PaddingVertical(5)
+                                        .PaddingHorizontal(3);
+                                }
+                            });
+
+                        page.Footer()
+                            .AlignCenter()
+                            .Text(x =>
+                            {
+                                x.Span("Generated: ");
+                                x.Span(DateTime.Now.ToString("dd-MM-yyyy HH:mm")).SemiBold();
+                                x.Span(" | Total Orders: ");
+                                x.Span(orders.Count.ToString()).SemiBold();
+                                x.Span(" | Total: Rs.");
+                                x.Span(orders.Sum(o => o.TotalAmount).ToString("F2")).SemiBold();
+                            });
+                    });
+                });
+
+                return document.GeneratePdf();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating PDF export");
+                // Fallback to CSV if PDF fails
+                return await ExportToCsvAsync(orders);
+            }
         }
 
         public async Task<bool> UpdateOrderStatusAsync(int orderId, string newStatus)

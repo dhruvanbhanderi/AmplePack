@@ -1,0 +1,882 @@
+@model AmplePack.Models.BoxCalculatorInput
+@{
+    ViewData["Title"] = "Box Price Calculator";
+    var hasResult = ViewBag.HasResult as bool? ?? false;
+    var result = ViewBag.Result as AmplePack.Models.BoxCalculatorResult;
+    var layoutSuggestions = ViewBag.LayoutSuggestions as List<AmplePack.Services.SheetLayoutSuggestion>;
+}
+
+<!-- Content Header -->
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">
+                    <i class="fas fa-calculator mr-2"></i>
+                    Box Price Calculator
+                </h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Home</a></li>
+                    <li class="breadcrumb-item active">Box Calculator</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid">
+        
+        @if (hasResult && result != null)
+        {
+            <!-- Results Summary Row -->
+            <div class="row mb-4">
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-primary">
+                        <div class="inner">
+                            <h3>Rs.@result.FinalPricePerBoxIncGST.ToString("F2")</h3>
+                            <p>Price per Box (Inc GST)</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-box"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-success">
+                        <div class="inner">
+                            <h3>Rs.@result.GrandTotal.ToString("F2")</h3>
+                            <p>Total Order Value</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-rupee-sign"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-info">
+                        <div class="inner">
+                            <h3>@result.EfficiencyPercentage.ToString("F1")%</h3>
+                            <p>Sheet Efficiency</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-warning">
+                        <div class="inner">
+                            <h3>@result.SheetsRequired</h3>
+                            <p>Sheets Required</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-layer-group"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="row">
+            <!-- Calculator Form -->
+            <div class="col-md-@(hasResult ? "6" : "12")">
+                <div class="card card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-edit mr-2"></i>
+                            Box Specifications & Pricing
+                        </h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <form asp-action="Index" method="post" id="calculatorForm">
+                        <div class="card-body">
+                            
+                            <!-- Box Dimensions Section -->
+                            <div class="form-section">
+                                <h5 class="section-title">
+                                    <i class="fas fa-cube mr-2"></i>
+                                    Box Dimensions (inches)
+                                </h5>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label asp-for="Length"></label>
+                                            <input asp-for="Length" class="form-control" placeholder="Length in inches" />
+                                            <span asp-validation-for="Length" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label asp-for="Width"></label>
+                                            <input asp-for="Width" class="form-control" placeholder="Width in inches" />
+                                            <span asp-validation-for="Width" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label asp-for="Height"></label>
+                                            <input asp-for="Height" class="form-control" placeholder="Height in inches" />
+                                            <span asp-validation-for="Height" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Board Specifications Section -->
+                            <div class="form-section">
+                                <h5 class="section-title">
+                                    <i class="fas fa-industry mr-2"></i>
+                                    Board Specifications
+                                </h5>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label asp-for="BoardType"></label>
+                                            <select asp-for="BoardType" class="form-control" id="boardTypeSelect">
+                                                <option value="">Select Board Type</option>
+                                                @foreach (var boardType in ViewBag.BoardTypes as List<AmplePack.Models.BoardSpecs>)
+                                                {
+                                                    <option value="@boardType.BoardType" 
+                                                            data-gsm="@boardType.DefaultGSM" 
+                                                            data-compression="@boardType.DefaultCompressionRatio"
+                                                            selected="@(Model.BoardType == boardType.BoardType)">
+                                                        @boardType.BoardType (@boardType.Description)
+                                                    </option>
+                                                }
+                                            </select>
+                                            <span asp-validation-for="BoardType" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label asp-for="BoardGSM"></label>
+                                            <input asp-for="BoardGSM" class="form-control" />
+                                            <span asp-validation-for="BoardGSM" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label asp-for="CompressionRatio"></label>
+                                            <input asp-for="CompressionRatio" class="form-control" step="0.01" />
+                                            <span asp-validation-for="CompressionRatio" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Production Details Section -->
+                            <div class="form-section">
+                                <h5 class="section-title">
+                                    <i class="fas fa-cogs mr-2"></i>
+                                    Production Details
+                                </h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="Quantity"></label>
+                                            <input asp-for="Quantity" class="form-control" />
+                                            <span asp-validation-for="Quantity" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="materialRateSelect">Material Rate Category</label>
+                                            <select class="form-control" id="materialRateSelect">
+                                                <option value="">Select Rate Category</option>
+                                                @foreach (var rate in ViewBag.MaterialRates as List<AmplePack.Models.MaterialRates>)
+                                                {
+                                                    <option value="@rate.RateCategory" 
+                                                            data-board-rate="@rate.BoardRatePerSqM"
+                                                            data-printing-rate="@rate.PrintingRatePerSqM"
+                                                            data-die-cutting-rate="@rate.DieCuttingRatePerSqM"
+                                                            data-labor-rate="@rate.LaborRatePerBox">
+                                                        @rate.RateCategory (@rate.Region)
+                                                    </option>
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Material Rates Section -->
+                            <div class="form-section">
+                                <h5 class="section-title">
+                                    <i class="fas fa-money-bill-wave mr-2"></i>
+                                    Material Rates (Rs.)
+                                </h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="BoardRatePerSqM"></label>
+                                            <input asp-for="BoardRatePerSqM" class="form-control" step="0.01" />
+                                            <span asp-validation-for="BoardRatePerSqM" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="PrintingCostPerSqM"></label>
+                                            <input asp-for="PrintingCostPerSqM" class="form-control" step="0.01" />
+                                            <span asp-validation-for="PrintingCostPerSqM" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="DieCuttingCostPerSqM"></label>
+                                            <input asp-for="DieCuttingCostPerSqM" class="form-control" step="0.01" />
+                                            <span asp-validation-for="DieCuttingCostPerSqM" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="LaborCostPerBox"></label>
+                                            <input asp-for="LaborCostPerBox" class="form-control" step="0.01" />
+                                            <span asp-validation-for="LaborCostPerBox" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sheet Specifications Section -->
+                            <div class="form-section">
+                                <h5 class="section-title">
+                                    <i class="fas fa-layer-group mr-2"></i>
+                                    Sheet Specifications (inches)
+                                </h5>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="sheetSizeSelect">Sheet Size</label>
+                                            <select class="form-control" id="sheetSizeSelect">
+                                                <option value="">Select Sheet Size</option>
+                                                @foreach (var sheet in ViewBag.SheetSizes as List<AmplePack.Models.SheetSpecs>)
+                                                {
+                                                    <option value="@sheet.SheetSize" 
+                                                            data-length="@sheet.LengthInches"
+                                                            data-width="@sheet.WidthInches">
+                                                        @sheet.SheetSize
+                                                    </option>
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label asp-for="SheetLength"></label>
+                                            <input asp-for="SheetLength" class="form-control" />
+                                            <span asp-validation-for="SheetLength" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label asp-for="SheetWidth"></label>
+                                            <input asp-for="SheetWidth" class="form-control" />
+                                            <span asp-validation-for="SheetWidth" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Business Parameters Section -->
+                            <div class="form-section">
+                                <h5 class="section-title">
+                                    <i class="fas fa-chart-line mr-2"></i>
+                                    Business Parameters
+                                </h5>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label asp-for="OverheadPercentage"></label>
+                                            <input asp-for="OverheadPercentage" class="form-control" step="0.1" />
+                                            <span asp-validation-for="OverheadPercentage" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label asp-for="ProfitMarginPercentage"></label>
+                                            <input asp-for="ProfitMarginPercentage" class="form-control" step="0.1" />
+                                            <span asp-validation-for="ProfitMarginPercentage" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label asp-for="DiscountPercentage"></label>
+                                            <input asp-for="DiscountPercentage" class="form-control" step="0.1" />
+                                            <span asp-validation-for="DiscountPercentage" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label asp-for="WastePercentage"></label>
+                                            <input asp-for="WastePercentage" class="form-control" step="0.1" />
+                                            <span asp-validation-for="WastePercentage" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Additional Options Section -->
+                            <div class="form-section">
+                                <h5 class="section-title">
+                                    <i class="fas fa-sliders-h mr-2"></i>
+                                    Additional Options
+                                </h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="ShippingCostPerOrder"></label>
+                                            <input asp-for="ShippingCostPerOrder" class="form-control" step="0.01" />
+                                            <span asp-validation-for="ShippingCostPerOrder" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <div class="form-check mt-4">
+                                                <input asp-for="IncludeGST" class="form-check-input" />
+                                                <label asp-for="IncludeGST" class="form-check-label"></label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input asp-for="ShowDetailedBreakdown" class="form-check-input" />
+                                                <label asp-for="ShowDetailedBreakdown" class="form-check-label"></label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-calculator mr-1"></i>
+                                Calculate Price
+                            </button>
+                            <button type="button" class="btn btn-secondary ml-2" onclick="resetForm()">
+                                <i class="fas fa-undo mr-1"></i>
+                                Reset
+                            </button>
+                            @if (hasResult)
+                            {
+                                <button type="button" class="btn btn-info ml-2" onclick="getOptimizationSuggestions()">
+                                    <i class="fas fa-lightbulb mr-1"></i>
+                                    Optimize
+                                </button>
+                                <button type="button" class="btn btn-success ml-2" onclick="exportCalculation()">
+                                    <i class="fas fa-download mr-1"></i>
+                                    Export PDF
+                                </button>
+                            }
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            @if (hasResult && result != null)
+            {
+                <!-- Results Panel -->
+                <div class="col-md-6">
+                    <!-- Price Breakdown -->
+                    <div class="card card-success mb-3">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-receipt mr-2"></i>
+                                Price Breakdown
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Material Cost per Box:</strong></td>
+                                        <td class="text-right">Rs.@result.MaterialCostPerBox.ToString("F2")</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Production Cost per Box:</strong></td>
+                                        <td class="text-right">Rs.@((result.PrintingCostPerBox + result.DieCuttingCostPerBox + result.LaborCostPerBox).ToString("F2"))</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Base Cost per Box:</td>
+                                        <td class="text-right">Rs.@result.BaseCostPerBox.ToString("F2")</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Overhead (@Model.OverheadPercentage.ToString("F2")%):</td>
+                                        <td class="text-right">Rs.@result.OverheadCostPerBox.ToString("F2")</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Profit (@Model.ProfitMarginPercentage.ToString("F2")%):</td>
+                                        <td class="text-right">Rs.@result.ProfitPerBox.ToString("F2")</td>
+                                    </tr>
+                                    @if (result.DiscountPerBox > 0)
+                                    {
+                                        <tr>
+                                            <td>Discount (@Model.DiscountPercentage.ToString("F2")%):</td>
+                                            <td class="text-right text-success">-Rs.@result.DiscountPerBox.ToString("F2")</td>
+                                        </tr>
+                                    }
+                                    <tr class="border-top">
+                                        <td><strong>Price per Box (Ex-GST):</strong></td>
+                                        <td class="text-right"><strong>Rs.@result.FinalPricePerBoxExGST.ToString("F2")</strong></td>
+                                    </tr>
+                                    @if (Model.IncludeGST)
+                                    {
+                                        <tr>
+                                            <td>GST (18%):</td>
+                                            <td class="text-right">Rs.@result.GSTPerBox.ToString("F2")</td>
+                                        </tr>
+                                        <tr class="border-top">
+                                            <td><strong>Price per Box (Inc-GST):</strong></td>
+                                            <td class="text-right"><strong class="text-primary">Rs.@result.FinalPricePerBoxIncGST.ToString("F2")</strong></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Order Summary -->
+                    <div class="card card-info mb-3">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-shopping-cart mr-2"></i>
+                                Order Summary
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Quantity:</strong></td>
+                                        <td class="text-right">@Model.Quantity boxes</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Total Order Cost:</strong></td>
+                                        <td class="text-right">Rs.@result.TotalOrderCostIncGST.ToString("F2")</td>
+                                    </tr>
+                                    @if (result.ShippingCost > 0)
+                                    {
+                                        <tr>
+                                            <td>Shipping Cost:</td>
+                                            <td class="text-right">Rs.@result.ShippingCost.ToString("F2")</td>
+                                        </tr>
+                                    }
+                                    <tr class="border-top">
+                                        <td><strong class="text-success">Grand Total:</strong></td>
+                                        <td class="text-right"><strong class="text-success h5">Rs.@result.GrandTotal.ToString("F2")</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Production Details -->
+                    <div class="card card-warning mb-3">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-industry mr-2"></i>
+                                Production Details
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="info-box">
+                                        <span class="info-box-icon bg-warning">
+                                            <i class="fas fa-expand-arrows-alt"></i>
+                                        </span>
+                                        <div class="info-box-content">
+                                            <span class="info-box-text">Blank Size</span>
+                                            <span class="info-box-number">@Math.Round(result.BlankLengthMm, 1) × @Math.Round(result.BlankWidthMm, 1) mm</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="info-box">
+                                        <span class="info-box-icon bg-info">
+                                            <i class="fas fa-weight"></i>
+                                        </span>
+                                        <div class="info-box-content">
+                                            <span class="info-box-text">Box Weight</span>
+                                            <span class="info-box-number">@Math.Round(result.BoxWeightGrams, 1)g</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="info-box">
+                                        <span class="info-box-icon bg-success">
+                                            <i class="fas fa-layer-group"></i>
+                                        </span>
+                                        <div class="info-box-content">
+                                            <span class="info-box-text">Blanks/Sheet</span>
+                                            <span class="info-box-number">@result.BlanksPerSheet</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="info-box">
+                                        <span class="info-box-icon bg-primary">
+                                            <i class="fas fa-chart-pie"></i>
+                                        </span>
+                                        <div class="info-box-content">
+                                            <span class="info-box-text">Efficiency</span>
+                                            <span class="info-box-number">@Math.Round(result.EfficiencyPercentage, 1)%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="mt-2"><small class="text-muted">@result.LayoutInfo.LayoutDescription</small></p>
+                        </div>
+                    </div>
+
+                    <!-- Warnings and Recommendations -->
+                    @if (result.Warnings.Any() || result.Recommendations.Any())
+                    {
+                        <div class="card card-secondary">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                                    Warnings & Recommendations
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                @if (result.Warnings.Any())
+                                {
+                                    <div class="alert alert-warning">
+                                        <h6><i class="fas fa-exclamation-triangle mr-1"></i> Warnings:</h6>
+                                        <ul class="mb-0">
+                                            @foreach (var warning in result.Warnings)
+                                            {
+                                                <li>@warning</li>
+                                            }
+                                        </ul>
+                                    </div>
+                                }
+                                @if (result.Recommendations.Any())
+                                {
+                                    <div class="alert alert-info">
+                                        <h6><i class="fas fa-lightbulb mr-1"></i> Recommendations:</h6>
+                                        <ul class="mb-0">
+                                            @foreach (var recommendation in result.Recommendations)
+                                            {
+                                                <li>@recommendation</li>
+                                            }
+                                        </ul>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Optimization Modal -->
+<div class="modal fade" id="optimizationModal" tabindex="-1" role="dialog" aria-labelledby="optimizationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="optimizationModalLabel">
+                    <i class="fas fa-lightbulb mr-2"></i>Sheet Layout Optimization
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="optimizationContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Board type change handler
+            $('#boardTypeSelect').change(function() {
+                var selectedOption = $(this).find('option:selected');
+                if (selectedOption.val()) {
+                    $('#BoardGSM').val(selectedOption.data('gsm'));
+                    $('#CompressionRatio').val(selectedOption.data('compression'));
+                }
+            });
+
+            // Material rate change handler
+            $('#materialRateSelect').change(function() {
+                var selectedOption = $(this).find('option:selected');
+                if (selectedOption.val()) {
+                    $('#BoardRatePerSqM').val(selectedOption.data('board-rate'));
+                    $('#PrintingCostPerSqM').val(selectedOption.data('printing-rate'));
+                    $('#DieCuttingCostPerSqM').val(selectedOption.data('die-cutting-rate'));
+                    $('#LaborCostPerBox').val(selectedOption.data('labor-rate'));
+                }
+            });
+
+            // Sheet size change handler
+            $('#sheetSizeSelect').change(function() {
+                var selectedOption = $(this).find('option:selected');
+                if (selectedOption.val()) {
+                    $('#SheetLength').val(selectedOption.data('length'));
+                    $('#SheetWidth').val(selectedOption.data('width'));
+                }
+            });
+        });
+
+        function resetForm() {
+            if (confirm('Are you sure you want to reset all fields?')) {
+                document.getElementById('calculatorForm').reset();
+                // Reload page to clear results
+                window.location.href = '@Url.Action("Index")';
+            }
+        }
+
+        function exportCalculation() {
+            // Show loading
+            Swal.fire({
+                title: 'Generating Export...',
+                text: 'Please wait while we prepare your export.',
+                icon: 'info',
+                showConfirmButton: false,
+                allowOutsideClick: false
+            });
+            
+            // Collect form data
+            var formData = new FormData(document.getElementById('calculatorForm'));
+            
+            // Make AJAX call to export endpoint
+            fetch('@Url.Action("ExportToPdf")', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.headers.get('content-type')?.includes('application/pdf')) {
+                    // Handle PDF download
+                    return response.blob().then(blob => {
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = `BoxCalculation_${new Date().getTime()}.pdf`;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        Swal.fire('Success!', 'PDF has been downloaded', 'success');
+                    });
+                } else {
+                    // Handle JSON response
+                    return response.json().then(data => {
+                        if (data.success) {
+                            Swal.fire('Info', data.message, 'info');
+                        } else {
+                            Swal.fire('Error!', data.message || 'Export failed', 'error');
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                Swal.fire('Error!', 'Export failed: ' + error.message, 'error');
+            });
+        }
+
+        function getOptimizationSuggestions() {
+            // Collect form data
+            var formData = {
+                Length: parseFloat($('#Length').val()) || 0,
+                Width: parseFloat($('#Width').val()) || 0,
+                Height: parseFloat($('#Height').val()) || 0,
+                BoardGSM: parseInt($('#BoardGSM').val()) || 200,
+                CompressionRatio: parseFloat($('#CompressionRatio').val()) || 1.32,
+                Quantity: parseInt($('#Quantity').val()) || 1000
+            };
+
+            $.ajax({
+                url: '@Url.Action("GetOptimizationSuggestions")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(formData),
+                success: function(response) {
+                    if (response.success) {
+                        displayOptimizationSuggestions(response.suggestions);
+                    } else {
+                        Swal.fire('Error', response.message || 'Failed to get suggestions', 'error');
+                    }
+                },
+                error: function() {
+                    Swal.fire('Error', 'Failed to get optimization suggestions', 'error');
+                }
+            });
+        }
+
+        function displayOptimizationSuggestions(suggestions) {
+            var content = `
+                <p>Here are optimized sheet layout suggestions for better efficiency:</p>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Sheet Size</th>
+                                <th>Blanks/Sheet</th>
+                                <th>Efficiency</th>
+                                <th>Sheets Required</th>
+                                <th>Layout</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            suggestions.forEach(function(suggestion) {
+                var efficiencyClass = suggestion.efficiency >= 80 ? 'text-success' : 
+                                    suggestion.efficiency >= 60 ? 'text-warning' : 'text-danger';
+                
+                content += `
+                    <tr>
+                        <td>${suggestion.sheetSize}</td>
+                        <td>${suggestion.blanksPerSheet}</td>
+                        <td class="${efficiencyClass}">${suggestion.efficiency}%</td>
+                        <td>${suggestion.sheetsRequired}</td>
+                        <td><small>${suggestion.description}</small></td>
+                    </tr>
+                `;
+            });
+
+            content += `
+                        </tbody>
+                    </table>
+                </div>
+                <div class="alert alert-info">
+                    <small><i class="fas fa-info-circle mr-1"></i>
+                    Higher efficiency means less waste. Consider choosing a sheet size with >70% efficiency for optimal cost savings.
+                    </small>
+                </div>
+            `;
+
+            $('#optimizationContent').html(content);
+            $('#optimizationModal').modal('show');
+        }
+    </script>
+}
+
+@section Styles {
+    <style>
+        .form-section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .form-section:last-child {
+            border-bottom: none;
+        }
+
+        .section-title {
+            color: #495057;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .info-box {
+            display: block;
+            min-height: 70px;
+            background: #fff;
+            width: 100%;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+            border-radius: 2px;
+            margin-bottom: 15px;
+        }
+
+        .info-box-icon {
+            border-top-left-radius: 2px;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            border-bottom-left-radius: 2px;
+            display: block;
+            float: left;
+            height: 70px;
+            width: 70px;
+            text-align: center;
+            font-size: 20px;
+            line-height: 70px;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .info-box-content {
+            padding: 5px 10px;
+            margin-left: 70px;
+        }
+
+        .info-box-text {
+            text-transform: uppercase;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        .info-box-number {
+            display: block;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .small-box {
+            border-radius: 2px;
+            position: relative;
+            display: block;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+        }
+
+        .small-box > .inner {
+            padding: 10px;
+        }
+
+        .small-box > .small-box-footer {
+            position: relative;
+            text-align: center;
+            padding: 3px 0;
+            color: #fff;
+            color: rgba(255,255,255,0.8);
+            display: block;
+            z-index: 10;
+            background: rgba(0,0,0,0.1);
+            text-decoration: none;
+        }
+
+        .small-box h3 {
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin: 0 0 10px 0;
+            white-space: nowrap;
+            padding: 0;
+        }
+
+        .small-box p {
+            font-size: 1rem;
+        }
+
+        .small-box .icon {
+            transition: all .3s linear;
+            position: absolute;
+            top: -10px;
+            right: 10px;
+            z-index: 0;
+            font-size: 70px;
+            color: rgba(0,0,0,0.15);
+        }
+
+        .bg-primary { background-color: #007bff !important; color: white; }
+        .bg-success { background-color: #28a745 !important; color: white; }
+        .bg-info { background-color: #17a2b8 !important; color: white; }
+        .bg-warning { background-color: #ffc107 !important; color: white; }
+    </style>
+}
+
+@Html.AntiForgeryToken()

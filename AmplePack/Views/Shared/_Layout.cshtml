@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@ViewData["Title"] - AmplePack</title>
 
@@ -47,11 +48,13 @@
                 <ul class="navbar-nav ml-auto">
                     <!-- User Menu -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link" data-toggle="dropdown" href="#">
-                            <div class="img-circle elevation-2" alt="@User.Identity?.Name"></div>
+                        <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" aria-expanded="false">
+                            <i class="fas fa-user-circle fa-lg mr-1"></i>
+                            <span class="d-none d-sm-inline">@User.Identity?.Name</span>
                         </a>
                         <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
                             <div class="dropdown-item dropdown-header">
+                                <i class="fas fa-user mr-2"></i>
                                 @User.Identity?.Name
                                 <br>
                                 <small>
@@ -84,8 +87,8 @@
                                 </a>
                                 <div class="dropdown-divider"></div>
                             }
-                            <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                                <button type="submit" class="dropdown-item">
+                            <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline w-100">
+                                <button type="submit" class="dropdown-item text-danger">
                                     <i class="fas fa-sign-out-alt mr-2"></i> Logout
                                 </button>
                             </form>
@@ -93,7 +96,7 @@
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link" data-widget="fullscreen" href="#" role="button">
+                        <a class="nav-link" data-widget="fullscreen" href="#" role="button" title="Full Screen">
                             <i class="fas fa-expand-arrows-alt"></i>
                         </a>
                     </li>
@@ -104,7 +107,7 @@
             <aside class="main-sidebar sidebar-dark-primary elevation-4">
                 <!-- Brand Logo -->
                 <a asp-controller="Home" asp-action="Index" class="brand-link">
-                    <div class="brand-image img-circle elevation-3"></div>
+                    <i class="fas fa-boxes brand-image img-circle elevation-3" style="color: #fff; font-size: 2rem; margin-left: 10px;"></i>
                     <span class="brand-text font-weight-light">AmplePack</span>
                 </a>
 
@@ -113,10 +116,24 @@
                     <!-- Sidebar user panel -->
                     <div class="user-panel mt-3 pb-3 mb-3 d-flex">
                         <div class="image">
-                            <div class="img-circle elevation-2" alt="@User.Identity?.Name"></div>
+                            <i class="fas fa-user-circle fa-2x text-white"></i>
                         </div>
                         <div class="info">
-                            <a href="#" class="d-block">@User.Identity?.Name</a>
+                            <a href="#" class="d-block text-white">@User.Identity?.Name</a>
+                            <small class="text-muted">
+                                @if (User.IsInRole("Admin"))
+                                {
+                                    <span>Admin</span>
+                                }
+                                else if (User.IsInRole("Manager"))
+                                {
+                                    <span>Manager</span>
+                                }
+                                else
+                                {
+                                    <span>User</span>
+                                }
+                            </small>
                         </div>
                     </div>
 
@@ -178,6 +195,14 @@
                                 <a asp-controller="CustomerProducts" asp-action="Index" class="nav-link" data-controller="customerproducts" data-action="index">
                                     <i class="nav-icon fas fa-cube"></i>
                                     <p>Customer Products</p>
+                                </a>
+                            </li>
+
+                            <li class="nav-header">TOOLS</li>
+                            <li class="nav-item">
+                                <a asp-controller="BoxCalculator" asp-action="Index" class="nav-link" data-controller="boxcalculator" data-action="index">
+                                    <i class="nav-icon fas fa-calculator"></i>
+                                    <p>Box Price Calculator</p>
                                 </a>
                             </li>
 
