@@ -843,3 +843,11 @@
             AdminLTE.init();
         }
     });
+
+    // Export to global scope for debugging
+    window.AmplePack.App = App;
+    window.AmplePack.InventoryManager = InventoryManager;
+    window.AmplePack.OrderManager = OrderManager;
+    window.AmplePack.CustomerManager = CustomerManager;
+
+})(jQuery);

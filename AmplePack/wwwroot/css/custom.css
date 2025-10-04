@@ -1,0 +1,139 @@
+/* Custom styles for AmplePack application */
+
+/* Fix any layout issues */
+body {
+    font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Ensure proper content wrapper styling */
+.content-wrapper {
+    min-height: calc(100vh - 140px);
+}
+
+/* Box Calculator specific styles */
+.simple-layout-visualizer {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    overflow: hidden;
+    margin: 15px 0;
+}
+
+.layout-summary {
+    background: #f8f9fa;
+    border-left: 1px solid #ddd;
+}
+
+/* Responsive layout for visualization */
+@media (max-width: 768px) {
+    .simple-layout-visualizer {
+        flex-direction: column !important;
+        height: auto !important;
+    }
+    
+    .simple-layout-visualizer .layout-summary {
+        min-width: 100% !important;
+        max-width: 100% !important;
+        border-left: none !important;
+        border-top: 1px solid #ddd !important;
+    }
+    
+    .simple-layout-visualizer > div:first-child {
+        min-height: 300px;
+    }
+}
+
+/* Form styling improvements */
+.form-section {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.form-section:last-child {
+    border-bottom: none;
+}
+
+.section-title {
+    color: #495057;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+/* Visualization container improvements */
+#layoutVisualizationContainer {
+    width: 100%;
+    height: 450px;
+    min-height: 450px;
+    position: relative;
+    background: #fafafa;
+    border-radius: 4px;
+}
+
+/* Canvas responsive improvements */
+canvas {
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-crisp-edges;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+/* Summary panel styling */
+.summary-content {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Prevent header overlap */
+.card-header {
+    background: #17a2b8;
+    color: white;
+    border-bottom: 1px solid #138496;
+    padding: 12px 15px;
+}
+
+.card-header .card-title {
+    margin: 0;
+    font-weight: 600;
+}
+
+.card-header .card-tools .btn {
+    margin-left: 5px;
+}
+
+/* Loading states */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Error handling styles */
+.error-container {
+    padding: 20px;
+    text-align: center;
+    color: #dc3545;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+}
+
+/* Print styles */
+@media print {
+    .sidebar-mini .content-wrapper,
+    .sidebar-mini .main-footer,
+    .sidebar-mini .main-header {
+        margin-left: 0 !important;
+    }
+    
+    .main-sidebar {
+        display: none !important;
+    }
+    
+    .simple-layout-visualizer {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    
+    .card-tools {
+        display: none !important;
+    }
+}

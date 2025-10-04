@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Box Layout Visualization Test</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .result { margin: 10px 0; padding: 10px; background: #f5f5f5; }
+        .error { background: #ffe6e6; color: red; }
+        .success { background: #e6ffe6; color: green; }
+        #layoutVisualizationContainer { width: 800px; height: 400px; border: 1px solid #ccc; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Box Layout Visualization Test Page</h1>
+    
+    <div class="test-section">
+        <h3>Step 1: Basic JavaScript Test</h3>
+        <button onclick="testBasic()">Test Basic JS</button>
+        <div id="basicResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Step 2: API Connectivity Test</h3>
+        <button onclick="testAPI()">Test API</button>
+        <div id="apiResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Step 3: Visualization Test</h3>
+        <button onclick="testVisualizationStandalone()">Test Visualization</button>
+        <div id="layoutVisualizationContainer"></div>
+        <div id="visualizationResult" class="result"></div>
+    </div>
+
+    <script src="/js/BoxLayoutVisualizer.js"></script>
+    <script>
+        let layoutVisualizer;
+        
+        function testBasic() {
+            const result = document.getElementById('basicResult');
+            try {
+                result.innerHTML = `
+                    <div class="success">
+                        ? JavaScript working<br>
+                        ? jQuery available: ${typeof $ !== 'undefined'}<br>
+                        ? Current URL: ${window.location.href}<br>
+                        ? Origin: ${window.location.origin}
+                    </div>
+                `;
+                console.log('Basic test passed');
+            } catch (error) {
+                result.innerHTML = `<div class="error">? Error: ${error.message}</div>`;
+            }
+        }
+        
+        function testAPI() {
+            const result = document.getElementById('apiResult');
+            result.innerHTML = 'Testing API connectivity...';
+            
+            fetch('/BoxCalculator/TestVisualizationSimple')
+                .then(response => {
+                    console.log('API Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('API Response data:', data);
+                    result.innerHTML = `
+                        <div class="success">
+                            ? API connectivity working<br>
+                            ? Response success: ${data.success}<br>
+                            ? Data received: ${JSON.stringify(data).substring(0, 100)}...
+                        </div>
+                    `;
+                })
+                .catch(error => {
+                    console.error('API Error:', error);
+                    result.innerHTML = `
+                        <div class="error">
+                            ? API Error: ${error.message}<br>
+                            Check browser console for details
+                        </div>
+                    `;
+                });
+        }
+        
+        function testVisualizationStandalone() {
+            const result = document.getElementById('visualizationResult');
+            result.innerHTML = 'Testing visualization...';
+            
+            try {
+                // Initialize visualizer
+                if (!layoutVisualizer) {
+                    layoutVisualizer = new BoxLayoutVisualizer('layoutVisualizationContainer', {
+                        width: 800,
+                        height: 400
+                    });
+                    console.log('Layout visualizer created:', layoutVisualizer);
+                }
+                
+                // Test with hardcoded data
+                fetch('/BoxCalculator/TestVisualizationSimple')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            console.log('Updating visualization with data:', data.visualization);
+                            layoutVisualizer.updateVisualization(data.visualization);
+                            result.innerHTML = `
+                                <div class="success">
+                                    ? Visualization test successful!<br>
+                                    ? Layout: ${data.visualization.layoutDescription}<br>
+                                    ? Efficiency: ${data.visualization.efficiencyPercentage}%<br>
+                                    ? Blanks: ${data.visualization.totalBlanksPerSheet}
+                                </div>
+                            `;
+                        } else {
+                            throw new Error(data.message || 'API returned success=false');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Visualization error:', error);
+                        result.innerHTML = `
+                            <div class="error">
+                                ? Visualization Error: ${error.message}<br>
+                                Check browser console for details
+                            </div>
+                        `;
+                    });
+                    
+            } catch (error) {
+                console.error('Visualization setup error:', error);
+                result.innerHTML = `
+                    <div class="error">
+                        ? Setup Error: ${error.message}<br>
+                        BoxLayoutVisualizer may not be loaded
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

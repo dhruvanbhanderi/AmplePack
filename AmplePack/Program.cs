@@ -14,26 +14,15 @@ namespace AmplePack
         {
             // Ensure UTF-8 encoding for console output
             Console.OutputEncoding = Encoding.UTF8;
-
-            // Enable QuestPDF debugging globally to capture layout diagnostics in published builds
-            // This will cause QuestPDF to write debug files to the temp folder when a layout error occurs
-            try
-            {
-                QuestPDF.Settings.EnableDebugging = true;
-            }
-            catch
-            {
-                // ignore if not available at runtime
-            }
-
+            
             var builder = WebApplication.CreateBuilder(args);
 
-            // Configure QuestPDF license (already present)
+            // Configure QuestPDF
             QuestPDF.Settings.License = LicenseType.Community;
 
             // Add services
             builder.Services.AddControllersWithViews();
-
+            
             // Configure request localization for proper encoding
             builder.Services.Configure<RequestLocalizationOptions>(options =>
             {
@@ -79,14 +68,6 @@ namespace AmplePack
             });
 
             var app = builder.Build();
-
-            // Log QuestPDF temp path for diagnostics
-            try
-            {
-                var tempPath = System.IO.Path.GetTempPath();
-                Console.WriteLine($"QuestPDF debug temp path: {tempPath}");
-            }
-            catch { }
 
             // Database initialization
             using (var scope = app.Services.CreateScope())

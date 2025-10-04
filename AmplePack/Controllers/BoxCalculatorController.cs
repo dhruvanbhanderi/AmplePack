@@ -24,7 +24,33 @@ namespace AmplePack.Controllers
         /// </summary>
         public IActionResult Index()
         {
-            var model = new BoxCalculatorInput();
+            var model = new BoxCalculatorInput
+            {
+                // Set default box dimensions
+                Length = 12,
+                Width = 8,
+                Height = 6,
+                
+                // Set default sheet dimensions
+                SheetLength = 40,
+                SheetWidth = 30,
+                
+                // Set default board specifications
+                BoardGSM = 200,
+                CompressionRatio = 1.32m,
+                
+                // Set default quantities and percentages
+                Quantity = 1000,
+                OverheadPercentage = 15,
+                ProfitMarginPercentage = 20,
+                DiscountPercentage = 0,
+                WastePercentage = 5,
+                
+                // Set default options
+                IncludeGST = true,
+                ShowDetailedBreakdown = true,
+                ShippingCostPerOrder = 0
+            };
             
             // Set default values from standard rates
             var standardRates = MaterialRates.GetStandardRates().FirstOrDefault();
@@ -273,6 +299,263 @@ namespace AmplePack.Controllers
             {
                 return Json(new { success = false, message = ex.Message });
             }
+        }
+
+        /// <summary>
+        /// API: Get real-time layout visualization data
+        /// </summary>
+        [HttpPost]
+        [AllowAnonymous]
+        public IActionResult GetLayoutVisualization([FromBody] LayoutVisualizationRequest request)
+        {
+            try
+            {
+                // Add detailed logging for debugging
+                Console.WriteLine($"Received visualization request: L={request.Length}, W={request.Width}, H={request.Height}");
+                Console.WriteLine($"Sheet: {request.SheetLength}x{request.SheetWidth}, GSM={request.BoardGSM}, CR={request.CompressionRatio}");
+
+                // Validate input
+                if (request.Length <= 0 || request.Width <= 0 || request.Height <= 0)
+                {
+                    return Json(new { success = false, message = "Invalid box dimensions" });
+                }
+
+                if (request.SheetLength <= 0 || request.SheetWidth <= 0)
+                {
+                    return Json(new { success = false, message = "Invalid sheet dimensions" });
+                }
+
+                var visualization = _calculatorService.GenerateLayoutVisualization(request);
+
+                if (visualization == null)
+                {
+                    return Json(new { success = false, message = "Failed to generate visualization" });
+                }
+
+                Console.WriteLine($"Generated visualization: {visualization.TotalBlanksPerSheet} blanks, {visualization.EfficiencyPercentage:F1}% efficiency");
+
+                return Json(new
+                {
+                    success = true,
+                    visualization = new
+                    {
+                        // Sheet dimensions
+                        sheetLengthMm = (double)Math.Round(visualization.SheetLengthMm, 1),
+                        sheetWidthMm = (double)Math.Round(visualization.SheetWidthMm, 1),
+                        sheetLengthInches = (double)Math.Round(visualization.SheetLengthInches, 2),
+                        sheetWidthInches = (double)Math.Round(visualization.SheetWidthInches, 2),
+                        
+                        // Blank dimensions
+                        blankLengthMm = (double)Math.Round(visualization.BlankLengthMm, 1),
+                        blankWidthMm = (double)Math.Round(visualization.BlankWidthMm, 1),
+                        blankLengthInches = (double)Math.Round(visualization.BlankLengthInches, 2),
+                        blankWidthInches = (double)Math.Round(visualization.BlankWidthInches, 2),
+                        
+                        // Layout information
+                        blanksPerRow = visualization.BlanksPerRow,
+                        blanksPerColumn = visualization.BlanksPerColumn,
+                        totalBlanksPerSheet = visualization.TotalBlanksPerSheet,
+                        
+                        // Efficiency metrics
+                        efficiencyPercentage = (double)Math.Round(visualization.EfficiencyPercentage, 1),
+                        wastePercentage = (double)Math.Round(visualization.WastePercentage, 1),
+                        usedAreaSqM = (double)Math.Round(visualization.UsedAreaSqM, 4),
+                        wastedAreaSqM = (double)Math.Round(visualization.WastedAreaSqM, 4),
+                        
+                        // Unused areas
+                        unusedLengthMm = (double)Math.Round(visualization.UnusedLengthMm, 1),
+                        unusedWidthMm = (double)Math.Round(visualization.UnusedWidthMm, 1),
+                        
+                        // Position data for rendering
+                        blankPositions = visualization.BlankPositions.Select(bp => new
+                        {
+                            row = bp.Row,
+                            column = bp.Column,
+                            startXPercent = (double)Math.Round(bp.StartXPercent, 2),
+                            startYPercent = (double)Math.Round(bp.StartYPercent, 2),
+                            widthPercent = (double)Math.Round(bp.WidthPercent, 2),
+                            heightPercent = (double)Math.Round(bp.HeightPercent, 2),
+                            startXMm = (double)Math.Round(bp.StartXMm, 1),
+                            startYMm = (double)Math.Round(bp.StartYMm, 1),
+                            widthMm = (double)Math.Round(bp.WidthMm, 1),
+                            heightMm = (double)Math.Round(bp.HeightMm, 1)
+                        }).ToArray(),
+                        
+                        wasteAreas = visualization.WasteAreas.Select(wa => new
+                        {
+                            areaType = wa.AreaType,
+                            startXPercent = (double)Math.Round(wa.StartXPercent, 2),
+                            startYPercent = (double)Math.Round(wa.StartYPercent, 2),
+                            widthPercent = (double)Math.Round(wa.WidthPercent, 2),
+                            heightPercent = (double)Math.Round(wa.HeightPercent, 2),
+                            areaSqM = (double)Math.Round(wa.AreaSqM, 4)
+                        }).ToArray(),
+                        
+                        // Descriptions and suggestions
+                        layoutDescription = visualization.LayoutDescription ?? string.Empty,
+                        isOptimal = visualization.IsOptimal,
+                        optimizationSuggestions = visualization.OptimizationSuggestions ?? new List<string>()
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Visualization error: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
+        }
+
+        /// <summary>
+        /// API: Get layout comparison for multiple sheet sizes
+        /// </summary>
+        [HttpPost]
+        public IActionResult GetLayoutComparison([FromBody] LayoutVisualizationRequest request)
+        {
+            try
+            {
+                var comparisons = new List<object>();
+                var standardSheets = SheetSpecs.GetStandardSheetSizes().Where(s => s.IsStandard).Take(6).ToList();
+
+                foreach (var sheet in standardSheets)
+                {
+                    var tempRequest = new LayoutVisualizationRequest
+                    {
+                        Length = request.Length,
+                        Width = request.Width,
+                        Height = request.Height,
+                        SheetLength = sheet.LengthInches,
+                        SheetWidth = sheet.WidthInches,
+                        BoardGSM = request.BoardGSM,
+                        CompressionRatio = request.CompressionRatio,
+                        Quantity = request.Quantity
+                    };
+
+                    var visualization = _calculatorService.GenerateLayoutVisualization(tempRequest);
+
+                    comparisons.Add(new
+                    {
+                        sheetSize = sheet.SheetSize,
+                        sheetLengthInches = sheet.LengthInches,
+                        sheetWidthInches = sheet.WidthInches,
+                        blanksPerSheet = visualization.TotalBlanksPerSheet,
+                        efficiency = Math.Round(visualization.EfficiencyPercentage, 1),
+                        waste = Math.Round(visualization.WastePercentage, 1),
+                        layoutDescription = visualization.LayoutDescription,
+                        isOptimal = visualization.IsOptimal,
+                        sheetsRequired = visualization.TotalBlanksPerSheet > 0 ? 
+                            (int)Math.Ceiling((double)request.Quantity / visualization.TotalBlanksPerSheet) : int.MaxValue
+                    });
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    comparisons = comparisons.OrderByDescending(c => c.GetType().GetProperty("efficiency")?.GetValue(c, null)).ToList()
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Simple test endpoint for visualization debugging
+        /// </summary>
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult TestVisualization()
+        {
+            try
+            {
+                var testRequest = new LayoutVisualizationRequest
+                {
+                    Length = 12,
+                    Width = 8,
+                    Height = 6,
+                    SheetLength = 40,
+                    SheetWidth = 30,
+                    BoardGSM = 200,
+                    CompressionRatio = 1.32m,
+                    Quantity = 1000
+                };
+
+                var result = _calculatorService.GenerateLayoutVisualization(testRequest);
+
+                return Json(new
+                {
+                    success = true,
+                    message = "Test successful",
+                    result = new
+                    {
+                        totalBlanks = result.TotalBlanksPerSheet,
+                        efficiency = result.EfficiencyPercentage,
+                        layout = $"{result.BlanksPerRow}x{result.BlanksPerColumn}",
+                        description = result.LayoutDescription
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = ex.Message,
+                    stackTrace = ex.StackTrace
+                });
+            }
+        }
+
+        /// <summary>
+        /// Very simple test endpoint that just returns hardcoded data
+        /// </summary>
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult TestVisualizationSimple()
+        {
+            return Json(new
+            {
+                success = true,
+                visualization = new
+                {
+                    sheetLengthMm = 1016.0,
+                    sheetWidthMm = 762.0,
+                    sheetLengthInches = 40.0,
+                    sheetWidthInches = 30.0,
+                    blankLengthMm = 558.8,
+                    blankWidthMm = 371.9,
+                    blankLengthInches = 22.0,
+                    blankWidthInches = 14.6,
+                    blanksPerRow = 1,
+                    blanksPerColumn = 2,
+                    totalBlanksPerSheet = 2,
+                    efficiencyPercentage = 53.8,
+                    wastePercentage = 46.2,
+                    layoutDescription = "1 × 2 layout (2 blanks per sheet, 53.8% efficiency)",
+                    blankPositions = new object[]
+                    {
+                        new { row = 1, column = 1, startXPercent = 0.0, startYPercent = 0.0, widthPercent = 55.0, heightPercent = 48.8 },
+                        new { row = 2, column = 1, startXPercent = 0.0, startYPercent = 48.8, widthPercent = 55.0, heightPercent = 48.8 }
+                    },
+                    wasteAreas = new object[]
+                    {
+                        new { areaType = "RightMargin", startXPercent = 55.0, startYPercent = 0.0, widthPercent = 45.0, heightPercent = 97.6 }
+                    }
+                }
+            });
+        }
+
+        /// <summary>
+        /// Test page for visualization debugging (no auth required)
+        /// </summary>
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult Test()
+        {
+            return PhysicalFile(
+                Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "test-visualization.html"),
+                "text/html");
         }
     }
 }

@@ -6,20 +6,16 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using System.Text;
-using Microsoft.Extensions.Logging;
-using System.IO;
 
 namespace AmplePack.Services
 {
     public class EnhancedReportService
     {
         private readonly AppDbContext _context;
-        private readonly ILogger<EnhancedReportService> _logger;
 
-        public EnhancedReportService(AppDbContext context, ILogger<EnhancedReportService> logger)
+        public EnhancedReportService(AppDbContext context)
         {
             _context = context;
-            _logger = logger;
         }
 
         #region Data Retrieval Methods
@@ -162,192 +158,154 @@ namespace AmplePack.Services
 
         public Task<byte[]> ExportToPdfAsync<T>(List<T> data, ReportExportRequest request, ReportSummary? summary = null)
         {
-            try
+            // Get IST time
+            var istTime = GetISTTime();
+
+            var pdfBytes = Document.Create(container =>
             {
-                // Defensive limits: cap columns and rows to avoid layout overflow
-                var maxColumns = 8;
-                var maxRows = 100; // already applied in UI, but enforce here
-
-                var pdfBytes = Document.Create(container =>
+                container.Page(page =>
                 {
-                    container.Page(page =>
-                    {
-                        page.Size(PageSizes.A4.Landscape());
-                        page.Margin(1, Unit.Centimetre);
-                        page.PageColor(Colors.White);
-                        page.DefaultTextStyle(x => x.FontSize(9));
+                    page.Size(PageSizes.A4.Landscape());
+                    page.Margin(1, Unit.Centimetre);
+                    page.PageColor(Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(9));
 
-                        page.Header()
-                            .Height(80)
-                            .Background(Colors.Grey.Lighten3)
-                            .Padding(10)
-                            .Row(row =>
+                    page.Header()
+                        .Height(80)
+                        .Background(Colors.Grey.Lighten3)
+                        .Padding(10)
+                        .Row(row =>
+                        {
+                            row.RelativeItem().Column(column =>
                             {
-                                row.RelativeItem().Column(column =>
-                                {
-                                    column.Item().Text("AMPLE PACKAGING")
-                                        .FontSize(18)
-                                        .SemiBold()
-                                        .FontColor(Colors.Blue.Darken2);
+                                column.Item().Text("AMPLE PACKAGING")
+                                    .FontSize(18)
+                                    .SemiBold()
+                                    .FontColor(Colors.Blue.Darken2);
 
-                                    column.Item().Text($"{GetReportTitle(request.ReportType)} Report")
-                                        .FontSize(12)
-                                        .FontColor(Colors.Grey.Darken2);
-                                });
-
-                                row.ConstantItem(150).AlignRight().Column(column =>
-                                {
-                                    column.Item().Text($"Generated: {GetISTTime():dd-MM-yyyy HH:mm} IST")
-                                        .FontSize(8);
-
-                                    if (summary != null)
-                                    {
-                                        column.Item().Text($"Period: {summary.PeriodDescription}")
-                                            .FontSize(8);
-                                    }
-                                });
+                                column.Item().Text($"{GetReportTitle(request.ReportType)} Report")
+                                    .FontSize(12)
+                                    .FontColor(Colors.Grey.Darken2);
                             });
 
-                        page.Content()
-                            .PaddingVertical(10)
-                            .Column(column =>
+                            row.ConstantItem(150).AlignRight().Column(column =>
                             {
-                                if (data.Any())
+                                column.Item().Text($"Generated: {istTime:dd-MM-yyyy HH:mm} IST")
+                                    .FontSize(8);
+                                
+                                if (summary != null)
                                 {
-                                    var properties = typeof(T).GetProperties();
-                                    var selectedProps = request.SelectedColumns.Any()
-                                        ? properties.Where(p => request.SelectedColumns.Contains(p.Name)).Take(maxColumns).ToArray()
-                                        : properties.Take(maxColumns).ToArray(); // Limit columns for PDF
+                                    column.Item().Text($"Period: {summary.PeriodDescription}")
+                                        .FontSize(8);
+                                }
+                            });
+                        });
 
-                                    column.Item().Table(table =>
+                    page.Content()
+                        .PaddingVertical(10)
+                        .Column(column =>
+                        {
+                            if (data.Any())
+                            {
+                                var properties = typeof(T).GetProperties();
+                                var selectedProps = request.SelectedColumns.Any() 
+                                    ? properties.Where(p => request.SelectedColumns.Contains(p.Name)).Take(8).ToArray()
+                                    : properties.Take(8).ToArray(); // Limit columns for PDF
+
+                                column.Item().Table(table =>
+                                {
+                                    table.ColumnsDefinition(columns =>
                                     {
-                                        table.ColumnsDefinition(columns =>
+                                        for (int i = 0; i < selectedProps.Length; i++)
                                         {
-                                            for (int i = 0; i < selectedProps.Length; i++)
-                                            {
-                                                columns.RelativeColumn();
-                                            }
-                                        });
-
-                                        table.Header(header =>
-                                        {
-                                            foreach (var prop in selectedProps)
-                                            {
-                                                header.Cell().Element(HeaderCellStyle).Text(GetDisplayName(prop.Name));
-                                            }
-
-                                            static IContainer HeaderCellStyle(IContainer container)
-                                            {
-                                                return container
-                                                    .Background(Colors.Blue.Lighten4)
-                                                    .BorderColor(Colors.Blue.Lighten2)
-                                                    .Border(1)
-                                                    .Padding(3)
-                                                    .DefaultTextStyle(x => x.SemiBold().FontSize(8));
-                                            }
-                                        });
-
-                                        foreach (var item in data.Take(maxRows)) // Limit rows for PDF
-                                        {
-                                            foreach (var prop in selectedProps)
-                                            {
-                                                var value = prop.GetValue(item);
-                                                var displayValue = FormatValueForPdf(value, prop.Name);
-
-                                                // Ensure truncated values to avoid unbreakable long strings
-                                                if (displayValue != null && displayValue.Length > 200)
-                                                    displayValue = displayValue.Substring(0, 197) + "...";
-
-                                                table.Cell().Element(RowCellStyle).Text(displayValue);
-                                            }
-
-                                            static IContainer RowCellStyle(IContainer container)
-                                            {
-                                                return container
-                                                    .BorderColor(Colors.Grey.Lighten2)
-                                                    .Border(1)
-                                                    .Padding(3)
-                                                    .DefaultTextStyle(x => x.FontSize(7));
-                                            }
+                                            columns.RelativeColumn();
                                         }
                                     });
 
-                                    if (data.Count > maxRows)
+                                    table.Header(header =>
                                     {
-                                        column.Item().PaddingTop(10).Text($"Note: Showing first {maxRows} records of {data.Count} total records")
-                                            .FontSize(8)
-                                            .FontColor(Colors.Grey.Darken1);
+                                        foreach (var prop in selectedProps)
+                                        {
+                                            header.Cell().Element(HeaderCellStyle).Text(GetDisplayName(prop.Name));
+                                        }
+
+                                        static IContainer HeaderCellStyle(IContainer container)
+                                        {
+                                            return container
+                                                .Background(Colors.Blue.Lighten4)
+                                                .BorderColor(Colors.Blue.Lighten2)
+                                                .Border(1)
+                                                .Padding(3)
+                                                .DefaultTextStyle(x => x.SemiBold().FontSize(8));
+                                        }
+                                    });
+
+                                    foreach (var item in data.Take(50)) // Limit rows for PDF
+                                    {
+                                        foreach (var prop in selectedProps)
+                                        {
+                                            var value = prop.GetValue(item);
+                                            var displayValue = FormatValueForPdf(value, prop.Name);
+                                            table.Cell().Element(RowCellStyle).Text(displayValue);
+                                        }
+
+                                        static IContainer RowCellStyle(IContainer container)
+                                        {
+                                            return container
+                                                .BorderColor(Colors.Grey.Lighten2)
+                                                .Border(1)
+                                                .Padding(3)
+                                                .DefaultTextStyle(x => x.FontSize(7));
+                                        }
                                     }
-                                }
-                                else
+                                });
+
+                                if (data.Count > 50)
                                 {
-                                    column.Item().AlignCenter().Text("No data available for the selected criteria")
-                                        .FontSize(12)
+                                    column.Item().PaddingTop(10).Text($"Note: Showing first 50 records of {data.Count} total records")
+                                        .FontSize(8)
                                         .FontColor(Colors.Grey.Darken1);
                                 }
+                            }
+                            else
+                            {
+                                column.Item().AlignCenter().Text("No data available for the selected criteria")
+                                    .FontSize(12)
+                                    .FontColor(Colors.Grey.Darken1);
+                            }
 
-                                // Add summary
-                                if (request.IncludeSummary && summary != null)
+                            // Add summary
+                            if (request.IncludeSummary && summary != null)
+                            {
+                                column.Item().PaddingTop(20).Column(summaryColumn =>
                                 {
-                                    column.Item().PaddingTop(20).Column(summaryColumn =>
+                                    summaryColumn.Item().Text("SUMMARY")
+                                        .FontSize(12)
+                                        .SemiBold()
+                                        .FontColor(Colors.Blue.Darken2);
+
+                                    summaryColumn.Item().PaddingTop(5).Row(row =>
                                     {
-                                        summaryColumn.Item().Text("SUMMARY")
-                                            .FontSize(12)
-                                            .SemiBold()
-                                            .FontColor(Colors.Blue.Darken2);
-
-                                        summaryColumn.Item().PaddingTop(5).Row(row =>
-                                        {
-                                            row.ConstantItem(100).Text("Total Records:");
-                                            row.ConstantItem(80).Text(summary.TotalRecords.ToString());
-                                            row.ConstantItem(100).Text("Total Amount:");
-                                            row.RelativeItem().Text(CurrencyHelper.FormatCurrency(summary.TotalAmount));
-                                        });
+                                        row.ConstantItem(100).Text("Total Records:");
+                                        row.ConstantItem(80).Text(summary.TotalRecords.ToString());
+                                        row.ConstantItem(100).Text("Total Amount:");
+                                        row.RelativeItem().Text(CurrencyHelper.FormatCurrency(summary.TotalAmount));
                                     });
-                                }
-                            });
+                                });
+                            }
+                        });
 
-                        page.Footer()
-                            .Height(30)
-                            .Background(Colors.Grey.Lighten4)
-                            .Padding(10)
-                            .AlignCenter()
-                            .Text("AmplePack - Generated on " + GetISTTime().ToString("dd-MM-yyyy HH:mm") + " IST")
-                            .FontSize(8);
-                    });
-                }).GeneratePdf();
+                    page.Footer()
+                        .Height(30)
+                        .Background(Colors.Grey.Lighten4)
+                        .Padding(10)
+                        .AlignCenter()
+                        .Text("AmplePack - Generated on " + istTime.ToString("dd-MM-yyyy HH:mm") + " IST")
+                        .FontSize(8);
+                });
+            }).GeneratePdf();
 
-                return Task.FromResult(pdfBytes);
-            }
-            catch (QuestPDF.Drawing.Exceptions.DocumentLayoutException dex)
-            {
-                // Enable QuestPDF debugging to get detailed layout diagnostics
-                try
-                {
-                    QuestPDF.Settings.EnableDebugging = true;
-                }
-                catch { }
-
-                _logger.LogError(dex, "QuestPDF layout exception during PDF generation. A debug report was enabled.");
-                _logger.LogInformation("QuestPDF debug files (if generated) are located in: {TempPath}", Path.GetTempPath());
-
-                // Rethrow so controller can return proper error and log
-                throw;
-            }
-            catch (Exception ex)
-            {
-                // Fallback: enable debugging and log
-                try
-                {
-                    QuestPDF.Settings.EnableDebugging = true;
-                }
-                catch { }
-
-                _logger.LogError(ex, "Unexpected error during PDF export. Enabled QuestPDF debugging.");
-                _logger.LogInformation("QuestPDF debug files (if generated) are located in: {TempPath}", Path.GetTempPath());
-
-                throw;
-            }
+            return Task.FromResult(pdfBytes);
         }
 
         #endregion

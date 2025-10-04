@@ -101,64 +101,64 @@ namespace AmplePack.Services
             decimal sheetLengthMm = input.SheetLength * INCH_TO_MM_CONVERSION;
             decimal sheetWidthMm = input.SheetWidth * INCH_TO_MM_CONVERSION;
 
-            // Check if blank can fit at all
+            // Check if box can fit at all
             if (result.BlankLengthMm > sheetLengthMm && result.BlankWidthMm > sheetWidthMm)
             {
-                // Blank is larger than sheet in both dimensions
+                // Box is larger than sheet in both dimensions
                 result.BlanksPerSheet = 0;
                 result.SheetsRequired = int.MaxValue;
                 result.EfficiencyPercentage = 0;
                 result.WastePercentage = 100 + input.WastePercentage;
-                result.LayoutInfo.LayoutDescription = "Blank too large for sheet size";
+                result.LayoutInfo.LayoutDescription = "Box too large for sheet size";
                 return;
             }
 
-            // Calculate how many blanks fit in each direction
-            int blanksPerRowLength = 0;
-            int blanksPerRowWidth = 0;
-            int blanksPerColLength = 0;
-            int blanksPerColWidth = 0;
+            // Calculate how many boxes fit in each direction
+            int boxesPerRowLength = 0;
+            int boxesPerRowWidth = 0;
+            int boxesPerColLength = 0;
+            int boxesPerColWidth = 0;
 
             // Standard orientation (length along sheet length)
             if (result.BlankLengthMm <= sheetLengthMm)
-                blanksPerRowLength = (int)(sheetLengthMm / result.BlankLengthMm);
+                boxesPerRowLength = (int)(sheetLengthMm / result.BlankLengthMm);
             if (result.BlankWidthMm <= sheetWidthMm)
-                blanksPerColLength = (int)(sheetWidthMm / result.BlankWidthMm);
+                boxesPerColLength = (int)(sheetWidthMm / result.BlankWidthMm);
 
             // Rotated orientation (width along sheet length)
             if (result.BlankWidthMm <= sheetLengthMm)
-                blanksPerRowWidth = (int)(sheetLengthMm / result.BlankWidthMm);
+                boxesPerRowWidth = (int)(sheetLengthMm / result.BlankWidthMm);
             if (result.BlankLengthMm <= sheetWidthMm)
-                blanksPerColWidth = (int)(sheetWidthMm / result.BlankLengthMm);
+                boxesPerColWidth = (int)(sheetWidthMm / result.BlankLengthMm);
 
             // Try both orientations and pick the best
-            int option1 = blanksPerRowLength * blanksPerColLength; // Standard orientation
-            int option2 = blanksPerRowWidth * blanksPerColWidth;   // Rotated orientation
+            int option1 = boxesPerRowLength * boxesPerColLength; // Standard orientation
+            int option2 = boxesPerRowWidth * boxesPerColWidth;   // Rotated orientation
 
             if (option1 >= option2 && option1 > 0)
             {
                 result.BlanksPerSheet = option1;
-                result.LayoutInfo.BlanksPerRow = blanksPerRowLength;
-                result.LayoutInfo.BlanksPerColumn = blanksPerColLength;
-                result.LayoutInfo.UnusedLengthMm = sheetLengthMm - (blanksPerRowLength * result.BlankLengthMm);
-                result.LayoutInfo.UnusedWidthMm = sheetWidthMm - (blanksPerColLength * result.BlankWidthMm);
+                result.LayoutInfo.BlanksPerRow = boxesPerRowLength;
+                result.LayoutInfo.BlanksPerColumn = boxesPerColLength;
+                result.LayoutInfo.UnusedLengthMm = sheetLengthMm - (boxesPerRowLength * result.BlankLengthMm);
+                result.LayoutInfo.UnusedWidthMm = sheetWidthMm - (boxesPerColLength * result.BlankWidthMm);
             }
             else if (option2 > 0)
             {
                 result.BlanksPerSheet = option2;
-                result.LayoutInfo.BlanksPerRow = blanksPerRowWidth;
-                result.LayoutInfo.BlanksPerColumn = blanksPerColWidth;
-                result.LayoutInfo.UnusedLengthMm = sheetLengthMm - (blanksPerRowWidth * result.BlankWidthMm);
-                result.LayoutInfo.UnusedWidthMm = sheetWidthMm - (blanksPerColWidth * result.BlankLengthMm);
+                result.LayoutInfo.BlanksPerRow = boxesPerRowWidth;
+                result.LayoutInfo.BlanksPerColumn = boxesPerColWidth;
+                result.LayoutInfo.UnusedLengthMm = sheetLengthMm - (boxesPerRowWidth * result.BlankWidthMm);
+                result.LayoutInfo.UnusedWidthMm = sheetWidthMm - (boxesPerColWidth * result.BlankLengthMm);
             }
             else
             {
-                // No blanks fit
+                // No boxes fit
                 result.BlanksPerSheet = 0;
                 result.SheetsRequired = int.MaxValue;
                 result.EfficiencyPercentage = 0;
                 result.WastePercentage = 100 + input.WastePercentage;
-                result.LayoutInfo.LayoutDescription = "Blank dimensions too large for sheet";
+                result.LayoutInfo.LayoutDescription = "Box dimensions too large for sheet";
                 return;
             }
 
@@ -193,7 +193,7 @@ namespace AmplePack.Services
 
             // Layout description
             result.LayoutInfo.LayoutDescription = $"{result.LayoutInfo.BlanksPerRow} × {result.LayoutInfo.BlanksPerColumn} layout " +
-                                                 $"({result.BlanksPerSheet} blanks per sheet, {result.EfficiencyPercentage:F1}% efficiency)";
+                                                 $"({result.BlanksPerSheet} boxes per sheet, {result.EfficiencyPercentage:F1}% efficiency)";
         }
 
         /// <summary>
@@ -323,7 +323,7 @@ namespace AmplePack.Services
             // Size warnings
             if (result.BlankLengthMm > sheetLengthMm || result.BlankWidthMm > sheetWidthMm)
             {
-                result.Warnings.Add("Box blank larger than sheet size. Production not possible with current sheet dimensions.");
+                result.Warnings.Add("Box larger than sheet size. Production not possible with current sheet dimensions.");
             }
 
             // Economic warnings
@@ -420,6 +420,326 @@ namespace AmplePack.Services
             }
 
             return suggestions.OrderByDescending(s => s.EfficiencyPercentage).ToList();
+        }
+
+        /// <summary>
+        /// Generate detailed sheet layout visualization data
+        /// </summary>
+        /// <param name="request">Layout visualization request</param>
+        /// <returns>Detailed visualization data for frontend rendering</returns>
+        public SheetLayoutVisualization GenerateLayoutVisualization(LayoutVisualizationRequest request)
+        {
+            var visualization = new SheetLayoutVisualization();
+
+            try
+            {
+                Console.WriteLine($"Service: Processing visualization request for {request.Length}x{request.Width}x{request.Height} box on {request.SheetLength}x{request.SheetWidth} sheet");
+
+                // Convert dimensions to mm
+                var lengthMm = request.Length * INCH_TO_MM_CONVERSION;
+                var widthMm = request.Width * INCH_TO_MM_CONVERSION;
+                var heightMm = request.Height * INCH_TO_MM_CONVERSION;
+                var sheetLengthMm = request.SheetLength * INCH_TO_MM_CONVERSION;
+                var sheetWidthMm = request.SheetWidth * INCH_TO_MM_CONVERSION;
+
+                Console.WriteLine($"Service: Converted to mm - Box: {lengthMm}x{widthMm}x{heightMm}, Sheet: {sheetLengthMm}x{sheetWidthMm}");
+
+                // Calculate blank dimensions
+                const decimal standardMargin = 12.0m;
+                var blankLengthMm = (lengthMm + widthMm + standardMargin) * request.CompressionRatio;
+                var blankWidthMm = (widthMm + heightMm + standardMargin) * request.CompressionRatio;
+
+                Console.WriteLine($"Service: Calculated blank dimensions - {blankLengthMm}x{blankWidthMm} mm");
+
+                // Set basic dimensions
+                visualization.SheetLengthMm = sheetLengthMm;
+                visualization.SheetWidthMm = sheetWidthMm;
+                visualization.SheetLengthInches = request.SheetLength;
+                visualization.SheetWidthInches = request.SheetWidth;
+                visualization.BlankLengthMm = blankLengthMm;
+                visualization.BlankWidthMm = blankWidthMm;
+                visualization.BlankLengthInches = blankLengthMm / INCH_TO_MM_CONVERSION;
+                visualization.BlankWidthInches = blankWidthMm / INCH_TO_MM_CONVERSION;
+
+                // Calculate layout - try both orientations
+                var layout1 = CalculateLayoutOption(sheetLengthMm, sheetWidthMm, blankLengthMm, blankWidthMm, false);
+                var layout2 = CalculateLayoutOption(sheetLengthMm, sheetWidthMm, blankLengthMm, blankWidthMm, true);
+
+                Console.WriteLine($"Service: Layout option 1 (normal): {layout1.totalBlanks} blanks ({layout1.blanksPerRow}x{layout1.blanksPerColumn})");
+                Console.WriteLine($"Service: Layout option 2 (rotated): {layout2.totalBlanks} blanks ({layout2.blanksPerRow}x{layout2.blanksPerColumn})");
+
+                // Choose the best layout
+                var bestLayout = layout1.totalBlanks >= layout2.totalBlanks ? layout1 : layout2;
+                
+                visualization.BlanksPerRow = bestLayout.blanksPerRow;
+                visualization.BlanksPerColumn = bestLayout.blanksPerColumn;
+                visualization.TotalBlanksPerSheet = bestLayout.totalBlanks;
+                visualization.UnusedLengthMm = bestLayout.unusedLength;
+                visualization.UnusedWidthMm = bestLayout.unusedWidth;
+
+                Console.WriteLine($"Service: Best layout - {bestLayout.totalBlanks} blanks, unused: {bestLayout.unusedLength}x{bestLayout.unusedWidth} mm");
+
+                // Calculate areas and efficiency
+                var sheetAreaSqM = (sheetLengthMm * sheetWidthMm) / (MM_TO_M_CONVERSION * MM_TO_M_CONVERSION);
+                var blankAreaSqM = (blankLengthMm * blankWidthMm) / (MM_TO_M_CONVERSION * MM_TO_M_CONVERSION);
+                visualization.UsedAreaSqM = visualization.TotalBlanksPerSheet * blankAreaSqM;
+                visualization.WastedAreaSqM = sheetAreaSqM - visualization.UsedAreaSqM;
+                visualization.EfficiencyPercentage = sheetAreaSqM > 0 ? (visualization.UsedAreaSqM / sheetAreaSqM) * 100 : 0;
+                visualization.WastePercentage = 100 - visualization.EfficiencyPercentage;
+
+                Console.WriteLine($"Service: Efficiency calculation - {visualization.EfficiencyPercentage:F1}% efficiency, {visualization.WastePercentage:F1}% waste");
+
+                // Generate blank positions
+                GenerateBlankPositions(visualization, bestLayout.rotated);
+
+                // Generate waste areas
+                GenerateWasteAreas(visualization);
+
+                // Generate layout description and suggestions
+                GenerateLayoutDescription(visualization);
+                GenerateOptimizationSuggestions(visualization, request);
+
+                visualization.IsOptimal = visualization.EfficiencyPercentage >= 75;
+
+                Console.WriteLine($"Service: Generated {visualization.BlankPositions.Count} blank positions and {visualization.WasteAreas.Count} waste areas");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Service error in GenerateLayoutVisualization: {ex.Message}");
+                Console.WriteLine($"Service stack trace: {ex.StackTrace}");
+                visualization.OptimizationSuggestions.Add($"Error generating layout: {ex.Message}");
+            }
+
+            return visualization;
+        }
+
+        /// <summary>
+        /// Calculate layout option for given orientation
+        /// </summary>
+        private (int blanksPerRow, int blanksPerColumn, int totalBlanks, decimal unusedLength, decimal unusedWidth, bool rotated) 
+            CalculateLayoutOption(decimal sheetLength, decimal sheetWidth, decimal blankLength, decimal blankWidth, bool rotateBlank)
+        {
+            var actualBlankLength = rotateBlank ? blankWidth : blankLength;
+            var actualBlankWidth = rotateBlank ? blankLength : blankWidth;
+
+            if (actualBlankLength > sheetLength || actualBlankWidth > sheetWidth)
+            {
+                return (0, 0, 0, sheetLength, sheetWidth, rotateBlank);
+            }
+
+            var blanksPerRow = (int)(sheetLength / actualBlankLength);
+            var blanksPerColumn = (int)(sheetWidth / actualBlankWidth);
+            var totalBlanks = blanksPerRow * blanksPerColumn;
+            var unusedLength = sheetLength - (blanksPerRow * actualBlankLength);
+            var unusedWidth = sheetWidth - (blanksPerColumn * actualBlankWidth);
+
+            return (blanksPerRow, blanksPerColumn, totalBlanks, unusedLength, unusedWidth, rotateBlank);
+        }
+
+        /// <summary>
+        /// Generate positions for each box on the sheet
+        /// </summary>
+        private void GenerateBlankPositions(SheetLayoutVisualization visualization, bool rotated)
+        {
+            visualization.BlankPositions.Clear();
+
+            var actualBlankLength = rotated ? visualization.BlankWidthMm : visualization.BlankLengthMm;
+            var actualBlankWidth = rotated ? visualization.BlankLengthMm : visualization.BlankWidthMm;
+
+            for (int row = 0; row < visualization.BlanksPerColumn; row++)
+            {
+                for (int col = 0; col < visualization.BlanksPerRow; col++)
+                {
+                    var startX = col * actualBlankLength;
+                    var startY = row * actualBlankWidth;
+                    
+                    // Ensure the box position is within sheet bounds
+                    if (startX + actualBlankLength <= visualization.SheetLengthMm && 
+                        startY + actualBlankWidth <= visualization.SheetWidthMm)
+                    {
+                        var position = new BlankPosition
+                        {
+                            Row = row + 1,
+                            Column = col + 1,
+                            StartXMm = startX,
+                            StartYMm = startY,
+                            EndXMm = startX + actualBlankLength,
+                            EndYMm = startY + actualBlankWidth,
+                            WidthMm = actualBlankLength,
+                            HeightMm = actualBlankWidth,
+                            
+                            // Calculate percentages for CSS positioning with bounds checking
+                            StartXPercent = Math.Min(100, Math.Max(0, (startX / visualization.SheetLengthMm) * 100)),
+                            StartYPercent = Math.Min(100, Math.Max(0, (startY / visualization.SheetWidthMm) * 100)),
+                            WidthPercent = Math.Min(100, Math.Max(0, (actualBlankLength / visualization.SheetLengthMm) * 100)),
+                            HeightPercent = Math.Min(100, Math.Max(0, (actualBlankWidth / visualization.SheetWidthMm) * 100))
+                        };
+
+                        visualization.BlankPositions.Add(position);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Generate waste area information
+        /// </summary>
+        private void GenerateWasteAreas(SheetLayoutVisualization visualization)
+        {
+            visualization.WasteAreas.Clear();
+
+            // Calculate used area dimensions
+            var usedLengthMm = visualization.BlanksPerRow * (visualization.BlankLengthMm);
+            var usedWidthMm = visualization.BlanksPerColumn * (visualization.BlankWidthMm);
+            
+            // Ensure used dimensions don't exceed sheet dimensions
+            usedLengthMm = Math.Min(usedLengthMm, visualization.SheetLengthMm);
+            usedWidthMm = Math.Min(usedWidthMm, visualization.SheetWidthMm);
+            
+            // Recalculate actual unused dimensions
+            var actualUnusedLength = visualization.SheetLengthMm - usedLengthMm;
+            var actualUnusedWidth = visualization.SheetWidthMm - usedWidthMm;
+
+            // Right margin waste (if any)
+            if (actualUnusedLength > 0)
+            {
+                var rightWaste = new WasteArea
+                {
+                    AreaType = "RightMargin",
+                    StartXMm = usedLengthMm,
+                    StartYMm = 0,
+                    EndXMm = visualization.SheetLengthMm,
+                    EndYMm = usedWidthMm,
+                    WidthMm = actualUnusedLength,
+                    HeightMm = usedWidthMm,
+                    AreaSqM = (actualUnusedLength * usedWidthMm) / (MM_TO_M_CONVERSION * MM_TO_M_CONVERSION),
+                    
+                    // Calculate percentages with bounds checking
+                    StartXPercent = Math.Min(100, Math.Max(0, (usedLengthMm / visualization.SheetLengthMm) * 100)),
+                    StartYPercent = 0,
+                    WidthPercent = Math.Min(100, Math.Max(0, (actualUnusedLength / visualization.SheetLengthMm) * 100)),
+                    HeightPercent = Math.Min(100, Math.Max(0, (usedWidthMm / visualization.SheetWidthMm) * 100))
+                };
+                
+                // Only add if the waste area makes sense
+                if (rightWaste.WidthPercent > 0.1m && rightWaste.HeightPercent > 0.1m)
+                {
+                    visualization.WasteAreas.Add(rightWaste);
+                }
+            }
+
+            // Bottom margin waste (if any)
+            if (actualUnusedWidth > 0)
+            {
+                var bottomWaste = new WasteArea
+                {
+                    AreaType = "BottomMargin",
+                    StartXMm = 0,
+                    StartYMm = usedWidthMm,
+                    EndXMm = usedLengthMm,
+                    EndYMm = visualization.SheetWidthMm,
+                    WidthMm = usedLengthMm,
+                    HeightMm = actualUnusedWidth,
+                    AreaSqM = (usedLengthMm * actualUnusedWidth) / (MM_TO_M_CONVERSION * MM_TO_M_CONVERSION),
+                    
+                    // Calculate percentages with bounds checking
+                    StartXPercent = 0,
+                    StartYPercent = Math.Min(100, Math.Max(0, (usedWidthMm / visualization.SheetWidthMm) * 100)),
+                    WidthPercent = Math.Min(100, Math.Max(0, (usedLengthMm / visualization.SheetLengthMm) * 100)),
+                    HeightPercent = Math.Min(100, Math.Max(0, (actualUnusedWidth / visualization.SheetWidthMm) * 100))
+                };
+                
+                // Only add if the waste area makes sense
+                if (bottomWaste.WidthPercent > 0.1m && bottomWaste.HeightPercent > 0.1m)
+                {
+                    visualization.WasteAreas.Add(bottomWaste);
+                }
+            }
+
+            // Corner waste (if both margins exist)
+            if (actualUnusedLength > 0 && actualUnusedWidth > 0)
+            {
+                var cornerWaste = new WasteArea
+                {
+                    AreaType = "Corner",
+                    StartXMm = usedLengthMm,
+                    StartYMm = usedWidthMm,
+                    EndXMm = visualization.SheetLengthMm,
+                    EndYMm = visualization.SheetWidthMm,
+                    WidthMm = actualUnusedLength,
+                    HeightMm = actualUnusedWidth,
+                    AreaSqM = (actualUnusedLength * actualUnusedWidth) / (MM_TO_M_CONVERSION * MM_TO_M_CONVERSION),
+                    
+                    // Calculate percentages with bounds checking
+                    StartXPercent = Math.Min(100, Math.Max(0, (usedLengthMm / visualization.SheetLengthMm) * 100)),
+                    StartYPercent = Math.Min(100, Math.Max(0, (usedWidthMm / visualization.SheetWidthMm) * 100)),
+                    WidthPercent = Math.Min(100, Math.Max(0, (actualUnusedLength / visualization.SheetLengthMm) * 100)),
+                    HeightPercent = Math.Min(100, Math.Max(0, (actualUnusedWidth / visualization.SheetWidthMm) * 100))
+                };
+                
+                // Only add if the waste area makes sense
+                if (cornerWaste.WidthPercent > 0.1m && cornerWaste.HeightPercent > 0.1m)
+                {
+                    visualization.WasteAreas.Add(cornerWaste);
+                }
+            }
+            
+            // Update unused dimensions in visualization
+            visualization.UnusedLengthMm = actualUnusedLength;
+            visualization.UnusedWidthMm = actualUnusedWidth;
+        }
+
+        /// <summary>
+        /// Generate layout description
+        /// </summary>
+        private void GenerateLayoutDescription(SheetLayoutVisualization visualization)
+        {
+            visualization.LayoutDescription = $"{visualization.BlanksPerRow} × {visualization.BlanksPerColumn} layout " +
+                                           $"({visualization.TotalBlanksPerSheet} boxes per sheet, {visualization.EfficiencyPercentage:F1}% efficiency)";
+        }
+
+        /// <summary>
+        /// Generate optimization suggestions
+        /// </summary>
+        private void GenerateOptimizationSuggestions(SheetLayoutVisualization visualization, LayoutVisualizationRequest request)
+        {
+            visualization.OptimizationSuggestions.Clear();
+
+            if (visualization.EfficiencyPercentage < 60)
+            {
+                visualization.OptimizationSuggestions.Add("Consider adjusting box dimensions to improve sheet utilization.");
+                visualization.OptimizationSuggestions.Add("Try different sheet sizes for better efficiency.");
+            }
+            else if (visualization.EfficiencyPercentage < 75)
+            {
+                visualization.OptimizationSuggestions.Add("Good layout, but there's room for improvement. Consider fine-tuning dimensions.");
+            }
+            else if (visualization.EfficiencyPercentage >= 85)
+            {
+                visualization.OptimizationSuggestions.Add("Excellent sheet utilization! This is an optimal layout.");
+            }
+
+            if (visualization.WastePercentage > 25)
+            {
+                visualization.OptimizationSuggestions.Add($"High waste ({visualization.WastePercentage:F1}%). Consider reducing box size or changing sheet size.");
+            }
+
+            if (visualization.TotalBlanksPerSheet == 0)
+            {
+                visualization.OptimizationSuggestions.Add("Box blank is too large for the selected sheet size. Choose a larger sheet or reduce box dimensions.");
+            }
+            else if (visualization.TotalBlanksPerSheet == 1)
+            {
+                visualization.OptimizationSuggestions.Add("Only one blank fits per sheet. Consider optimizing dimensions for better economics.");
+            }
+        }
+
+        /// <summary>
+        /// Get live layout visualization updates
+        /// </summary>
+        public SheetLayoutVisualization GetLiveLayoutUpdate(LayoutVisualizationRequest request)
+        {
+            return GenerateLayoutVisualization(request);
         }
     }
 

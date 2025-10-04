@@ -79,6 +79,36 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Sheet Layout Visualization Row -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card card-info">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-th mr-2"></i>
+                                Sheet Layout Visualization
+                            </h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-sm btn-primary" onclick="updateLayoutVisualization()" title="Refresh Visualization">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                                <button type="button" class="btn btn-sm btn-success" onclick="compareSheetLayouts()" title="Compare Sheet Sizes">
+                                    <i class="fas fa-balance-scale"></i> Compare
+                                </button>
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body" style="padding: 15px !important;">
+                            <div id="layoutVisualizationContainer" style="width: 100%; height: 450px; position: relative; background: #fafafa; border-radius: 4px;">
+                                <!-- Visualization will be rendered here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         }
 
         <div class="row">
@@ -90,11 +120,6 @@
                             <i class="fas fa-edit mr-2"></i>
                             Box Specifications & Pricing
                         </h3>
-                        <div class="card-tools">
-                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                <i class="fas fa-minus"></i>
-                            </button>
-                        </div>
                     </div>
                     <form asp-action="Index" method="post" id="calculatorForm">
                         <div class="card-body">
@@ -109,21 +134,21 @@
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             <label asp-for="Length"></label>
-                                            <input asp-for="Length" class="form-control" placeholder="Length in inches" />
+                                            <input asp-for="Length" class="form-control dimension-input" placeholder="Length in inches" />
                                             <span asp-validation-for="Length" class="text-danger"></span>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             <label asp-for="Width"></label>
-                                            <input asp-for="Width" class="form-control" placeholder="Width in inches" />
+                                            <input asp-for="Width" class="form-control dimension-input" placeholder="Width in inches" />
                                             <span asp-validation-for="Width" class="text-danger"></span>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             <label asp-for="Height"></label>
-                                            <input asp-for="Height" class="form-control" placeholder="Height in inches" />
+                                            <input asp-for="Height" class="form-control dimension-input" placeholder="Height in inches" />
                                             <span asp-validation-for="Height" class="text-danger"></span>
                                         </div>
                                     </div>
@@ -142,14 +167,17 @@
                                             <label asp-for="BoardType"></label>
                                             <select asp-for="BoardType" class="form-control" id="boardTypeSelect">
                                                 <option value="">Select Board Type</option>
-                                                @foreach (var boardType in ViewBag.BoardTypes as List<AmplePack.Models.BoardSpecs>)
+                                                @if (ViewBag.BoardTypes is List<AmplePack.Models.BoardSpecs> boardTypes)
                                                 {
-                                                    <option value="@boardType.BoardType" 
-                                                            data-gsm="@boardType.DefaultGSM" 
-                                                            data-compression="@boardType.DefaultCompressionRatio"
-                                                            selected="@(Model.BoardType == boardType.BoardType)">
-                                                        @boardType.BoardType (@boardType.Description)
-                                                    </option>
+                                                    @foreach (var boardType in boardTypes)
+                                                    {
+                                                        <option value="@boardType.BoardType" 
+                                                                data-gsm="@boardType.DefaultGSM" 
+                                                                data-compression="@boardType.DefaultCompressionRatio"
+                                                                selected="@(Model.BoardType == boardType.BoardType)">
+                                                            @boardType.BoardType (@boardType.Description)
+                                                        </option>
+                                                    }
                                                 }
                                             </select>
                                             <span asp-validation-for="BoardType" class="text-danger"></span>
@@ -158,14 +186,14 @@
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             <label asp-for="BoardGSM"></label>
-                                            <input asp-for="BoardGSM" class="form-control" />
+                                            <input asp-for="BoardGSM" class="form-control layout-input" />
                                             <span asp-validation-for="BoardGSM" class="text-danger"></span>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             <label asp-for="CompressionRatio"></label>
-                                            <input asp-for="CompressionRatio" class="form-control" step="0.01" />
+                                            <input asp-for="CompressionRatio" class="form-control layout-input" step="0.01" />
                                             <span asp-validation-for="CompressionRatio" class="text-danger"></span>
                                         </div>
                                     </div>
@@ -182,7 +210,7 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label asp-for="Quantity"></label>
-                                            <input asp-for="Quantity" class="form-control" />
+                                            <input asp-for="Quantity" class="form-control layout-input" />
                                             <span asp-validation-for="Quantity" class="text-danger"></span>
                                         </div>
                                     </div>
@@ -191,15 +219,18 @@
                                             <label for="materialRateSelect">Material Rate Category</label>
                                             <select class="form-control" id="materialRateSelect">
                                                 <option value="">Select Rate Category</option>
-                                                @foreach (var rate in ViewBag.MaterialRates as List<AmplePack.Models.MaterialRates>)
+                                                @if (ViewBag.MaterialRates is List<AmplePack.Models.MaterialRates> materialRates)
                                                 {
-                                                    <option value="@rate.RateCategory" 
-                                                            data-board-rate="@rate.BoardRatePerSqM"
-                                                            data-printing-rate="@rate.PrintingRatePerSqM"
-                                                            data-die-cutting-rate="@rate.DieCuttingRatePerSqM"
-                                                            data-labor-rate="@rate.LaborRatePerBox">
-                                                        @rate.RateCategory (@rate.Region)
-                                                    </option>
+                                                    @foreach (var rate in materialRates)
+                                                    {
+                                                        <option value="@rate.RateCategory" 
+                                                                data-board-rate="@rate.BoardRatePerSqM"
+                                                                data-printing-rate="@rate.PrintingRatePerSqM"
+                                                                data-die-cutting-rate="@rate.DieCuttingRatePerSqM"
+                                                                data-labor-rate="@rate.LaborRatePerBox">
+                                                            @rate.RateCategory (@rate.Region)
+                                                        </option>
+                                                    }
                                                 }
                                             </select>
                                         </div>
@@ -257,13 +288,16 @@
                                             <label for="sheetSizeSelect">Sheet Size</label>
                                             <select class="form-control" id="sheetSizeSelect">
                                                 <option value="">Select Sheet Size</option>
-                                                @foreach (var sheet in ViewBag.SheetSizes as List<AmplePack.Models.SheetSpecs>)
+                                                @if (ViewBag.SheetSizes is List<AmplePack.Models.SheetSpecs> sheetSizes)
                                                 {
-                                                    <option value="@sheet.SheetSize" 
-                                                            data-length="@sheet.LengthInches"
-                                                            data-width="@sheet.WidthInches">
-                                                        @sheet.SheetSize
-                                                    </option>
+                                                    @foreach (var sheet in sheetSizes)
+                                                    {
+                                                        <option value="@sheet.SheetSize" 
+                                                                data-length="@sheet.LengthInches"
+                                                                data-width="@sheet.WidthInches">
+                                                            @sheet.SheetSize
+                                                        </option>
+                                                    }
                                                 }
                                             </select>
                                         </div>
@@ -271,14 +305,14 @@
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             <label asp-for="SheetLength"></label>
-                                            <input asp-for="SheetLength" class="form-control" />
+                                            <input asp-for="SheetLength" class="form-control layout-input" />
                                             <span asp-validation-for="SheetLength" class="text-danger"></span>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             <label asp-for="SheetWidth"></label>
-                                            <input asp-for="SheetWidth" class="form-control" />
+                                            <input asp-for="SheetWidth" class="form-control layout-input" />
                                             <span asp-validation-for="SheetWidth" class="text-danger"></span>
                                         </div>
                                     </div>
@@ -512,7 +546,7 @@
                                             <i class="fas fa-layer-group"></i>
                                         </span>
                                         <div class="info-box-content">
-                                            <span class="info-box-text">Blanks/Sheet</span>
+                                            <span class="info-box-text">Boxes/Sheet</span>
                                             <span class="info-box-number">@result.BlanksPerSheet</span>
                                         </div>
                                     </div>
@@ -577,6 +611,28 @@
     </div>
 </section>
 
+<!-- Sheet Comparison Modal -->
+<div class="modal fade" id="sheetComparisonModal" tabindex="-1" role="dialog" aria-labelledby="sheetComparisonModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="sheetComparisonModalLabel">
+                    <i class="fas fa-balance-scale mr-2"></i>Sheet Size Comparison
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="sheetComparisonContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Optimization Modal -->
 <div class="modal fade" id="optimizationModal" tabindex="-1" role="dialog" aria-labelledby="optimizationModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
@@ -601,13 +657,61 @@
 
 @section Scripts {
     <script>
+        // Test if the script path is working
+        console.log('Loading BoxLayoutVisualizer script...');
+        console.log('Script path should be:', '@Url.Content("~/js/BoxLayoutVisualizer.js")');
+    </script>
+    
+    <script src="~/js/BoxLayoutVisualizer.js"></script>
+    
+    <script>
+        // Test if the script loaded
+        console.log('After script tag - BoxLayoutVisualizer available:', typeof BoxLayoutVisualizer);
+    </script>
+    
+    <script>
+        let layoutVisualizer;
+        let updateTimeout;
+        let hasResultsLoaded = @(hasResult ? "true" : "false");
+
         $(document).ready(function() {
+            console.log('Initializing Box Calculator page...');
+            
+            // Initialize layout visualizer
+            if (document.getElementById('layoutVisualizationContainer')) {
+                console.log('Container found, creating layout visualizer...');
+                
+                try {
+                    layoutVisualizer = new BoxLayoutVisualizer('layoutVisualizationContainer', {
+                        width: 500,
+                        height: 350
+                    });
+                    console.log('Layout visualizer created successfully');
+
+                    // Load initial visualization if results are available
+                    if (hasResultsLoaded) {
+                        setTimeout(function() {
+                            updateLayoutVisualization();
+                        }, 500);
+                    }
+                } catch (error) {
+                    console.error('Error creating layout visualizer:', error);
+                    document.getElementById('layoutVisualizationContainer').innerHTML = `
+                        <div style="padding: 40px; text-align: center; color: #dc3545; background: #f8f9fa; border-radius: 8px;">
+                            <h4>Visualization Error</h4>
+                            <p>Failed to initialize layout visualizer. Please refresh the page.</p>
+                        </div>
+                    `;
+                }
+            }
+
             // Board type change handler
             $('#boardTypeSelect').change(function() {
                 var selectedOption = $(this).find('option:selected');
                 if (selectedOption.val()) {
                     $('#BoardGSM').val(selectedOption.data('gsm'));
                     $('#CompressionRatio').val(selectedOption.data('compression'));
+                    debounceLayoutUpdate();
                 }
             });
 
@@ -628,68 +732,222 @@
                 if (selectedOption.val()) {
                     $('#SheetLength').val(selectedOption.data('length'));
                     $('#SheetWidth').val(selectedOption.data('width'));
+                    debounceLayoutUpdate();
                 }
             });
+
+            // Live update handlers for layout-affecting inputs
+            $('.dimension-input, .layout-input').on('input', function() {
+                debounceLayoutUpdate();
+            });
+
+            function debounceLayoutUpdate() {
+                if (layoutVisualizer && hasValidDimensions()) {
+                    clearTimeout(updateTimeout);
+                    updateTimeout = setTimeout(updateLayoutVisualization, 800);
+                }
+            }
+
+            function hasValidDimensions() {
+                const length = parseFloat($('#Length').val()) || 0;
+                const width = parseFloat($('#Width').val()) || 0;
+                const height = parseFloat($('#Height').val()) || 0;
+                const sheetLength = parseFloat($('#SheetLength').val()) || 0;
+                const sheetWidth = parseFloat($('#SheetWidth').val()) || 0;
+                
+                return length > 0 && width > 0 && height > 0 && sheetLength > 0 && sheetWidth > 0;
+            }
         });
+
+        function updateLayoutVisualization() {
+            if (!layoutVisualizer) return;
+
+            const requestData = {
+                Length: parseFloat($('#Length').val()) || 0,
+                Width: parseFloat($('#Width').val()) || 0,
+                Height: parseFloat($('#Height').val()) || 0,
+                SheetLength: parseFloat($('#SheetLength').val()) || 0,
+                SheetWidth: parseFloat($('#SheetWidth').val()) || 0,
+                BoardGSM: parseInt($('#BoardGSM').val()) || 200,
+                CompressionRatio: parseFloat($('#CompressionRatio').val()) || 1.32,
+                Quantity: parseInt($('#Quantity').val()) || 1000
+            };
+
+            if (requestData.Length === 0 || requestData.Width === 0 || requestData.Height === 0 ||
+                requestData.SheetLength === 0 || requestData.SheetWidth === 0) {
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("GetLayoutVisualization")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(requestData),
+                success: function(response) {
+                    if (response.success) {
+                        layoutVisualizer.updateVisualization(response.visualization);
+                    } else {
+                        console.error('Layout visualization failed:', response.message);
+                        layoutVisualizer.updateVisualization(null);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Layout visualization error:', error);
+                    layoutVisualizer.updateVisualization(null);
+                }
+            });
+        }
+
+        function compareSheetLayouts() {
+            const requestData = {
+                Length: parseFloat($('#Length').val()) || 0,
+                Width: parseFloat($('#Width').val()) || 0,
+                Height: parseFloat($('#Height').val()) || 0,
+                SheetLength: parseFloat($('#SheetLength').val()) || 0,
+                SheetWidth: parseFloat($('#SheetWidth').val()) || 0,
+                BoardGSM: parseInt($('#BoardGSM').val()) || 200,
+                CompressionRatio: parseFloat($('#CompressionRatio').val()) || 1.32,
+                Quantity: parseInt($('#Quantity').val()) || 1000
+            };
+
+            if (requestData.Length === 0 || requestData.Width === 0 || requestData.Height === 0) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Error', 'Please enter valid box dimensions first', 'error');
+                } else {
+                    alert('Please enter valid box dimensions first');
+                }
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("GetLayoutComparison")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(requestData),
+                success: function(response) {
+                    if (response.success) {
+                        displaySheetComparison(response.comparisons);
+                    } else {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire('Error', response.message || 'Failed to get sheet comparisons', 'error');
+                        } else {
+                            alert(response.message || 'Failed to get sheet comparisons');
+                        }
+                    }
+                },
+                error: function() {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire('Error', 'Failed to get sheet comparisons', 'error');
+                    } else {
+                        alert('Failed to get sheet comparisons');
+                    }
+                }
+            });
+        }
+
+        function displaySheetComparison(comparisons) {
+            let content = `
+                <p>Comparison of different sheet sizes for your box dimensions:</p>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th>Sheet Size</th>
+                                <th>Dimensions (inches)</th>
+                                <th>Blanks/Sheet</th>
+                                <th>Efficiency</th>
+                                <th>Sheets Required</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            comparisons.forEach(function(comparison) {
+                const efficiencyClass = comparison.efficiency >= 80 ? 'badge-success' : 
+                                      comparison.efficiency >= 60 ? 'badge-warning' : 'badge-danger';
+                
+                const statusClass = comparison.isOptimal ? 'badge-success' : 'badge-secondary';
+                const statusText = comparison.isOptimal ? 'Optimal' : 'Standard';
+                
+                content += `
+                    <tr style="cursor: pointer;" onclick="selectSheetSize('${comparison.sheetSize}', ${comparison.sheetLengthInches}, ${comparison.sheetWidthInches})">
+                        <td><strong>${comparison.sheetSize}</strong></td>
+                        <td>${comparison.sheetLengthInches}" × ${comparison.sheetWidthInches}"</td>
+                        <td>${comparison.blanksPerSheet}</td>
+                        <td><span class="badge ${efficiencyClass}">${comparison.efficiency}%</span></td>
+                        <td>${comparison.sheetsRequired === 2147483647 ? 'N/A' : comparison.sheetsRequired}</td>
+                        <td><span class="badge ${statusClass}">${statusText}</span></td>
+                    </tr>
+                `;
+            });
+
+            content += `
+                        </tbody>
+                    </table>
+                </div>
+                <div class="alert alert-info">
+                    <small><i class="fas fa-info-circle mr-1"></i>
+                    Click on any row to apply that sheet size to your calculation. Green indicates optimal efficiency (>80%).
+                    </small>
+                </div>
+            `;
+
+            $('#sheetComparisonContent').html(content);
+            $('#sheetComparisonModal').modal('show');
+        }
+
+        function selectSheetSize(sheetSize, length, width) {
+            $('#sheetSizeSelect').val(sheetSize);
+            $('#SheetLength').val(length);
+            $('#SheetWidth').val(width);
+            $('#sheetComparisonModal').modal('hide');
+            updateLayoutVisualization();
+        }
 
         function resetForm() {
             if (confirm('Are you sure you want to reset all fields?')) {
                 document.getElementById('calculatorForm').reset();
-                // Reload page to clear results
+                if (layoutVisualizer) {
+                    layoutVisualizer.updateVisualization(null);
+                }
                 window.location.href = '@Url.Action("Index")';
             }
         }
 
         function exportCalculation() {
-            // Show loading
-            Swal.fire({
-                title: 'Generating Export...',
-                text: 'Please wait while we prepare your export.',
-                icon: 'info',
-                showConfirmButton: false,
-                allowOutsideClick: false
-            });
-            
-            // Collect form data
             var formData = new FormData(document.getElementById('calculatorForm'));
             
-            // Make AJAX call to export endpoint
             fetch('@Url.Action("ExportToPdf")', {
                 method: 'POST',
                 body: formData
             })
-            .then(response => {
-                if (response.headers.get('content-type')?.includes('application/pdf')) {
-                    // Handle PDF download
-                    return response.blob().then(blob => {
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.style.display = 'none';
-                        a.href = url;
-                        a.download = `BoxCalculation_${new Date().getTime()}.pdf`;
-                        document.body.appendChild(a);
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                        Swal.fire('Success!', 'PDF has been downloaded', 'success');
-                    });
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire('Info', data.message, 'info');
+                    } else {
+                        alert(data.message);
+                    }
                 } else {
-                    // Handle JSON response
-                    return response.json().then(data => {
-                        if (data.success) {
-                            Swal.fire('Info', data.message, 'info');
-                        } else {
-                            Swal.fire('Error!', data.message || 'Export failed', 'error');
-                        }
-                    });
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire('Error!', data.message || 'Export failed', 'error');
+                    } else {
+                        alert(data.message || 'Export failed');
+                    }
                 }
             })
             .catch(error => {
-                Swal.fire('Error!', 'Export failed: ' + error.message, 'error');
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Error!', 'Export failed: ' + error.message, 'error');
+                } else {
+                    alert('Export failed: ' + error.message);
+                }
             });
         }
 
         function getOptimizationSuggestions() {
-            // Collect form data
             var formData = {
                 Length: parseFloat($('#Length').val()) || 0,
                 Width: parseFloat($('#Width').val()) || 0,
@@ -708,11 +966,19 @@
                     if (response.success) {
                         displayOptimizationSuggestions(response.suggestions);
                     } else {
-                        Swal.fire('Error', response.message || 'Failed to get suggestions', 'error');
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire('Error', response.message || 'Failed to get suggestions', 'error');
+                        } else {
+                            alert(response.message || 'Failed to get suggestions');
+                        }
                     }
                 },
                 error: function() {
-                    Swal.fire('Error', 'Failed to get optimization suggestions', 'error');
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire('Error', 'Failed to get optimization suggestions', 'error');
+                    } else {
+                        alert('Failed to get optimization suggestions');
+                    }
                 }
             });
         }
@@ -838,18 +1104,6 @@
             padding: 10px;
         }
 
-        .small-box > .small-box-footer {
-            position: relative;
-            text-align: center;
-            padding: 3px 0;
-            color: #fff;
-            color: rgba(255,255,255,0.8);
-            display: block;
-            z-index: 10;
-            background: rgba(0,0,0,0.1);
-            text-decoration: none;
-        }
-
         .small-box h3 {
             font-size: 2.2rem;
             font-weight: bold;
@@ -876,6 +1130,39 @@
         .bg-success { background-color: #28a745 !important; color: white; }
         .bg-info { background-color: #17a2b8 !important; color: white; }
         .bg-warning { background-color: #ffc107 !important; color: white; }
+
+        .simple-layout-visualizer {
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .layout-summary {
+            background: #f8f9fa;
+            border-left: 1px solid #dee2e6;
+        }
+
+        .summary-content {
+            font-family: Arial, sans-serif;
+        }
+
+        .summary-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(0,123,255,0.1);
+        }
+
+        .badge {
+            font-size: 0.8em;
+        }
     </style>
 }
 
