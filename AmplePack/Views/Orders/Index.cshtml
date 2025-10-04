@@ -182,9 +182,6 @@
                                     <a class="dropdown-item" href="javascript:void(0)" onclick="exportOrders('csv')">
                                         <i class="fas fa-file-csv mr-2"></i>Export as CSV
                                     </a>
-                                    <a class="dropdown-item" href="javascript:void(0)" onclick="exportOrders('excel')">
-                                        <i class="fas fa-file-excel mr-2"></i>Export as Excel
-                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -479,6 +476,18 @@
         }
         
         function exportOrders(format) {
+            // Validate format - only allow PDF and CSV
+            if (format !== 'pdf' && format !== 'csv') {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Invalid Format',
+                        text: 'Only PDF and CSV exports are supported.',
+                        icon: 'error'
+                    });
+                }
+                return;
+            }
+
             const button = event?.target?.closest('a, button');
             const originalText = button?.innerHTML || 'Export';
             
@@ -518,7 +527,7 @@
             // Create a temporary link to trigger download
             const link = document.createElement('a');
             link.href = exportUrl;
-            link.download = `orders_export_${new Date().getTime()}.${format === 'excel' ? 'xlsx' : format}`;
+            link.download = `orders_export_${new Date().getTime()}.${format}`;
             link.style.display = 'none';
             
             document.body.appendChild(link);

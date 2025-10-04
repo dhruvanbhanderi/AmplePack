@@ -13,11 +13,13 @@ namespace AmplePack.Controllers
     {
         private readonly AppDbContext _context;
         private readonly EnhancedReportService _reportService;
+        private readonly ILogger<ReportsController> _logger;
 
-        public ReportsController(AppDbContext context, EnhancedReportService reportService)
+        public ReportsController(AppDbContext context, EnhancedReportService reportService, ILogger<ReportsController> logger)
         {
             _context = context;
             _reportService = reportService;
+            _logger = logger;
         }
 
         // Keep existing Index method unchanged
@@ -145,10 +147,16 @@ namespace AmplePack.Controllers
         {
             try
             {
+                // Validate export format - only allow PDF
+                if (string.IsNullOrEmpty(filter.ExportFormat) || filter.ExportFormat.ToLower() != "pdf")
+                {
+                    return BadRequest(new { success = false, message = "Invalid export format. Only PDF is supported." });
+                }
+
                 var request = new ReportExportRequest
                 {
                     ReportType = filter.ExportType,
-                    ExportFormat = "pdf", // Only PDF now
+                    ExportFormat = "pdf", // Force PDF only
                     StartDate = GetDateFromFilter(filter),
                     EndDate = GetDateToFilter(filter),
                     SelectedColumns = filter.SelectedColumns,
@@ -177,6 +185,7 @@ namespace AmplePack.Controllers
                 byte[] fileData;
                 string fileName;
                 string contentType = "application/pdf";
+                string fileExtension = ".pdf";
                 ReportSummary? summary = null;
 
                 // Generate summary if requested
@@ -191,28 +200,30 @@ namespace AmplePack.Controllers
                         var orderData = await _reportService.GetOrderReportDataAsync(request);
                         if (summary != null) summary.TotalRecords = orderData.Count;
                         fileData = await _reportService.ExportToPdfAsync(orderData, request, summary);
+                        fileName = $"Orders_Report_{DateTime.Now:yyyyMMdd_HHmmss}{fileExtension}";
                         break;
                     case "customers":
                         var customerData = await _reportService.GetCustomerReportDataAsync(request);
                         if (summary != null) summary.TotalRecords = customerData.Count;
                         fileData = await _reportService.ExportToPdfAsync(customerData, request, summary);
+                        fileName = $"Customers_Report_{DateTime.Now:yyyyMMdd_HHmmss}{fileExtension}";
                         break;
                     case "inventory":
                         var inventoryData = await _reportService.GetInventoryReportDataAsync(request);
                         if (summary != null) summary.TotalRecords = inventoryData.Count;
                         fileData = await _reportService.ExportToPdfAsync(inventoryData, request, summary);
+                        fileName = $"Inventory_Report_{DateTime.Now:yyyyMMdd_HHmmss}{fileExtension}";
                         break;
                     default:
-                        return BadRequest("Invalid export type");
+                        return BadRequest(new { success = false, message = "Invalid report type." });
                 }
-
-                fileName = $"{filter.ExportType}_report_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
 
                 return File(fileData, contentType, fileName);
             }
             catch (Exception ex)
             {
-                return BadRequest($"Export failed: {ex.Message}");
+                _logger.LogError(ex, "Error exporting data: {@Filter}", filter);
+                return StatusCode(500, new { success = false, message = "Export failed: " + ex.Message });
             }
         }
 

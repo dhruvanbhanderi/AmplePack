@@ -101,10 +101,17 @@ namespace AmplePack.Controllers
         }
 
         // GET: Orders/Export (for future enhancement)
-        public async Task<IActionResult> Export(string? customerFilter, string? statusFilter, DateTime? startDate, DateTime? endDate, string? searchTerm, string format = "excel")
+        public async Task<IActionResult> Export(string? customerFilter, string? statusFilter, DateTime? startDate, DateTime? endDate, string? searchTerm, string format = "pdf")
         {
             try
             {
+                // Validate format - only allow PDF and CSV
+                if (format.ToLower() != "pdf" && format.ToLower() != "csv")
+                {
+                    TempData["ErrorMessage"] = "Invalid export format. Only PDF and CSV are supported.";
+                    return RedirectToAction(nameof(Index));
+                }
+
                 var filter = new OrderFilterViewModel
                 {
                     CustomerFilter = customerFilter,
@@ -119,7 +126,6 @@ namespace AmplePack.Controllers
                 var fileName = $"Orders_Export_{DateTime.Now:yyyyMMdd_HHmmss}";
                 var contentType = format.ToLower() switch
                 {
-                    "excel" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     "csv" => "text/csv",
                     "pdf" => "application/pdf",
                     _ => "application/octet-stream"
@@ -127,7 +133,6 @@ namespace AmplePack.Controllers
                 
                 var fileExtension = format.ToLower() switch
                 {
-                    "excel" => ".xlsx",
                     "csv" => ".csv",
                     "pdf" => ".pdf",
                     _ => ".bin"
