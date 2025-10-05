@@ -327,8 +327,10 @@
                 const $parent = $this.parent('.nav-item');
                 const hasSubmenu = $parent.find('.nav-treeview').length > 0;
                 const href = $this.attr('href');
+                const dataSection = $this.attr('data-section');
                 
-                if (hasSubmenu && href === '#') {
+                // For menu items with submenus (like Reports, Orders)
+                if (hasSubmenu && (href === '#' || dataSection)) {
                     e.preventDefault();
                     
                     // Toggle current menu
@@ -346,6 +348,8 @@
                         $parent.addClass('menu-open');
                         $this.addClass('active');
                     }
+                    
+                    console.log('Toggled submenu:', dataSection || 'unknown', 'Open:', !isOpen);
                 }
                 // For actual navigation links, let them proceed normally
                 // The active state will be set on page load
@@ -818,6 +822,29 @@
         // Initialize main app
         App.init();
 
+        // Add debugging for navigation issues
+        console.log('App.js: Document ready, current path:', window.location.pathname);
+        
+        // Debug navigation clicks
+        $(document).on('click', '.nav-sidebar .nav-link', function(e) {
+            const $this = $(this);
+            const href = $this.attr('href');
+            const dataSection = $this.attr('data-section');
+            const text = $this.text().trim();
+            
+            console.log('Navigation click:', {
+                text: text,
+                href: href,
+                dataSection: dataSection,
+                hasSubmenu: $this.parent().find('.nav-treeview').length > 0
+            });
+            
+            // If this is a real navigation link (not #), let it work
+            if (href && href !== '#' && !dataSection) {
+                console.log('Following navigation link:', href);
+            }
+        });
+
         // Initialize specific managers based on current page
         const path = window.location.pathname.toLowerCase();
         
@@ -841,6 +868,9 @@
         // Initialize AdminLTE components
         if (typeof AdminLTE !== 'undefined') {
             AdminLTE.init();
+            console.log('AdminLTE initialized');
+        } else {
+            console.warn('AdminLTE not found');
         }
     });
 
