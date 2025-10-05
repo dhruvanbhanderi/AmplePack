@@ -10,13 +10,10 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Select2 CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
     <!-- Theme style -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
     <!-- Custom styles -->
     <link rel="stylesheet" href="~/css/custom.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/placeholders.css" asp-append-version="true" />
     
     @await RenderSectionAsync("Styles", required: false)
 </head>
@@ -351,8 +348,6 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- jQuery UI -->
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-    <!-- Select2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
     <script>
         $.widget.bridge('uibutton', $.ui.button)
@@ -365,98 +360,9 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Custom App -->
     <script src="~/js/app.js" asp-append-version="true"></script>
-    <!-- Missing Functions -->
-    <script src="~/js/missing-functions.js" asp-append-version="true"></script>
 
     <script>
-        // Sidebar navigation activation - executed immediately when DOM is ready
-        $(document).ready(function() {
-            console.log('Layout script: Setting up sidebar navigation');
-            
-            // Function to activate navigation
-            function activateSidebarNavigation() {
-                const currentPath = window.location.pathname.toLowerCase();
-                const segments = currentPath.split('/').filter(s => s.length > 0);
-                const currentController = segments.length > 0 ? segments[0] : 'home';
-                const currentAction = segments.length > 1 ? segments[1] : 'index';
-                
-                console.log('Current path:', currentPath, 'Controller:', currentController, 'Action:', currentAction);
-                
-                // Remove all active classes first
-                $('.nav-sidebar .nav-link').removeClass('active');
-                $('.nav-sidebar .nav-item').removeClass('menu-open');
-                
-                let $activeLink = null;
-                
-                // First try to match using data attributes (most reliable)
-                $activeLink = $(`.nav-sidebar .nav-link[data-controller="${currentController}"][data-action="${currentAction}"]`);
-                
-                if ($activeLink.length === 0) {
-                    // Fallback to href matching
-                    $('.nav-sidebar .nav-link[href]').each(function() {
-                        const $link = $(this);
-                        const href = $link.attr('href');
-                        
-                        if (!href || href === '#') return;
-                        
-                        const linkPath = href.toLowerCase();
-                        
-                        // Handle root path
-                        if (currentPath === '/' && (linkPath.includes('/home/index') || linkPath === '/')) {
-                            $activeLink = $link;
-                            return false;
-                        }
-                        
-                        // Exact path match
-                        if (currentPath === linkPath) {
-                            $activeLink = $link;
-                            return false;
-                        }
-                        
-                        // Controller/Action match
-                        if (linkPath.includes(`/${currentController}/${currentAction}`)) {
-                            $activeLink = $link;
-                            return false;
-                        }
-                        
-                        // Controller match (fallback)
-                        if (linkPath.includes(`/${currentController}`) && $activeLink.length === 0) {
-                            $activeLink = $link;
-                        }
-                    });
-                }
-                
-                // Activate the found link
-                if ($activeLink && $activeLink.length > 0) {
-                    console.log('Activating link:', $activeLink.attr('href') || $activeLink.data('controller'));
-                    $activeLink.addClass('active');
-                    
-                    // Check if this is a submenu item
-                    const $submenu = $activeLink.closest('.nav-treeview');
-                    if ($submenu.length > 0) {
-                        // This is a submenu item, open the parent menu
-                        const $parentItem = $submenu.closest('.nav-item');
-                        $parentItem.addClass('menu-open');
-                        
-                        // Also make the parent link active
-                        const $parentLink = $parentItem.children('.nav-link').first();
-                        $parentLink.addClass('active');
-                        
-                        console.log('Opened parent menu for submenu item');
-                    }
-                } else {
-                    console.log('No matching navigation item found for controller:', currentController, 'action:', currentAction);
-                }
-            }
-            
-            // Activate navigation immediately
-            activateSidebarNavigation();
-            
-            // Also activate after AdminLTE initialization (fallback)
-            setTimeout(activateSidebarNavigation, 100);
-            setTimeout(activateSidebarNavigation, 500);
-        });
-
+        // Simple modal functions
         function showProfileModal() {
             $('#profileModal').modal('show');
         }

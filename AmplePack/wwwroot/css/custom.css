@@ -1,36 +1,32 @@
-/* Custom styles for AmplePack application */
+/* AmplePack Custom Styles - Clean Version */
 
-/* Fix any layout issues */
+/* Base styling */
 body {
-    font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* Ensure proper content wrapper styling */
 .content-wrapper {
     min-height: calc(100vh - 140px);
 }
 
-/* Navigation fixes */
-.nav-sidebar .nav-link.nav-hover {
-    background-color: rgba(255,255,255,0.1);
-    color: #c2c7d0;
+/* Navigation styling */
+.nav-sidebar .nav-link.active {
+    background-color: #007bff !important;
+    color: #fff !important;
 }
 
 .nav-sidebar .nav-item.menu-open > .nav-link {
-    background-color: rgba(255,255,255,0.1);
+    background-color: rgba(255,255,255,0.1) !important;
+    color: #c2c7d0;
 }
 
 .nav-sidebar .nav-treeview .nav-link.active {
-    background-color: #007bff;
-    color: #fff;
+    background-color: #007bff !important;
+    color: #fff !important;
+    padding-left: 2rem;
 }
 
-.nav-sidebar .nav-link.active {
-    background-color: rgba(255,255,255,0.1);
-    color: #fff;
-}
-
-/* Box Calculator specific styles */
+/* Box Calculator styles */
 .simple-layout-visualizer {
     border: 1px solid #ddd;
     border-radius: 4px;
@@ -44,43 +40,6 @@ body {
     border-left: 1px solid #ddd;
 }
 
-/* Responsive layout for visualization */
-@media (max-width: 768px) {
-    .simple-layout-visualizer {
-        flex-direction: column !important;
-        height: auto !important;
-    }
-    
-    .simple-layout-visualizer .layout-summary {
-        min-width: 100% !important;
-        max-width: 100% !important;
-        border-left: none !important;
-        border-top: 1px solid #ddd !important;
-    }
-    
-    .simple-layout-visualizer > div:first-child {
-        min-height: 300px;
-    }
-}
-
-/* Form styling improvements */
-.form-section {
-    margin-bottom: 25px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid #dee2e6;
-}
-
-.form-section:last-child {
-    border-bottom: none;
-}
-
-.section-title {
-    color: #495057;
-    margin-bottom: 15px;
-    font-weight: 600;
-}
-
-/* Visualization container improvements */
 #layoutVisualizationContainer {
     width: 100%;
     height: 450px;
@@ -90,25 +49,7 @@ body {
     border-radius: 4px;
 }
 
-/* Canvas responsive improvements */
-canvas {
-    image-rendering: -moz-crisp-edges;
-    image-rendering: -webkit-crisp-edges;
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
-}
-
-/* Summary panel styling */
-.summary-content {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-
-/* Better card layout for visualization */
-.card.card-info .card-body {
-    padding: 15px !important;
-}
-
-/* Header styling */
+/* Card styling */
 .card-header {
     background: #17a2b8;
     color: white;
@@ -125,37 +66,37 @@ canvas {
     margin-left: 5px;
 }
 
-/* Loading states */
+/* Utility classes */
 .loading {
     opacity: 0.6;
     pointer-events: none;
 }
 
-/* Error handling styles */
-.error-container {
-    padding: 20px;
-    text-align: center;
-    color: #dc3545;
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 0.375rem;
+/* Responsive design */
+@media (max-width: 768px) {
+    .simple-layout-visualizer {
+        flex-direction: column !important;
+        height: auto !important;
+    }
+    
+    .simple-layout-visualizer .layout-summary {
+        min-width: 100% !important;
+        max-width: 100% !important;
+        border-left: none !important;
+        border-top: 1px solid #ddd !important;
+    }
 }
 
 /* Print styles */
 @media print {
-    .sidebar-mini .content-wrapper,
-    .sidebar-mini .main-footer,
-    .sidebar-mini .main-header {
-        margin-left: 0 !important;
-    }
-    
     .main-sidebar {
         display: none !important;
     }
     
-    .simple-layout-visualizer {
-        break-inside: avoid;
-        page-break-inside: avoid;
+    .sidebar-mini .content-wrapper,
+    .sidebar-mini .main-footer,
+    .sidebar-mini .main-header {
+        margin-left: 0 !important;
     }
     
     .card-tools {

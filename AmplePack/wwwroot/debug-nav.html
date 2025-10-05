@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Navigation Debug</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test { margin: 10px 0; padding: 10px; background: #f5f5f5; }
+        .success { background: #e6ffe6; color: green; }
+        .error { background: #ffe6e6; color: red; }
+    </style>
+</head>
+<body>
+    <h1>Navigation Debug Test</h1>
+    
+    <div class="test">
+        <h3>Test Links</h3>
+        <a href="/Orders/Index" target="_blank">Orders Index</a> | 
+        <a href="/Reports/Index" target="_blank">Reports Index</a> | 
+        <a href="/Reports/Export" target="_blank">Reports Export</a>
+    </div>
+    
+    <div class="test">
+        <h3>jQuery Test</h3>
+        <div id="jqueryTest">Testing...</div>
+    </div>
+    
+    <script>
+        $(document).ready(function() {
+            $('#jqueryTest').html('<span class="success">? jQuery is working</span>');
+            
+            // Test if routes are reachable
+            fetch('/Orders/Index')
+                .then(response => {
+                    if (response.ok) {
+                        $('body').append('<div class="test success">? Orders route accessible</div>');
+                    } else {
+                        $('body').append('<div class="test error">? Orders route failed: ' + response.status + '</div>');
+                    }
+                })
+                .catch(error => {
+                    $('body').append('<div class="test error">? Orders route error: ' + error.message + '</div>');
+                });
+                
+            fetch('/Reports/Index')
+                .then(response => {
+                    if (response.ok) {
+                        $('body').append('<div class="test success">? Reports route accessible</div>');
+                    } else {
+                        $('body').append('<div class="test error">? Reports route failed: ' + response.status + '</div>');
+                    }
+                })
+                .catch(error => {
+                    $('body').append('<div class="test error">? Reports route error: ' + error.message + '</div>');
+                });
+        });
+    </script>
+</body>
+</html>
