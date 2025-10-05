@@ -1,0 +1,21 @@
+# Test configuration rules for OWASP ZAP
+# Format: RULE_ID	ACTION	PARAMETER
+
+# Ignore false positives and test-specific rules
+10021	IGNORE	# X-Content-Type-Options Header Missing - handled by application
+10020	IGNORE	# X-Frame-Options Header Not Set - handled by application
+10016	IGNORE	# Web Browser XSS Protection Not Enabled - handled by application
+
+# Accept certain cookies for testing
+10054	IGNORE	# Cookie without SameSite Attribute - test environment
+
+# Ignore development-specific endpoints
+10109	IGNORE	# Modern Web Application - development mode
+
+# Medium severity rules to monitor but not fail on
+40018	WARN	# SQL Injection - Oracle - monitor for potential issues
+40019	WARN	# SQL Injection - MySQL - monitor for potential issues
+40020	WARN	# SQL Injection - PostgreSQL - monitor for potential issues
+
+# Information disclosure rules
+10096	WARN	# Timestamp Disclosure - Unix - development acceptable
