@@ -58,14 +58,14 @@ class BoxLayoutVisualizer {
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 15px;
+            padding: 20px;
             background: #fafafa;
         `;
         
         // Create canvas
         this.canvas = document.createElement('canvas');
-        this.canvas.width = 450;
-        this.canvas.height = 300;
+        this.canvas.width = 480;
+        this.canvas.height = 320;
         this.canvas.style.cssText = `
             max-width: 100%;
             max-height: 100%;
@@ -112,11 +112,11 @@ class BoxLayoutVisualizer {
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Calculate rendering dimensions with minimal margins
-        const topMargin = 20;
-        const bottomMargin = 30;
-        const leftMargin = 40;
-        const rightMargin = 60;
+        // Calculate rendering dimensions with proper margins for dimensions
+        const topMargin = 35;     // Space for top dimension
+        const bottomMargin = 25;  // Bottom clearance
+        const leftMargin = 30;    // Left clearance
+        const rightMargin = 70;   // Space for right dimension
         
         const availableWidth = this.canvas.width - leftMargin - rightMargin;
         const availableHeight = this.canvas.height - topMargin - bottomMargin;
@@ -136,11 +136,11 @@ class BoxLayoutVisualizer {
         const sheetX = leftMargin + (availableWidth - sheetWidth) / 2;
         const sheetY = topMargin + (availableHeight - sheetHeight) / 2;
 
-        // Draw only essential elements
+        // Draw diagram elements
         this.drawSheet(sheetX, sheetY, sheetWidth, sheetHeight);
         this.drawWasteAreas(sheetX, sheetY, sheetWidth, sheetHeight);
         this.drawBlanks(sheetX, sheetY, sheetWidth, sheetHeight);
-        this.drawSimpleMeasurements(sheetX, sheetY, sheetWidth, sheetHeight);
+        this.drawCleanDimensions(sheetX, sheetY, sheetWidth, sheetHeight);
     }
 
     drawSheet(x, y, width, height) {
@@ -149,7 +149,7 @@ class BoxLayoutVisualizer {
         this.ctx.fillRect(x, y, width, height);
 
         // Simple sheet border
-        this.ctx.strokeStyle = '#9e9e9e';
+        this.ctx.strokeStyle = '#8e8e8e';
         this.ctx.lineWidth = 2;
         this.ctx.strokeRect(x, y, width, height);
     }
@@ -160,7 +160,6 @@ class BoxLayoutVisualizer {
         }
         
         this.visualization.wasteAreas.forEach(waste => {
-            // Ensure percentages are within valid bounds (0-100)
             const startXPercent = Math.max(0, Math.min(100, waste.startXPercent));
             const startYPercent = Math.max(0, Math.min(100, waste.startYPercent));
             const widthPercent = Math.max(0, Math.min(100 - startXPercent, waste.widthPercent));
@@ -171,30 +170,30 @@ class BoxLayoutVisualizer {
             const w = (widthPercent / 100) * sheetWidth;
             const h = (heightPercent / 100) * sheetHeight;
 
-            // Only draw if the waste area is within sheet bounds
             if (x >= sheetX && y >= sheetY && 
                 (x + w) <= (sheetX + sheetWidth) && 
                 (y + h) <= (sheetY + sheetHeight) &&
                 w > 1 && h > 1) {
                 
-                // Simple waste area
-                this.ctx.fillStyle = '#ffebee';
+                // Simple waste fill
+                this.ctx.fillStyle = '#ffe6e6';
                 this.ctx.fillRect(x, y, w, h);
                 
                 // Simple border
-                this.ctx.strokeStyle = '#f44336';
+                this.ctx.strokeStyle = '#e57373';
                 this.ctx.lineWidth = 1;
                 this.ctx.strokeRect(x, y, w, h);
 
-                // Simple diagonal pattern
-                this.ctx.strokeStyle = '#f44336';
-                this.ctx.lineWidth = 0.5;
-                this.ctx.setLineDash([2, 2]);
+                // Clean diagonal pattern
+                this.ctx.strokeStyle = '#e57373';
+                this.ctx.lineWidth = 0.8;
+                this.ctx.setLineDash([3, 3]);
                 
-                for (let i = 0; i < w + h; i += 8) {
+                const step = 10;
+                for (let i = 0; i < w + h; i += step) {
                     this.ctx.beginPath();
-                    this.ctx.moveTo(x + i, y);
-                    this.ctx.lineTo(x, y + i);
+                    this.ctx.moveTo(x + Math.min(i, w), y);
+                    this.ctx.lineTo(x, y + Math.min(i, h));
                     this.ctx.stroke();
                 }
                 
@@ -209,7 +208,6 @@ class BoxLayoutVisualizer {
         }
         
         this.visualization.blankPositions.forEach((blank, index) => {
-            // Ensure percentages are within valid bounds (0-100)
             const startXPercent = Math.max(0, Math.min(100, blank.startXPercent));
             const startYPercent = Math.max(0, Math.min(100, blank.startYPercent));
             const widthPercent = Math.max(0, Math.min(100 - startXPercent, blank.widthPercent));
@@ -220,88 +218,85 @@ class BoxLayoutVisualizer {
             const w = (widthPercent / 100) * sheetWidth;
             const h = (heightPercent / 100) * sheetHeight;
 
-            // Only draw if the box is within sheet bounds
             if (x >= sheetX && y >= sheetY && 
                 (x + w) <= (sheetX + sheetWidth) && 
                 (y + h) <= (sheetY + sheetHeight) &&
                 w > 5 && h > 5) {
 
                 // Clean box background
-                this.ctx.fillStyle = '#e3f2fd';
+                this.ctx.fillStyle = '#e8f4fd';
                 this.ctx.fillRect(x, y, w, h);
 
-                // Simple border
+                // Clean border
                 this.ctx.strokeStyle = '#1976d2';
                 this.ctx.lineWidth = 1.5;
                 this.ctx.strokeRect(x, y, w, h);
 
-                // Simple number only
-                if (w > 20 && h > 15) {
+                // Simple number centered
+                if (w > 15 && h > 12) {
                     this.ctx.fillStyle = '#1976d2';
-                    this.ctx.font = 'bold 11px Arial';
+                    this.ctx.font = 'bold 10px Arial';
                     this.ctx.textAlign = 'center';
-                    this.ctx.fillText((index + 1).toString(), x + w/2, y + h/2 + 4);
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText((index + 1).toString(), x + w/2, y + h/2);
                 }
             }
         });
     }
 
-    drawSimpleMeasurements(sheetX, sheetY, sheetWidth, sheetHeight) {
-        const arrowSize = 4;
-        const offset = 15;
-        
-        this.ctx.strokeStyle = '#666';
-        this.ctx.fillStyle = '#666';
+    drawCleanDimensions(sheetX, sheetY, sheetWidth, sheetHeight) {
+        this.ctx.strokeStyle = '#555';
+        this.ctx.fillStyle = '#555';
         this.ctx.lineWidth = 1;
         this.ctx.font = '10px Arial';
         this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
         
-        // Horizontal dimension (width) - top
-        const topY = sheetY - offset;
+        // Top dimension (width) - clean and positioned properly
+        const topY = sheetY - 20;
         
-        // Simple dimension line
+        // Main dimension line
         this.ctx.beginPath();
         this.ctx.moveTo(sheetX, topY);
         this.ctx.lineTo(sheetX + sheetWidth, topY);
         this.ctx.stroke();
         
-        // Small tick marks
+        // End marks
         this.ctx.beginPath();
-        this.ctx.moveTo(sheetX, topY - 3);
-        this.ctx.lineTo(sheetX, topY + 3);
-        this.ctx.moveTo(sheetX + sheetWidth, topY - 3);
-        this.ctx.lineTo(sheetX + sheetWidth, topY + 3);
+        this.ctx.moveTo(sheetX, topY - 4);
+        this.ctx.lineTo(sheetX, topY + 4);
+        this.ctx.moveTo(sheetX + sheetWidth, topY - 4);
+        this.ctx.lineTo(sheetX + sheetWidth, topY + 4);
         this.ctx.stroke();
         
-        // Width measurement
+        // Width text - using simple double quote character
         this.ctx.fillText(
             `${this.visualization.sheetLengthInches.toFixed(1)}"`,
             sheetX + sheetWidth/2,
-            topY - 6
+            topY - 8
         );
         
-        // Vertical dimension (height) - right side
-        const rightX = sheetX + sheetWidth + offset;
+        // Right dimension (height) - clean and positioned properly
+        const rightX = sheetX + sheetWidth + 20;
         
-        // Simple dimension line
+        // Main dimension line
         this.ctx.beginPath();
         this.ctx.moveTo(rightX, sheetY);
         this.ctx.lineTo(rightX, sheetY + sheetHeight);
         this.ctx.stroke();
         
-        // Small tick marks
+        // End marks
         this.ctx.beginPath();
-        this.ctx.moveTo(rightX - 3, sheetY);
-        this.ctx.lineTo(rightX + 3, sheetY);
-        this.ctx.moveTo(rightX - 3, sheetY + sheetHeight);
-        this.ctx.lineTo(rightX + 3, sheetY + sheetHeight);
+        this.ctx.moveTo(rightX - 4, sheetY);
+        this.ctx.lineTo(rightX + 4, sheetY);
+        this.ctx.moveTo(rightX - 4, sheetY + sheetHeight);
+        this.ctx.lineTo(rightX + 4, sheetY + sheetHeight);
         this.ctx.stroke();
         
-        // Height measurement (rotated)
+        // Height text (rotated) - using simple double quote character
         this.ctx.save();
-        this.ctx.translate(rightX + 10, sheetY + sheetHeight/2);
+        this.ctx.translate(rightX + 12, sheetY + sheetHeight/2);
         this.ctx.rotate(-Math.PI/2);
-        this.ctx.textAlign = 'center';
         this.ctx.fillText(
             `${this.visualization.sheetWidthInches.toFixed(1)}"`,
             0, 0
@@ -314,7 +309,7 @@ class BoxLayoutVisualizer {
             this.summaryPanel.innerHTML = `
                 <div style="padding: 20px; text-align: center; color: #6c757d;">
                     <div style="width: 40px; height: 40px; background: #dee2e6; border-radius: 8px; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;">
-                        <span style="color: #6c757d; font-size: 20px; font-weight: bold;">?</span>
+                        <span style="color: #6c757d; font-size: 20px; font-weight: bold;">??</span>
                     </div>
                     <h5 style="color: #495057; margin-bottom: 10px;">Layout Analysis</h5>
                     <p style="font-size: 14px; margin-bottom: 20px;">Enter box and sheet dimensions to see layout analysis</p>
@@ -337,43 +332,61 @@ class BoxLayoutVisualizer {
         
         if (efficiency >= 80) {
             efficiencyColor = '#4caf50';
-            efficiencyStatus = 'High';
+            efficiencyStatus = 'Excellent';
+        } else if (efficiency >= 70) {
+            efficiencyColor = '#8bc34a';
+            efficiencyStatus = 'Good';
         } else if (efficiency >= 60) {
             efficiencyColor = '#ff9800';
-            efficiencyStatus = 'Medium';
+            efficiencyStatus = 'Fair';
         }
 
         this.summaryPanel.innerHTML = `
-            <div style="padding: 15px; font-family: Arial, sans-serif;">
+            <div style="padding: 15px; font-family: Arial, sans-serif; font-size: 13px;">
                 <!-- Efficiency -->
-                <div style="text-align: center; margin-bottom: 20px; padding: 15px; background: ${efficiencyColor}15; border-radius: 6px;">
-                    <div style="font-size: 24px; font-weight: bold; color: ${efficiencyColor};">${efficiency.toFixed(1)}%</div>
-                    <div style="font-size: 12px; color: #666; margin-top: 5px;">${efficiencyStatus} Efficiency</div>
+                <div style="text-align: center; margin-bottom: 20px; padding: 15px; background: ${efficiencyColor}15; border-radius: 8px; border-left: 4px solid ${efficiencyColor};">
+                    <div style="font-size: 28px; font-weight: bold; color: ${efficiencyColor}; margin-bottom: 5px;">${efficiency.toFixed(1)}%</div>
+                    <div style="font-size: 12px; color: #666; font-weight: 500;">${efficiencyStatus} Efficiency</div>
                 </div>
 
-                <!-- Layout -->
-                <div style="margin-bottom: 15px;">
-                    <div style="font-weight: bold; margin-bottom: 8px; color: #333;">Layout</div>
-                    <div style="font-size: 13px; color: #666;">
-                        <div style="margin-bottom: 3px;">${this.visualization.totalBlanksPerSheet} boxes per sheet</div>
-                        <div>${this.visualization.blanksPerRow} × ${this.visualization.blanksPerColumn} arrangement</div>
+                <!-- Layout Info -->
+                <div style="margin-bottom: 18px;">
+                    <div style="font-weight: bold; margin-bottom: 10px; color: #333; border-bottom: 1px solid #eee; padding-bottom: 5px;">Layout</div>
+                    <div style="color: #666; line-height: 1.5;">
+                        <div style="margin-bottom: 5px; display: flex; justify-content: space-between;">
+                            <span>Boxes per sheet:</span>
+                            <strong style="color: #333;">${this.visualization.totalBlanksPerSheet}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Arrangement:</span>
+                            <strong style="color: #333;">${this.visualization.blanksPerRow} × ${this.visualization.blanksPerColumn}</strong>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Dimensions -->
-                <div style="margin-bottom: 15px;">
-                    <div style="font-weight: bold; margin-bottom: 8px; color: #333;">Dimensions</div>
-                    <div style="font-size: 12px; color: #666;">
-                        <div style="margin-bottom: 3px;">Sheet: ${this.visualization.sheetLengthInches.toFixed(1)}" × ${this.visualization.sheetWidthInches.toFixed(1)}"</div>
-                        <div>Box Size: ${this.visualization.blankLengthInches.toFixed(1)}" × ${this.visualization.blankWidthInches.toFixed(1)}"</div>
+                <div style="margin-bottom: 18px;">
+                    <div style="font-weight: bold; margin-bottom: 10px; color: #333; border-bottom: 1px solid #eee; padding-bottom: 5px;">Dimensions</div>
+                    <div style="color: #666; line-height: 1.5; font-size: 12px;">
+                        <div style="margin-bottom: 5px;">
+                            <div style="color: #888; font-size: 11px;">Sheet Size:</div>
+                            <strong style="color: #333;">${this.visualization.sheetLengthInches.toFixed(1)}" × ${this.visualization.sheetWidthInches.toFixed(1)}"</strong>
+                        </div>
+                        <div>
+                            <div style="color: #888; font-size: 11px;">Box Size:</div>
+                            <strong style="color: #333;">${this.visualization.blankLengthInches.toFixed(1)}" × ${this.visualization.blankWidthInches.toFixed(1)}"</strong>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Waste -->
                 <div>
-                    <div style="font-weight: bold; margin-bottom: 8px; color: #333;">Waste</div>
-                    <div style="font-size: 13px; color: #f44336; font-weight: bold;">
-                        ${this.visualization.wastePercentage.toFixed(1)}% of sheet area
+                    <div style="font-weight: bold; margin-bottom: 10px; color: #333; border-bottom: 1px solid #eee; padding-bottom: 5px;">Waste Area</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #666;">Waste area:</span>
+                        <div style="font-weight: bold; color: #f44336; background: #ffebee; padding: 3px 8px; border-radius: 4px; font-size: 12px;">
+                            ${this.visualization.wastePercentage.toFixed(1)}%
+                        </div>
                     </div>
                 </div>
             </div>
@@ -388,6 +401,7 @@ class BoxLayoutVisualizer {
         this.ctx.fillStyle = '#9e9e9e';
         this.ctx.font = '14px Arial';
         this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
         this.ctx.fillText(
             'Enter dimensions to view layout',
             this.canvas.width / 2,
@@ -397,7 +411,7 @@ class BoxLayoutVisualizer {
         this.summaryPanel.innerHTML = `
             <div style="padding: 20px; text-align: center; color: #6c757d;">
                 <div style="width: 40px; height: 40px; background: #dee2e6; border-radius: 8px; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;">
-                    <span style="color: #6c757d; font-size: 20px; font-weight: bold;">?</span>
+                    <span style="color: #6c757d; font-size: 20px; font-weight: bold;">??</span>
                 </div>
                 <h5 style="color: #495057; margin-bottom: 10px;">Layout Analysis</h5>
                 <p style="font-size: 14px; margin-bottom: 20px;">Enter box and sheet dimensions to see layout analysis</p>
