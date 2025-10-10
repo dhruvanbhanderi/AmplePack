@@ -372,12 +372,32 @@ namespace AmplePack.Services
             return field.Replace("\"", "\"\"");
         }
 
+        // Helper: truncate safely with ellipsis to prevent layout overflow
+        private string TruncateSafe(string? input, int maxLength)
+        {
+            if (string.IsNullOrEmpty(input)) return string.Empty;
+            if (input.Length <= maxLength) return input;
+            if (maxLength <= 1) return input.Substring(0, maxLength);
+            return input.Substring(0, maxLength - 1).TrimEnd() + "…";
+        }
+
         private async Task<byte[]> ExportToPdfAsync(List<Order> orders)
         {
             await Task.CompletedTask; // Make async
             
             try
             {
+                // Optional: enable QuestPDF debugging when environment variable is set
+                var enableDebug = Environment.GetEnvironmentVariable("QUESTPDF_DEBUG") == "true";
+                if (enableDebug)
+                {
+                    QuestPDF.Settings.EnableDebugging = true;
+                    _logger.LogWarning("QuestPDF debugging enabled (QUESTPDF_DEBUG=true). Layout debug info will be produced on failure.");
+                }
+
+                // Limit to first 100 orders for performance (keeps behavior same)
+                var ordersToRender = orders.Take(100).ToList();
+
                 var document = Document.Create(container =>
                 {
                     container.Page(page =>
@@ -395,15 +415,15 @@ namespace AmplePack.Services
                             .PaddingVertical(1, Unit.Centimetre)
                             .Table(table =>
                             {
-                                // Define columns
+                                // Define columns – conservative proportions to prevent overflow
                                 table.ColumnsDefinition(columns =>
                                 {
-                                    columns.RelativeColumn(1); // Order ID
-                                    columns.RelativeColumn(2); // Customer
-                                    columns.RelativeColumn(1.5f); // Date
-                                    columns.RelativeColumn(1); // Status
-                                    columns.RelativeColumn(1.5f); // Amount
-                                    columns.RelativeColumn(2); // Items
+                                    columns.RelativeColumn(1);   // Order ID
+                                    columns.RelativeColumn(2);   // Customer
+                                    columns.RelativeColumn(1.2f); // Date
+                                    columns.RelativeColumn(1);   // Status
+                                    columns.RelativeColumn(1.2f); // Amount
+                                    columns.RelativeColumn(2.5f); // Items (wider but bounded)
                                 });
 
                                 // Header
@@ -417,18 +437,36 @@ namespace AmplePack.Services
                                     header.Cell().Element(HeaderStyle).Text("Items");
                                 });
 
-                                // Data rows
-                                foreach (var order in orders.Take(100)) // Limit for PDF performance
+                                // Data rows - sanitize long text before rendering to prevent layout conflicts
+                                foreach (var order in ordersToRender)
                                 {
-                                    var items = order.OrderDetails?.Any() == true
-                                        ? string.Join(", ", order.OrderDetails.Select(od => $"{od.BoxType} ({od.Quantity})"))
-                                        : "No items";
+                                    // Compose a safe, truncated items string to avoid unbounded height
+                                    string items = "No items";
+                                    if (order.OrderDetails?.Any() == true)
+                                    {
+                                        var itemParts = order.OrderDetails.Select(od =>
+                                        {
+                                            var boxType = TruncateSafe(od.BoxType, 40);
+                                            var qty = od.Quantity;
+                                            return $"{boxType} ({qty})";
+                                        }).ToList();
 
-                                    table.Cell().Element(CellStyle).Text($"CP{order.Id:D3}");
-                                    table.Cell().Element(CellStyle).Text(order.Customer?.Name ?? "N/A");
-                                    table.Cell().Element(CellStyle).Text(order.Date.ToString("dd-MM-yyyy"));
-                                    table.Cell().Element(CellStyle).Text(order.Status);
-                                    table.Cell().Element(CellStyle).Text($"Rs.{order.TotalAmount:F2}");
+                                        items = TruncateSafe(string.Join(", ", itemParts), 300); // 300 chars max
+                                    }
+
+                                    // Safe customer name and other fields
+                                    var customerName = TruncateSafe(order.Customer?.Name ?? "N/A", 80);
+                                    var dateText = order.Date.ToString("dd-MM-yyyy");
+                                    var statusText = TruncateSafe(order.Status ?? "", 30);
+                                    var amountText = $"Rs.{order.TotalAmount:F2}";
+                                    var orderIdText = $"CP{order.Id:D3}";
+
+                                    table.Cell().Element(CellStyle).Text(orderIdText);
+                                    table.Cell().Element(CellStyle).Text(customerName);
+                                    table.Cell().Element(CellStyle).Text(dateText);
+                                    table.Cell().Element(CellStyle).Text(statusText);
+                                    table.Cell().Element(CellStyle).Text(amountText);
+                                    // Render items as plain text (truncated). This avoids complicated nested containers.
                                     table.Cell().Element(CellStyle).Text(items);
                                 }
 
@@ -470,8 +508,10 @@ namespace AmplePack.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating PDF export");
-                // Fallback to CSV if PDF fails
+                // Log full context for diagnosis
+                _logger.LogError(ex, "Error generating PDF export for {Count} orders. Falling back to CSV.", orders.Count);
+
+                // Fallback: return CSV so export still works
                 return await ExportToCsvAsync(orders);
             }
         }
