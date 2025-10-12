@@ -147,16 +147,17 @@ namespace AmplePack.Controllers
         {
             try
             {
-                // Validate export format - only allow PDF
-                if (string.IsNullOrEmpty(filter.ExportFormat) || filter.ExportFormat.ToLower() != "pdf")
+                // Support both PDF and CSV formats
+                var validFormats = new[] { "pdf", "csv" };
+                if (string.IsNullOrEmpty(filter.ExportFormat) || !validFormats.Contains(filter.ExportFormat.ToLower()))
                 {
-                    return BadRequest(new { success = false, message = "Invalid export format. Only PDF is supported." });
+                    return BadRequest(new { success = false, message = "Invalid export format. Supported formats: PDF, CSV." });
                 }
 
                 var request = new ReportExportRequest
                 {
                     ReportType = filter.ExportType,
-                    ExportFormat = "pdf", // Force PDF only
+                    ExportFormat = filter.ExportFormat.ToLower(),
                     StartDate = GetDateFromFilter(filter),
                     EndDate = GetDateToFilter(filter),
                     SelectedColumns = filter.SelectedColumns,
@@ -184,9 +185,21 @@ namespace AmplePack.Controllers
 
                 byte[] fileData;
                 string fileName;
-                string contentType = "application/pdf";
-                string fileExtension = ".pdf";
+                string contentType;
+                string fileExtension;
                 ReportSummary? summary = null;
+
+                // Set content type and extension based on format
+                if (request.ExportFormat == "csv")
+                {
+                    contentType = "text/csv";
+                    fileExtension = ".csv";
+                }
+                else
+                {
+                    contentType = "application/pdf";
+                    fileExtension = ".pdf";
+                }
 
                 // Generate summary if requested
                 if (filter.IncludeSummary)
@@ -194,31 +207,98 @@ namespace AmplePack.Controllers
                     summary = await _reportService.GenerateSummaryAsync(filter.ExportType, request, 0);
                 }
 
-                switch (filter.ExportType.ToLower())
+                try
                 {
-                    case "orders":
-                        var orderData = await _reportService.GetOrderReportDataAsync(request);
-                        if (summary != null) summary.TotalRecords = orderData.Count;
-                        fileData = await _reportService.ExportToPdfAsync(orderData, request, summary);
-                        fileName = $"Orders_Report_{DateTime.Now:yyyyMMdd_HHmmss}{fileExtension}";
-                        break;
-                    case "customers":
-                        var customerData = await _reportService.GetCustomerReportDataAsync(request);
-                        if (summary != null) summary.TotalRecords = customerData.Count;
-                        fileData = await _reportService.ExportToPdfAsync(customerData, request, summary);
-                        fileName = $"Customers_Report_{DateTime.Now:yyyyMMdd_HHmmss}{fileExtension}";
-                        break;
-                    case "inventory":
-                        var inventoryData = await _reportService.GetInventoryReportDataAsync(request);
-                        if (summary != null) summary.TotalRecords = inventoryData.Count;
-                        fileData = await _reportService.ExportToPdfAsync(inventoryData, request, summary);
-                        fileName = $"Inventory_Report_{DateTime.Now:yyyyMMdd_HHmmss}{fileExtension}";
-                        break;
-                    default:
-                        return BadRequest(new { success = false, message = "Invalid report type." });
-                }
+                    switch (filter.ExportType.ToLower())
+                    {
+                        case "orders":
+                            var orderData = await _reportService.GetOrderReportDataAsync(request);
+                            if (summary != null) summary.TotalRecords = orderData.Count;
+                            
+                            if (request.ExportFormat == "csv")
+                            {
+                                fileData = await _reportService.ExportToCsvAsync(orderData, request, summary);
+                            }
+                            else
+                            {
+                                fileData = await _reportService.ExportToPdfAsync(orderData, request, summary);
+                            }
+                            fileName = $"Orders_Report_{DateTime.Now:yyyyMMdd_HHmmss}{fileExtension}";
+                            break;
 
-                return File(fileData, contentType, fileName);
+                        case "customers":
+                            var customerData = await _reportService.GetCustomerReportDataAsync(request);
+                            if (summary != null) summary.TotalRecords = customerData.Count;
+                            
+                            if (request.ExportFormat == "csv")
+                            {
+                                fileData = await _reportService.ExportToCsvAsync(customerData, request, summary);
+                            }
+                            else
+                            {
+                                fileData = await _reportService.ExportToPdfAsync(customerData, request, summary);
+                            }
+                            fileName = $"Customers_Report_{DateTime.Now:yyyyMMdd_HHmmss}{fileExtension}";
+                            break;
+
+                        case "inventory":
+                            var inventoryData = await _reportService.GetInventoryReportDataAsync(request);
+                            if (summary != null) summary.TotalRecords = inventoryData.Count;
+                            
+                            if (request.ExportFormat == "csv")
+                            {
+                                fileData = await _reportService.ExportToCsvAsync(inventoryData, request, summary);
+                            }
+                            else
+                            {
+                                fileData = await _reportService.ExportToPdfAsync(inventoryData, request, summary);
+                            }
+                            fileName = $"Inventory_Report_{DateTime.Now:yyyyMMdd_HHmmss}{fileExtension}";
+                            break;
+
+                        default:
+                            return BadRequest(new { success = false, message = "Invalid report type." });
+                    }
+
+                    return File(fileData, contentType, fileName);
+                }
+                catch (Exception ex) when (request.ExportFormat == "pdf")
+                {
+                    // If PDF fails, automatically fallback to CSV
+                    _logger.LogWarning(ex, "PDF export failed for {ReportType}, falling back to CSV", filter.ExportType);
+                    
+                    request.ExportFormat = "csv";
+                    contentType = "text/csv";
+                    fileExtension = ".csv";
+                    
+                    switch (filter.ExportType.ToLower())
+                    {
+                        case "orders":
+                            var orderData = await _reportService.GetOrderReportDataAsync(request);
+                            fileData = await _reportService.ExportToCsvAsync(orderData, request, summary);
+                            fileName = $"Orders_Report_{DateTime.Now:yyyyMMdd_HHmmss}_Fallback{fileExtension}";
+                            break;
+
+                        case "customers":
+                            var customerData = await _reportService.GetCustomerReportDataAsync(request);
+                            fileData = await _reportService.ExportToCsvAsync(customerData, request, summary);
+                            fileName = $"Customers_Report_{DateTime.Now:yyyyMMdd_HHmmss}_Fallback{fileExtension}";
+                            break;
+
+                        case "inventory":
+                            var inventoryData = await _reportService.GetInventoryReportDataAsync(request);
+                            fileData = await _reportService.ExportToCsvAsync(inventoryData, request, summary);
+                            fileName = $"Inventory_Report_{DateTime.Now:yyyyMMdd_HHmmss}_Fallback{fileExtension}";
+                            break;
+
+                        default:
+                            throw; // Re-throw if it's not a report type issue
+                    }
+
+                    // Add a header to indicate this was a fallback
+                    Response.Headers.Add("X-Export-Fallback", "PDF export failed, returned CSV instead");
+                    return File(fileData, contentType, fileName);
+                }
             }
             catch (Exception ex)
             {

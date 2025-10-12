@@ -122,12 +122,21 @@
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label for="exportFormat">
-                                            <i class="fas fa-file-pdf mr-1"></i>
+                                            <i class="fas fa-file-download mr-1"></i>
                                             Export Format
                                         </label>
                                         <select class="form-control" id="exportFormat" name="exportFormat">
-                                            <option value="pdf">PDF Document</option>
+                                            <option value="pdf">
+                                                <i class="fas fa-file-pdf"></i> PDF Document (Limited to 20 records)
+                                            </option>
+                                            <option value="csv">
+                                                <i class="fas fa-file-csv"></i> CSV File (Complete data)
+                                            </option>
                                         </select>
+                                        <small class="form-text text-muted">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            PDF is limited for display purposes. Use CSV for complete data export.
+                                        </small>
                                     </div>
                                 </div>
                             </div>
@@ -385,6 +394,7 @@
             // Setup event handlers
             $('#exportType').on('change', handleReportTypeChange);
             $('#quickDateRange').on('change', handleDateRangeChange);
+            $('#exportFormat').on('change', handleFormatChange);
             
             // Initialize dropdowns
             initializeDropdowns();
@@ -396,6 +406,25 @@
             setTimeout(() => {
                 $('#exportType').trigger('change');
             }, 100);
+        }
+
+        function handleFormatChange() {
+            const format = $('#exportFormat').val();
+            const $helpText = $('#exportFormat').siblings('.form-text');
+            
+            if (format === 'pdf') {
+                $helpText.html(`
+                    <i class="fas fa-info-circle mr-1"></i>
+                    PDF is limited to 20 records for display purposes. Use CSV for complete data export.
+                `);
+                $helpText.removeClass('text-success').addClass('text-muted');
+            } else {
+                $helpText.html(`
+                    <i class="fas fa-check-circle mr-1"></i>
+                    CSV format includes all records with complete data. Recommended for large datasets.
+                `);
+                $helpText.removeClass('text-muted').addClass('text-success');
+            }
         }
 
         function initializeDropdowns() {
@@ -738,6 +767,7 @@
 
         async function exportReport() {
             const reportType = $('#exportType').val();
+            const exportFormat = $('#exportFormat').val();
             
             if (!reportType) {
                 showAlert('Please select a report type first', 'warning');
@@ -767,20 +797,33 @@
                     throw new Error(errorText || 'Export failed');
                 }
 
+                // Check if this was a fallback response
+                const wasFallback = response.headers.get('X-Export-Fallback');
+                
                 // Download the file
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.style.display = 'none';
                 a.href = url;
-                a.download = `${reportType}_report_${new Date().getTime()}.pdf`;
+                
+                // Determine file extension from response or format
+                const fileExtension = exportFormat === 'csv' || wasFallback ? '.csv' : '.pdf';
+                a.download = `${reportType}_report_${new Date().getTime()}${fileExtension}`;
                 
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(url);
                 document.body.removeChild(a);
 
-                showAlert('Report generated and downloaded successfully!', 'success');
+                // Show appropriate success message
+                let message = 'Report generated and downloaded successfully!';
+                if (wasFallback) {
+                    message = 'PDF export failed, but CSV report was generated successfully. Please try CSV format for better reliability.';
+                    showAlert(message, 'warning');
+                } else {
+                    showAlert(message, 'success');
+                }
 
             } catch (error) {
                 console.error('Export failed:', error);
@@ -794,6 +837,7 @@
         function getFormData() {
             const formData = {
                 exportType: $('#exportType').val(),
+                exportFormat: $('#exportFormat').val(), // Add export format
                 quickDateRange: $('#quickDateRange').val(),
                 dateFrom: $('#dateFrom').val(),
                 dateTo: $('#dateTo').val(),

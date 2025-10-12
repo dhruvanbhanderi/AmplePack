@@ -211,7 +211,7 @@
     // EXPORT FUNCTIONALITY
     // ==========================================================================
     const ExportManager = {
-        quickExport: function(reportType, format = 'pdf') {
+        quickExport: function(reportType, format = 'csv') { // Default to CSV for reliability
             const button = window.event?.target || document.activeElement;
             const originalText = button?.innerHTML;
             
@@ -220,10 +220,13 @@
                 button.disabled = true;
             }
 
+            const fileExtension = format === 'csv' ? '.csv' : '.pdf';
+            const contentType = format === 'csv' ? 'text/csv' : 'application/pdf';
+
             fetch(`/Reports/QuickExport/${reportType}?format=${format}`, {
                 method: 'GET',
                 headers: {
-                    'Accept': 'application/pdf',
+                    'Accept': contentType,
                 }
             })
             .then(response => {
@@ -242,7 +245,7 @@
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
-                link.download = `${reportType}_report_${new Date().getTime()}.pdf`;
+                link.download = `${reportType}_report_${new Date().getTime()}${fileExtension}`;
                 link.style.display = 'none';
                 
                 document.body.appendChild(link);
@@ -255,6 +258,101 @@
             .catch(error => {
                 console.error('Export failed:', error);
                 App.showToast(`Failed to download ${reportType} report: ${error.message}`, 'error');
+            })
+            .finally(() => {
+                if (button) {
+                    setTimeout(() => {
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                    }, 1000);
+                }
+            });
+        },
+
+        // Orders-specific export function
+        exportOrders: function(format = 'csv') {
+            const button = window.event?.target || document.activeElement;
+            const originalText = button?.innerHTML;
+            
+            if (button) {
+                button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Exporting...';
+                button.disabled = true;
+            }
+
+            // Get current filter values from the form
+            const customerFilter = document.getElementById('customerFilter')?.value || '';
+            const statusFilter = document.getElementById('statusFilter')?.value || '';
+            const startDate = document.getElementById('startDate')?.value || '';
+            const endDate = document.getElementById('endDate')?.value || '';
+            const searchTerm = document.getElementById('searchTerm')?.value || '';
+
+            // Build query parameters
+            const params = new URLSearchParams();
+            if (customerFilter) params.append('customerFilter', customerFilter);
+            if (statusFilter) params.append('statusFilter', statusFilter);
+            if (startDate) params.append('startDate', startDate);
+            if (endDate) params.append('endDate', endDate);
+            if (searchTerm) params.append('searchTerm', searchTerm);
+            params.append('format', format);
+
+            const fileExtension = format === 'csv' ? '.csv' : '.pdf';
+            const contentType = format === 'csv' ? 'text/csv' : 'application/pdf';
+
+            fetch(`/Orders/Export?${params}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': contentType,
+                }
+            })
+            .then(response => {
+                // Check if this was a fallback response
+                const wasFallback = response.headers.get('X-Export-Fallback');
+                
+                if (!response.ok) {
+                    throw new Error(`Export failed with status ${response.status}`);
+                }
+                return response.blob().then(blob => ({ blob, wasFallback }));
+            })
+            .then(({ blob, wasFallback }) => {
+                if (blob.size === 0) {
+                    throw new Error('Generated file is empty');
+                }
+
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                
+                // Adjust filename if fallback occurred
+                const actualExtension = wasFallback ? '.csv' : fileExtension;
+                link.download = `Orders_Export_${new Date().getTime()}${actualExtension}`;
+                link.style.display = 'none';
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+
+                // Show appropriate message
+                if (wasFallback) {
+                    App.showToast('PDF export failed, but CSV file was generated successfully. Please try CSV format for better reliability.', 'warning');
+                } else {
+                    App.showToast(`Orders exported to ${format.toUpperCase()} successfully!`, 'success');
+                }
+            })
+            .catch(error => {
+                console.error('Export failed:', error);
+                App.showToast(`Failed to export orders: ${error.message}`, 'error');
+                
+                // If PDF failed, suggest CSV
+                if (format === 'pdf') {
+                    App.showConfirm('PDF export failed. Would you like to try CSV format instead?', () => {
+                        ExportManager.exportOrders('csv');
+                    }, {
+                        title: 'Export Failed',
+                        confirmText: 'Try CSV',
+                        cancelText: 'Cancel'
+                    });
+                }
             })
             .finally(() => {
                 if (button) {
@@ -280,8 +378,9 @@
         // Then initialize our app
         App.init();
 
-        // Make export function globally available
+        // Make export functions globally available
         window.quickExport = ExportManager.quickExport;
+        window.exportOrders = ExportManager.exportOrders;
 
         // Global debug function
         window.debugNavigation = function() {

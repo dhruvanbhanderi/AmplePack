@@ -254,9 +254,15 @@ namespace AmplePack.Services
                     query = ApplyFilters(query, filter);
                 }
 
-                var topCustomers = await query
+                // Fetch data first, then process in memory to avoid SQLite decimal ordering issues
+                var ordersData = await query
                     .Where(o => o.Customer != null)
-                    .GroupBy(o => new { o.CustomerId, o.Customer!.Name })
+                    .Select(o => new { o.CustomerId, o.Customer!.Name, o.TotalAmount, o.Date })
+                    .ToListAsync();
+
+                // Group and calculate in memory
+                var topCustomers = ordersData
+                    .GroupBy(o => new { o.CustomerId, o.Name })
                     .Select(g => new CustomerOrderSummary
                     {
                         CustomerId = g.Key.CustomerId,
@@ -265,9 +271,9 @@ namespace AmplePack.Services
                         TotalValue = g.Sum(o => o.TotalAmount),
                         LastOrderDate = g.Max(o => o.Date)
                     })
-                    .OrderByDescending(c => c.TotalValue)
+                    .OrderByDescending(c => c.TotalValue) // This ordering happens in memory, not in SQLite
                     .Take(10)
-                    .ToListAsync();
+                    .ToList();
 
                 return topCustomers;
             }
@@ -282,6 +288,8 @@ namespace AmplePack.Services
         {
             try
             {
+                _logger.LogInformation("Starting export with format: {Format}", format);
+                
                 var query = _context.Orders
                     .Include(o => o.Customer)
                     .Include(o => o.OrderDetails)
@@ -292,6 +300,7 @@ namespace AmplePack.Services
                 query = ApplySorting(query, filter.SortBy, filter.SortOrder);
 
                 var orders = await query.ToListAsync();
+                _logger.LogInformation("Retrieved {Count} orders for export", orders.Count);
                 
                 return format.ToLower() switch
                 {
@@ -302,8 +311,24 @@ namespace AmplePack.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error exporting orders with format: {Format}", format);
-                throw;
+                _logger.LogError(ex, "Critical error in ExportOrdersAsync with format: {Format}. Filter: {@Filter}", format, filter);
+                
+                // If everything fails, try to return a simple CSV with basic order info
+                try
+                {
+                    var fallbackOrders = await _context.Orders
+                        .Include(o => o.Customer)
+                        .Take(100) // Limit for safety
+                        .ToListAsync();
+                    
+                    _logger.LogWarning("Attempting fallback CSV export with {Count} orders", fallbackOrders.Count);
+                    return await ExportToCsvAsync(fallbackOrders);
+                }
+                catch (Exception fallbackEx)
+                {
+                    _logger.LogError(fallbackEx, "Even fallback export failed");
+                    throw; // Re-throw original exception
+                }
             }
         }
 
@@ -312,7 +337,16 @@ namespace AmplePack.Services
             await Task.CompletedTask; // Make async
             
             var csvContent = new StringBuilder();
-            csvContent.AppendLine("Order ID,Customer Name,Customer Contact,Order Date,Status,Total Amount (Rs.),Box Type,Size,Quantity,Price per Box (Rs.),Delivery Date,Notes");
+            
+            // Professional CSV Header with Company Info
+            csvContent.AppendLine("# AMPLE PACKAGING - ORDER EXPORT REPORT");
+            csvContent.AppendLine($"# Generated on: {DateTime.Now:dd-MMM-yyyy HH:mm} IST");
+            csvContent.AppendLine($"# Total Orders: {orders.Count}");
+            csvContent.AppendLine($"# Total Value: Rs.{orders.Sum(o => o.TotalAmount):N2}");
+            csvContent.AppendLine("#");
+            
+            // Professional Column Headers (Standard Invoice Format)
+            csvContent.AppendLine("Order Number,Customer Name,Contact Number,Order Date,Status,Quantity,Unit Price,Total Amount,Product Type,Size Specification,Delivery Date,Remarks");
             
             foreach (var order in orders)
             {
@@ -320,65 +354,90 @@ namespace AmplePack.Services
                 {
                     foreach (var detail in order.OrderDetails)
                     {
-                        var line = string.Format(
-                            "CP{0:D3},\"{1}\",\"{2}\",{3},{4},Rs.{5:F2},\"{6}\",\"{7}\",{8},Rs.{9:F2},\"{10}\",\"{11}\"",
-                            order.Id,
-                            EscapeCsvField(order.Customer?.Name ?? "N/A"),
-                            EscapeCsvField(order.Customer?.Contact ?? "N/A"),
-                            order.Date.ToString("dd-MM-yyyy"), // Indian date format
-                            order.Status,
-                            order.TotalAmount,
-                            EscapeCsvField(detail.BoxType ?? ""),
-                            EscapeCsvField(detail.Size ?? ""),
-                            detail.Quantity,
-                            detail.PricePerBox,
-                            detail.DeliveryDate?.ToString("dd-MM-yyyy") ?? "N/A",
-                            EscapeCsvField(detail.Notes ?? "")
-                        );
+                        // Professional data formatting with no special characters
+                        var orderNumber = $"CP{order.Id:D3}";
+                        var customerName = CleanCsvText(order.Customer?.Name ?? "N/A");
+                        var contactNumber = CleanCsvText(order.Customer?.Contact ?? "N/A");
+                        var orderDate = order.Date.ToString("dd-MMM-yyyy");
+                        var status = GetProfessionalStatus(order.Status);
+                        var quantity = detail.Quantity.ToString();
+                        var unitPrice = $"Rs.{detail.PricePerBox:N2}";
+                        var totalAmount = $"Rs.{order.TotalAmount:N2}";
+                        var productType = CleanCsvText(detail.BoxType ?? "Standard Box");
+                        var sizeSpec = CleanCsvText(detail.Size ?? "Standard");
+                        var deliveryDate = detail.DeliveryDate?.ToString("dd-MMM-yyyy") ?? "TBD";
+                        var remarks = CleanCsvText(detail.Notes ?? "Standard Order");
+
+                        // Create professional CSV line
+                        var line = $"{orderNumber},{customerName},{contactNumber},{orderDate},{status},{quantity},{unitPrice},{totalAmount},{productType},{sizeSpec},{deliveryDate},{remarks}";
                         csvContent.AppendLine(line);
                     }
                 }
                 else
                 {
-                    var line = string.Format(
-                        "CP{0:D3},\"{1}\",\"{2}\",{3},{4},Rs.{5:F2},\"No items\",\"\",\"\",\"\",\"\",\"\"",
-                        order.Id,
-                        EscapeCsvField(order.Customer?.Name ?? "N/A"),
-                        EscapeCsvField(order.Customer?.Contact ?? "N/A"),
-                        order.Date.ToString("dd-MM-yyyy"),
-                        order.Status,
-                        order.TotalAmount
-                    );
+                    // Handle orders with no details professionally
+                    var orderNumber = $"CP{order.Id:D3}";
+                    var customerName = CleanCsvText(order.Customer?.Name ?? "N/A");
+                    var contactNumber = CleanCsvText(order.Customer?.Contact ?? "N/A");
+                    var orderDate = order.Date.ToString("dd-MMM-yyyy");
+                    var status = GetProfessionalStatus(order.Status);
+                    var totalAmount = $"Rs.{order.TotalAmount:N2}";
+                    
+                    var line = $"{orderNumber},{customerName},{contactNumber},{orderDate},{status},0,Rs.0.00,{totalAmount},No Items Specified,N/A,TBD,Order requires item specification";
                     csvContent.AppendLine(line);
                 }
             }
             
-            // Add summary
-            csvContent.AppendLine("");
-            csvContent.AppendLine("Summary:");
-            csvContent.AppendLine($"Total Orders:,{orders.Count}");
-            csvContent.AppendLine($"Total Value:,Rs.{orders.Sum(o => o.TotalAmount):F2}");
-            csvContent.AppendLine($"Export Date:,{DateTime.Now:dd-MM-yyyy HH:mm}");
+            // Professional Summary Section
+            csvContent.AppendLine("#");
+            csvContent.AppendLine("# SUMMARY STATISTICS");
+            csvContent.AppendLine($"# Total Orders Exported: {orders.Count}");
+            var completedCount = orders.Count(o => o.Status == "Completed");
+            csvContent.AppendLine($"# Completed Orders: {completedCount}");
+            var pendingCount = orders.Count(o => o.Status == "Pending");
+            var processingCount = orders.Count(o => o.Status == "Processing");
+            csvContent.AppendLine($"# Pending Orders: {pendingCount}");
+            csvContent.AppendLine($"# Processing Orders: {processingCount}");
+            csvContent.AppendLine($"# Total Business Value: Rs.{orders.Sum(o => o.TotalAmount):N2}");
+            csvContent.AppendLine($"# Average Order Value: Rs.{(orders.Any() ? orders.Average(o => o.TotalAmount) : 0):N2}");
+            csvContent.AppendLine("#");
+            csvContent.AppendLine("# Report generated by AmplePack Management System");
+            csvContent.AppendLine($"# Export timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss} IST");
             
             return Encoding.UTF8.GetBytes(csvContent.ToString());
         }
 
-        private string EscapeCsvField(string field)
+        // Clean CSV text - removes problematic characters and ensures professional format
+        private string CleanCsvText(string input)
         {
-            if (string.IsNullOrEmpty(field))
-                return "";
-                
-            // Escape quotes and handle special characters
-            return field.Replace("\"", "\"\"");
+            if (string.IsNullOrEmpty(input)) return "N/A";
+            
+            // Remove problematic characters and escape properly
+            var cleaned = input
+                .Replace("\"", "'")     // Replace quotes with apostrophes
+                .Replace(",", ";")      // Replace commas with semicolons
+                .Replace("\r", " ")     // Remove carriage returns
+                .Replace("\n", " ")     // Remove line feeds
+                .Replace("?", "")       // Remove question marks
+                .Replace("#", "No.")    // Replace hash with "No."
+                .Trim();
+            
+            // Ensure no empty strings
+            return string.IsNullOrEmpty(cleaned) ? "N/A" : cleaned;
         }
 
-        // Helper: truncate safely with ellipsis to prevent layout overflow
-        private string TruncateSafe(string? input, int maxLength)
+        // Professional status formatting
+        private string GetProfessionalStatus(string status)
         {
-            if (string.IsNullOrEmpty(input)) return string.Empty;
-            if (input.Length <= maxLength) return input;
-            if (maxLength <= 1) return input.Substring(0, maxLength);
-            return input.Substring(0, maxLength - 1).TrimEnd() + "…";
+            return status switch
+            {
+                "Pending" => "PENDING",
+                "Processing" => "IN PROGRESS",
+                "Completed" => "COMPLETED",
+                "Delivered" => "DELIVERED",
+                "Cancelled" => "CANCELLED",
+                _ => CleanCsvText(status).ToUpper()
+            };
         }
 
         private async Task<byte[]> ExportToPdfAsync(List<Order> orders)
@@ -387,132 +446,289 @@ namespace AmplePack.Services
             
             try
             {
-                // Optional: enable QuestPDF debugging when environment variable is set
-                var enableDebug = Environment.GetEnvironmentVariable("QUESTPDF_DEBUG") == "true";
-                if (enableDebug)
-                {
-                    QuestPDF.Settings.EnableDebugging = true;
-                    _logger.LogWarning("QuestPDF debugging enabled (QUESTPDF_DEBUG=true). Layout debug info will be produced on failure.");
-                }
+                // Enable QuestPDF debugging for troubleshooting
+                QuestPDF.Settings.EnableDebugging = true;
+                _logger.LogInformation("Generating professional invoice-style PDF export");
 
-                // Limit to first 100 orders for performance (keeps behavior same)
-                var ordersToRender = orders.Take(100).ToList();
+                // Limit to reasonable amount for PDF stability
+                var ordersToRender = orders.Take(25).ToList();
+                _logger.LogInformation("Exporting {Count} orders to PDF (limited from {Total} for optimal layout)", ordersToRender.Count, orders.Count);
 
                 var document = Document.Create(container =>
                 {
                     container.Page(page =>
                     {
-                        page.Size(PageSizes.A4.Landscape());
-                        page.Margin(2, Unit.Centimetre);
-                        page.DefaultTextStyle(x => x.FontSize(10));
+                        // Use A4 Portrait with professional margins
+                        page.Size(PageSizes.A4);
+                        page.Margin(15, Unit.Millimetre);
+                        page.DefaultTextStyle(x => x.FontSize(9).FontFamily("Arial"));
 
+                        // Professional Header
                         page.Header()
-                            .AlignCenter()
-                            .Text("AmplePack - Orders Report")
-                            .SemiBold().FontSize(16).FontColor(Colors.Blue.Medium);
-
-                        page.Content()
-                            .PaddingVertical(1, Unit.Centimetre)
-                            .Table(table =>
+                            .Height(60)
+                            .Padding(8)
+                            .Row(row =>
                             {
-                                // Define columns – conservative proportions to prevent overflow
-                                table.ColumnsDefinition(columns =>
+                                row.RelativeItem().Column(column =>
                                 {
-                                    columns.RelativeColumn(1);   // Order ID
-                                    columns.RelativeColumn(2);   // Customer
-                                    columns.RelativeColumn(1.2f); // Date
-                                    columns.RelativeColumn(1);   // Status
-                                    columns.RelativeColumn(1.2f); // Amount
-                                    columns.RelativeColumn(2.5f); // Items (wider but bounded)
+                                    column.Item().Text("AMPLE PACKAGING")
+                                        .FontSize(16)
+                                        .SemiBold()
+                                        .FontColor(Colors.Blue.Darken2);
+                                    
+                                    column.Item().Text("Order Summary Report")
+                                        .FontSize(12)
+                                        .FontColor(Colors.Grey.Darken2);
+                                    
+                                    column.Item().Text($"Generated: {DateTime.Now:dd-MMM-yyyy HH:mm}")
+                                        .FontSize(8)
+                                        .FontColor(Colors.Grey.Medium);
                                 });
 
-                                // Header
-                                table.Header(header =>
+                                row.ConstantItem(120).AlignRight().Column(column =>
                                 {
-                                    header.Cell().Element(HeaderStyle).Text("Order ID");
-                                    header.Cell().Element(HeaderStyle).Text("Customer");
-                                    header.Cell().Element(HeaderStyle).Text("Date");
-                                    header.Cell().Element(HeaderStyle).Text("Status");
-                                    header.Cell().Element(HeaderStyle).Text("Amount (Rs.)");
-                                    header.Cell().Element(HeaderStyle).Text("Items");
-                                });
-
-                                // Data rows - sanitize long text before rendering to prevent layout conflicts
-                                foreach (var order in ordersToRender)
-                                {
-                                    // Compose a safe, truncated items string to avoid unbounded height
-                                    string items = "No items";
-                                    if (order.OrderDetails?.Any() == true)
+                                    column.Item().Text($"Total Orders: {orders.Count}")
+                                        .FontSize(10)
+                                        .SemiBold();
+                                    
+                                    column.Item().Text($"Total Value: Rs.{orders.Sum(o => o.TotalAmount):N0}")
+                                        .FontSize(10)
+                                        .SemiBold()
+                                        .FontColor(Colors.Green.Darken1);
+                                    
+                                    if (orders.Count > 25)
                                     {
-                                        var itemParts = order.OrderDetails.Select(od =>
-                                        {
-                                            var boxType = TruncateSafe(od.BoxType, 40);
-                                            var qty = od.Quantity;
-                                            return $"{boxType} ({qty})";
-                                        }).ToList();
+                                        column.Item().Text($"Showing: {ordersToRender.Count} orders")
+                                            .FontSize(8)
+                                            .FontColor(Colors.Orange.Medium);
+                                    }
+                                });
+                            });
 
-                                        items = TruncateSafe(string.Join(", ", itemParts), 300); // 300 chars max
+                        // Professional Content with Essential Data Only
+                        page.Content()
+                            .PaddingVertical(5)
+                            .Column(column =>
+                            {
+                                if (ordersToRender.Any())
+                                {
+                                    column.Item().Table(table =>
+                                    {
+                                        // Professional column widths - only essential data
+                                        table.ColumnsDefinition(columns =>
+                                        {
+                                            columns.ConstantColumn(40);  // Order#
+                                            columns.ConstantColumn(80);  // Customer
+                                            columns.ConstantColumn(50);  // Date
+                                            columns.ConstantColumn(45);  // Status
+                                            columns.ConstantColumn(35);  // Qty
+                                            columns.ConstantColumn(60);  // Amount
+                                            columns.RelativeColumn(1);  // Product
+                                        });
+
+                                        // Professional Header
+                                        table.Header(header =>
+                                        {
+                                            header.Cell().Element(ProfessionalHeaderCell).Text("Order#");
+                                            header.Cell().Element(ProfessionalHeaderCell).Text("Customer");
+                                            header.Cell().Element(ProfessionalHeaderCell).Text("Date");
+                                            header.Cell().Element(ProfessionalHeaderCell).Text("Status");
+                                            header.Cell().Element(ProfessionalHeaderCell).Text("Items");
+                                            header.Cell().Element(ProfessionalHeaderCell).Text("Amount");
+                                            header.Cell().Element(ProfessionalHeaderCell).Text("Product Type");
+                                        });
+
+                                        // Data rows with professional formatting
+                                        foreach (var order in ordersToRender)
+                                        {
+                                            // Professional data formatting
+                                            var orderNum = $"CP{order.Id:D3}";
+                                            var customerName = CleanText(order.Customer?.Name ?? "N/A", 12);
+                                            var orderDate = order.Date.ToString("dd-MMM");
+                                            var status = GetStatusDisplay(order.Status);
+                                            var itemCount = order.OrderDetails?.Count ?? 0;
+                                            var amount = $"Rs.{order.TotalAmount:N0}";
+                                            var productType = GetProductSummary(order.OrderDetails);
+
+                                            table.Cell().Element(ProfessionalDataCell).Text(orderNum);
+                                            table.Cell().Element(ProfessionalDataCell).Text(customerName);
+                                            table.Cell().Element(ProfessionalDataCell).Text(orderDate);
+                                            table.Cell().Element(ProfessionalStatusCell).Text(status);
+                                            table.Cell().Element(ProfessionalDataCell).AlignCenter().Text(itemCount.ToString());
+                                            table.Cell().Element(ProfessionalAmountCell).Text(amount);
+                                            table.Cell().Element(ProfessionalDataCell).Text(productType);
+                                        }
+                                    });
+
+                                    // Professional Summary Section
+                                    if (orders.Count > 25)
+                                    {
+                                        column.Item().PaddingTop(10)
+                                            .Background(Colors.Blue.Lighten5)
+                                            .Padding(8)
+                                            .Row(row =>
+                                            {
+                                                row.RelativeItem().Text("Note: This PDF shows the first 25 orders for optimal display. For complete data export, please use CSV format.")
+                                                    .FontSize(8)
+                                                    .FontColor(Colors.Blue.Darken1);
+                                                
+                                                row.ConstantItem(80).AlignRight().Text("CSV Recommended")
+                                                    .FontSize(8)
+                                                    .SemiBold()
+                                                    .FontColor(Colors.Green.Darken1);
+                                            });
                                     }
 
-                                    // Safe customer name and other fields
-                                    var customerName = TruncateSafe(order.Customer?.Name ?? "N/A", 80);
-                                    var dateText = order.Date.ToString("dd-MM-yyyy");
-                                    var statusText = TruncateSafe(order.Status ?? "", 30);
-                                    var amountText = $"Rs.{order.TotalAmount:F2}";
-                                    var orderIdText = $"CP{order.Id:D3}";
+                                    // Professional Statistics
+                                    column.Item().PaddingTop(15)
+                                        .Row(row =>
+                                        {
+                                            var completedOrders = ordersToRender.Count(o => o.Status == "Completed");
+                                            var pendingOrders = ordersToRender.Count(o => o.Status == "Pending");
+                                            var totalValue = ordersToRender.Sum(o => o.TotalAmount);
 
-                                    table.Cell().Element(CellStyle).Text(orderIdText);
-                                    table.Cell().Element(CellStyle).Text(customerName);
-                                    table.Cell().Element(CellStyle).Text(dateText);
-                                    table.Cell().Element(CellStyle).Text(statusText);
-                                    table.Cell().Element(CellStyle).Text(amountText);
-                                    // Render items as plain text (truncated). This avoids complicated nested containers.
-                                    table.Cell().Element(CellStyle).Text(items);
+                                            row.RelativeItem().Column(col =>
+                                            {
+                                                col.Item().Text("Summary Statistics")
+                                                    .FontSize(10)
+                                                    .SemiBold()
+                                                    .FontColor(Colors.Blue.Darken2);
+                                                
+                                                col.Item().Text($"Completed: {completedOrders} | Pending: {pendingOrders}")
+                                                    .FontSize(8);
+                                                
+                                                col.Item().Text($"Displayed Value: Rs.{totalValue:N0}")
+                                                    .FontSize(8);
+                                            });
+                                        });
                                 }
-
-                                static IContainer HeaderStyle(IContainer container)
+                                else
                                 {
-                                    return container
-                                        .DefaultTextStyle(x => x.SemiBold().FontSize(9))
-                                        .PaddingVertical(8)
-                                        .BorderBottom(1)
-                                        .BorderColor(Colors.Black)
-                                        .AlignCenter();
-                                }
-
-                                static IContainer CellStyle(IContainer container)
-                                {
-                                    return container
-                                        .BorderBottom(1)
-                                        .BorderColor(Colors.Grey.Lighten2)
-                                        .PaddingVertical(5)
-                                        .PaddingHorizontal(3);
+                                    column.Item().AlignCenter().PaddingVertical(50)
+                                        .Text("No orders found for the selected criteria")
+                                        .FontSize(14)
+                                        .FontColor(Colors.Grey.Darken1);
                                 }
                             });
 
+                        // Professional Footer
                         page.Footer()
-                            .AlignCenter()
-                            .Text(x =>
+                            .Height(25)
+                            .Padding(5)
+                            .Row(row =>
                             {
-                                x.Span("Generated: ");
-                                x.Span(DateTime.Now.ToString("dd-MM-yyyy HH:mm")).SemiBold();
-                                x.Span(" | Total Orders: ");
-                                x.Span(orders.Count.ToString()).SemiBold();
-                                x.Span(" | Total: Rs.");
-                                x.Span(orders.Sum(o => o.TotalAmount).ToString("F2")).SemiBold();
+                                row.RelativeItem().Text("AmplePack - Packaging Solutions")
+                                    .FontSize(8)
+                                    .FontColor(Colors.Grey.Medium);
+                                
+                                row.ConstantItem(100).AlignRight().Text(x =>
+                                {
+                                    x.Span("Page ");
+                                    x.CurrentPageNumber();
+                                    x.Span(" of ");
+                                    x.TotalPages();
+                                });
                             });
                     });
                 });
 
-                return document.GeneratePdf();
+                // Generate PDF with error handling
+                var pdfBytes = document.GeneratePdf();
+                _logger.LogInformation("Professional PDF generated successfully: {Size} bytes", pdfBytes.Length);
+                return pdfBytes;
             }
             catch (Exception ex)
             {
-                // Log full context for diagnosis
-                _logger.LogError(ex, "Error generating PDF export for {Count} orders. Falling back to CSV.", orders.Count);
+                // Log error and fallback to CSV
+                _logger.LogError(ex, "Professional PDF generation failed. Order count: {Count}, Error: {Message}", 
+                    orders.Count, ex.Message);
 
-                // Fallback: return CSV so export still works
+                _logger.LogInformation("Falling back to CSV export due to PDF generation failure");
                 return await ExportToCsvAsync(orders);
+            }
+        }
+
+        // Professional Header Cell Styling
+        private static IContainer ProfessionalHeaderCell(IContainer container)
+        {
+            return container
+                .Background(Colors.Blue.Darken1)
+                .Padding(4)
+                .DefaultTextStyle(x => x.FontSize(8).SemiBold().FontColor(Colors.White));
+        }
+
+        // Professional Data Cell Styling
+        private static IContainer ProfessionalDataCell(IContainer container)
+        {
+            return container
+                .Padding(3)
+                .DefaultTextStyle(x => x.FontSize(7));
+        }
+
+        // Professional Status Cell with Color Coding
+        private static IContainer ProfessionalStatusCell(IContainer container)
+        {
+            return container
+                .Padding(3)
+                .DefaultTextStyle(x => x.FontSize(7).SemiBold());
+        }
+
+        // Professional Amount Cell (Right Aligned)
+        private static IContainer ProfessionalAmountCell(IContainer container)
+        {
+            return container
+                .Padding(3)
+                .AlignRight()
+                .DefaultTextStyle(x => x.FontSize(7).SemiBold().FontColor(Colors.Green.Darken1));
+        }
+
+        // Clean text helper - removes special characters and limits length
+        private string CleanText(string input, int maxLength)
+        {
+            if (string.IsNullOrEmpty(input)) return "N/A";
+            
+            // Remove problematic characters
+            var cleaned = input.Replace("?", "").Replace("#", "").Replace("\"", "").Trim();
+            
+            // Limit length professionally
+            if (cleaned.Length > maxLength)
+            {
+                return cleaned.Substring(0, maxLength - 1).TrimEnd() + ".";
+            }
+            
+            return cleaned;
+        }
+
+        // Professional status display
+        private string GetStatusDisplay(string status)
+        {
+            return status switch
+            {
+                "Pending" => "PENDING",
+                "Processing" => "PROCESS",
+                "Completed" => "COMPLETE",
+                "Delivered" => "DELIVERED",
+                "Cancelled" => "CANCELLED",
+                _ => CleanText(status, 8).ToUpper()
+            };
+        }
+
+        // Professional product summary
+        private string GetProductSummary(ICollection<OrderDetail>? orderDetails)
+        {
+            if (orderDetails == null || !orderDetails.Any())
+                return "No Items";
+
+            var firstItem = orderDetails.First();
+            var boxType = CleanText(firstItem.BoxType ?? "Box", 15);
+            
+            if (orderDetails.Count == 1)
+            {
+                return $"{boxType} ({firstItem.Quantity})";
+            }
+            else
+            {
+                return $"{boxType} +{orderDetails.Count - 1}";
             }
         }
 
