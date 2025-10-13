@@ -22,6 +22,7 @@ namespace AmplePack
 
             // Add services
             builder.Services.AddControllersWithViews();
+            builder.Services.AddRazorPages();
             
             // Configure request localization for proper encoding
             builder.Services.Configure<RequestLocalizationOptions>(options =>
@@ -83,7 +84,7 @@ namespace AmplePack
             builder.Services.AddScoped<InvoiceService>();
             builder.Services.AddScoped<EnhancedReportService>();
             builder.Services.AddScoped<OrderManagementService>();
-            builder.Services.AddScoped<BoxPriceCalculatorService>();
+            builder.Services.AddScoped<AdvancedBoxRateCalculatorService>();
 
             var app = builder.Build();
 
@@ -119,6 +120,8 @@ namespace AmplePack
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}");
+            
+            app.MapRazorPages(); // Map Razor Pages
 
             await app.RunAsync();
         }

@@ -50,6 +50,7 @@
 
   <ItemGroup>
     <Folder Include="Performance\" />
+    <Folder Include="Unit\Services\" />
   </ItemGroup>
 
 </Project>
