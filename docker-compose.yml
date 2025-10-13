@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  amplepack:
+    build: .
+    ports:
+      - "8080:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+    volumes:
+      - amplepack_data:/app/data
+    depends_on:
+      - db
+    networks:
+      - amplepack_network
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      SA_PASSWORD: "YourStrong!Passw0rd"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql_data:/var/opt/mssql
+    networks:
+      - amplepack_network
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - amplepack
+    networks:
+      - amplepack_network
+
+volumes:
+  amplepack_data:
+  sql_data:
+
+networks:
+  amplepack_network:
+    driver: bridge
