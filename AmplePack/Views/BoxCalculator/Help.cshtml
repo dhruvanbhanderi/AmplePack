@@ -1,0 +1,341 @@
+@{
+    ViewData["Title"] = "Box Calculator Help";
+}
+
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-question-circle me-2"></i>
+                        Box Rate Calculator Help Guide
+                    </h3>
+                </div>
+                <div class="card-body">
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Overview:</strong> This calculator determines the optimal box pricing based on your specifications, 
+                                sheet sizes, and cost parameters. It follows industry-standard corrugated box calculation formulas 
+                                to provide accurate pricing with material optimization.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion" id="helpAccordion">
+                        
+                        <!-- Box Specifications -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="boxSpecsHeader">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#boxSpecs">
+                                    <i class="fas fa-box me-2"></i>Box Specifications
+                                </button>
+                            </h2>
+                            <div id="boxSpecs" class="accordion-collapse collapse show" data-bs-parent="#helpAccordion">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h5>Dimensions</h5>
+                                            <ul>
+                                                <li><strong>Length:</strong> Internal length of the box in inches</li>
+                                                <li><strong>Width:</strong> Internal width of the box in inches</li>
+                                                <li><strong>Height:</strong> Internal height of the box in inches</li>
+                                            </ul>
+                                            
+                                            <h5>Material</h5>
+                                            <ul>
+                                                <li><strong>Board Type:</strong>
+                                                    <ul>
+                                                        <li>3 Ply: Single wall corrugated (3-5mm thickness)</li>
+                                                        <li>5 Ply: Double wall corrugated (6-7mm thickness)</li>
+                                                        <li>7 Ply: Triple wall corrugated (15mm thickness)</li>
+                                                    </ul>
+                                                </li>
+                                                <li><strong>GSM:</strong> Grams per Square Meter - paper weight/strength</li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="alert alert-warning">
+                                                <h6><i class="fas fa-exclamation-triangle me-2"></i>Important Notes:</h6>
+                                                <ul class="mb-0">
+                                                    <li>All dimensions are internal measurements</li>
+                                                    <li>Higher GSM = stronger but more expensive</li>
+                                                    <li>Board type affects material cost multiplier</li>
+                                                    <li>Minimum practical dimensions: 2" x 2" x 1"</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sheet Sizes -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="sheetSizesHeader">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sheetSizes">
+                                    <i class="fas fa-ruler-combined me-2"></i>Sheet Sizes & Apps Calculation
+                                </button>
+                            </h2>
+                            <div id="sheetSizes" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <h5>Understanding Apps</h5>
+                                            <p><strong>"Apps"</strong> refers to the number of boxes that can be cut from a single sheet of corrugated board.</p>
+                                            
+                                            <h6>Apps Calculation Formula:</h6>
+                                            <div class="bg-light p-3 rounded mb-3">
+                                                <code>
+                                                Box Layout Length = Length + (2 × Height)<br>
+                                                Box Layout Width = Width + (2 × Height)<br><br>
+                                                Apps Length = Floor(Sheet Length ÷ Box Layout Length)<br>
+                                                Apps Width = Floor(Sheet Width ÷ Box Layout Width)<br><br>
+                                                Total Apps = Apps Length × Apps Width
+                                                </code>
+                                            </div>
+                                            
+                                            <h6>Sheet Optimization:</h6>
+                                            <ul>
+                                                <li>Calculator tests both orientations (0° and 90° rotation)</li>
+                                                <li>Selects orientation with maximum apps</li>
+                                                <li>Compares Sheet Size 1 vs Sheet Size 2</li>
+                                                <li>Recommends optimal sheet for lowest cost per box</li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card bg-primary text-white">
+                                                <div class="card-body">
+                                                    <h6>Standard Sheet Sizes</h6>
+                                                    <ul class="mb-0">
+                                                        <li>40" × 30" (most common)</li>
+                                                        <li>36" × 28"</li>
+                                                        <li>42" × 32"</li>
+                                                        <li>38" × 26"</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cost Parameters -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="costParamsHeader">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#costParams">
+                                    <i class="fas fa-rupee-sign me-2"></i>Cost Parameters (User Editable)
+                                </button>
+                            </h2>
+                            <div id="costParams" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                                <div class="accordion-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped">
+                                            <thead class="table-dark">
+                                                <tr>
+                                                    <th>Parameter</th>
+                                                    <th>Default Value</th>
+                                                    <th>Description</th>
+                                                    <th>Typical Range</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td><strong>Paper Rate</strong></td>
+                                                    <td>?45.00/kg</td>
+                                                    <td>Cost of corrugated board per kilogram</td>
+                                                    <td>?35-60/kg</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Printing Cost</strong></td>
+                                                    <td>?2.50/sheet</td>
+                                                    <td>Cost to print on one sheet (includes setup, ink, labor)</td>
+                                                    <td>?1-5/sheet</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Die Cutting Cost</strong></td>
+                                                    <td>?1.50/sheet</td>
+                                                    <td>Cost to die-cut one sheet (includes die amortization)</td>
+                                                    <td>?0.50-3/sheet</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Labor Cost</strong></td>
+                                                    <td>?0.50/box</td>
+                                                    <td>Assembly and packing labor per box</td>
+                                                    <td>?0.25-1/box</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Wastage Factor</strong></td>
+                                                    <td>10%</td>
+                                                    <td>Material waste during production</td>
+                                                    <td>5-15%</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Overhead</strong></td>
+                                                    <td>15%</td>
+                                                    <td>Fixed costs (rent, utilities, admin)</td>
+                                                    <td>10-25%</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Profit Margin</strong></td>
+                                                    <td>20%</td>
+                                                    <td>Desired profit percentage</td>
+                                                    <td>15-35%</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>GST</strong></td>
+                                                    <td>18%</td>
+                                                    <td>Goods and Services Tax (India)</td>
+                                                    <td>12-18%</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Calculation Formula -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="formulaHeader">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#formula">
+                                    <i class="fas fa-calculator me-2"></i>Complete Calculation Formula
+                                </button>
+                            </h2>
+                            <div id="formula" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <h5>Step-by-Step Calculation Process:</h5>
+                                            
+                                            <div class="card mb-3">
+                                                <div class="card-header bg-info text-white">
+                                                    <strong>Step 1: Material Cost Calculation</strong>
+                                                </div>
+                                                <div class="card-body">
+                                                    <code>
+                                                    Board Multiplier = GSM multiplier based on board type<br>
+                                                    Effective GSM = GSM × Board Multiplier<br>
+                                                    Sheet Area (sq meters) = (Length × Width) ÷ 1550<br>
+                                                    Sheet Weight (kg) = (Effective GSM × Sheet Area) ÷ 1000<br>
+                                                    Material Cost per Sheet = Sheet Weight × Paper Rate per kg<br>
+                                                    Material Cost per Box = Material Cost per Sheet ÷ Apps
+                                                    </code>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="card mb-3">
+                                                <div class="card-header bg-warning text-dark">
+                                                    <strong>Step 2: Processing & Labor Costs</strong>
+                                                </div>
+                                                <div class="card-body">
+                                                    <code>
+                                                    Printing Cost per Box = Printing Cost per Sheet ÷ Apps<br>
+                                                    Die Cutting Cost per Box = Die Cutting Cost per Sheet ÷ Apps<br>
+                                                    Labor Cost per Box = Fixed Labor Cost per Box<br>
+                                                    Wastage Cost = Material Cost per Box × (Wastage % ÷ 100)
+                                                    </code>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="card mb-3">
+                                                <div class="card-header bg-success text-white">
+                                                    <strong>Step 3: Business Costs & Final Price</strong>
+                                                </div>
+                                                <div class="card-body">
+                                                    <code>
+                                                    Subtotal = Material + Wastage + Printing + Die Cutting + Labor<br>
+                                                    Overhead Cost = Subtotal × (Overhead % ÷ 100)<br>
+                                                    Total Cost = Subtotal + Overhead Cost<br>
+                                                    Profit = Total Cost × (Profit Margin % ÷ 100)<br>
+                                                    Selling Price = Total Cost + Profit<br>
+                                                    GST Amount = Selling Price × (GST % ÷ 100)<br>
+                                                    <strong>Final Price = Selling Price + GST Amount</strong>
+                                                    </code>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tips & Best Practices -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="tipsHeader">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#tips">
+                                    <i class="fas fa-lightbulb me-2"></i>Tips & Best Practices
+                                </button>
+                            </h2>
+                            <div id="tips" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="card border-success">
+                                                <div class="card-header bg-success text-white">
+                                                    <i class="fas fa-check-circle me-2"></i>Do's
+                                                </div>
+                                                <div class="card-body">
+                                                    <ul>
+                                                        <li>Always verify your sheet sizes with supplier</li>
+                                                        <li>Update paper rates regularly (monthly)</li>
+                                                        <li>Consider volume discounts for large orders</li>
+                                                        <li>Test both sheet orientations for optimization</li>
+                                                        <li>Account for setup costs in small orders</li>
+                                                        <li>Keep historical data for trend analysis</li>
+                                                        <li>Factor in seasonal price variations</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="card border-danger">
+                                                <div class="card-header bg-danger text-white">
+                                                    <i class="fas fa-times-circle me-2"></i>Don'ts
+                                                </div>
+                                                <div class="card-body">
+                                                    <ul>
+                                                        <li>Don't ignore wastage factors - they're crucial</li>
+                                                        <li>Don't use outdated paper rates</li>
+                                                        <li>Don't forget to include all processing costs</li>
+                                                        <li>Don't set profit margins too low</li>
+                                                        <li>Don't overlook transportation costs</li>
+                                                        <li>Don't ignore competitive pricing</li>
+                                                        <li>Don't forget GST implications</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="alert alert-primary mt-3">
+                                        <h5><i class="fas fa-info-circle me-2"></i>Quick Optimization Tips:</h5>
+                                        <ul class="mb-0">
+                                            <li><strong>For Small Boxes:</strong> Higher GSM, optimize for more apps per sheet</li>
+                                            <li><strong>For Large Boxes:</strong> Consider sheet utilization vs material costs</li>
+                                            <li><strong>High Volume Orders:</strong> Negotiate better paper rates and lower wastage</li>
+                                            <li><strong>Custom Shapes:</strong> Factor in additional die-cutting complexity</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <a href="@Url.Action("Index", "BoxCalculator")" class="btn btn-primary btn-lg">
+                            <i class="fas fa-calculator me-2"></i>Start Calculating
+                        </a>
+                        <a href="@Url.Action("Index", "Home")" class="btn btn-outline-secondary btn-lg ms-3">
+                            <i class="fas fa-home me-2"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

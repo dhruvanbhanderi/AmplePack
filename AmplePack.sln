@@ -7,6 +7,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AmplePack", "AmplePack\Ampl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AmplePack.Tests", "AmplePack.Tests\AmplePack.Tests.csproj", "{C945B4C2-ED96-4E24-AA1A-869AA40DCC8D}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\..\..\Downloads\Box Rate Formula(3 & 5 Ply).xlsx = ..\..\..\..\Downloads\Box Rate Formula(3 & 5 Ply).xlsx
+		..\..\..\..\Downloads\Box Rate Formula.xlsx = ..\..\..\..\Downloads\Box Rate Formula.xlsx
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,5 +50,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C8031B06-5FA8-4D5C-ABEF-E59084386EFB}
 	EndGlobalSection
 EndGlobal

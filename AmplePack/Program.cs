@@ -84,7 +84,7 @@ namespace AmplePack
             builder.Services.AddScoped<InvoiceService>();
             builder.Services.AddScoped<EnhancedReportService>();
             builder.Services.AddScoped<OrderManagementService>();
-            builder.Services.AddScoped<AdvancedBoxRateCalculatorService>();
+            builder.Services.AddScoped<IBoxCalculatorService, BoxCalculatorService>();
 
             var app = builder.Build();
 

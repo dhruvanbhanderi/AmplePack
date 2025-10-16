@@ -336,6 +336,17 @@
                                 </button>
                             </div>
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 mb-4">
+                                <button onclick="location.href='@Url.Action("Index", "BoxCalculator")'" class="btn btn-app-enhanced btn-warning">
+                                    <div class="btn-app-icon">
+                                        <i class="fas fa-calculator"></i>
+                                    </div>
+                                    <div class="btn-app-text">
+                                        <span class="btn-app-title">Box Calculator</span>
+                                        <span class="btn-app-desc">Calculate box pricing</span>
+                                    </div>
+                                </button>
+                            </div>
+                            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 mb-4">
                                 <button onclick="location.href='@Url.Action("Create", "Customers")'" class="btn btn-app-enhanced btn-success">
                                     <div class="btn-app-icon">
                                         <i class="fas fa-user-plus"></i>
@@ -347,7 +358,7 @@
                                 </button>
                             </div>
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 mb-4">
-                                <button onclick="location.href='@Url.Action("Create", "CustomerProducts")'" class="btn btn-app-enhanced btn-warning">
+                                <button onclick="location.href='@Url.Action("Create", "CustomerProducts")'" class="btn btn-app-enhanced btn-info">
                                     <div class="btn-app-icon">
                                         <i class="fas fa-cube"></i>
                                     </div>
@@ -357,14 +368,49 @@
                                     </div>
                                 </button>
                             </div>
+                        </div>
+                        <div class="row">
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 mb-4">
-                                <button onclick="location.href='@Url.Action("Create", "Inventory")'" class="btn btn-app-enhanced btn-info">
+                                <button onclick="location.href='@Url.Action("Create", "Inventory")'" class="btn btn-app-enhanced btn-secondary">
                                     <div class="btn-app-icon">
                                         <i class="fas fa-boxes"></i>
                                     </div>
                                     <div class="btn-app-text">
                                         <span class="btn-app-title">Add Inventory</span>
                                         <span class="btn-app-desc">Stock management</span>
+                                    </div>
+                                </button>
+                            </div>
+                            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 mb-4">
+                                <button onclick="location.href='@Url.Action("Index", "Reports")'" class="btn btn-app-enhanced btn-dark">
+                                    <div class="btn-app-icon">
+                                        <i class="fas fa-chart-line"></i>
+                                    </div>
+                                    <div class="btn-app-text">
+                                        <span class="btn-app-title">View Reports</span>
+                                        <span class="btn-app-desc">Analytics & insights</span>
+                                    </div>
+                                </button>
+                            </div>
+                            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 mb-4">
+                                <button onclick="location.href='@Url.Action("Help", "BoxCalculator")'" class="btn btn-app-enhanced btn-outline-primary">
+                                    <div class="btn-app-icon">
+                                        <i class="fas fa-question-circle"></i>
+                                    </div>
+                                    <div class="btn-app-text">
+                                        <span class="btn-app-title">Calculator Help</span>
+                                        <span class="btn-app-desc">Learn formulas & tips</span>
+                                    </div>
+                                </button>
+                            </div>
+                            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 mb-4">
+                                <button onclick="quickPriceCheck()" class="btn btn-app-enhanced btn-outline-success">
+                                    <div class="btn-app-icon">
+                                        <i class="fas fa-search-dollar"></i>
+                                    </div>
+                                    <div class="btn-app-text">
+                                        <span class="btn-app-title">Quick Price Check</span>
+                                        <span class="btn-app-desc">Fast calculation</span>
                                     </div>
                                 </button>
                             </div>
@@ -683,6 +729,157 @@
                 });
             });
         }
+
+        function quickPriceCheck() {
+            Swal.fire({
+                title: 'Quick Box Price Check',
+                html: `
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group text-left">
+                                <label for="quickLength">Length (in):</label>
+                                <input type="number" class="form-control" id="quickLength" step="0.1" value="10">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group text-left">
+                                <label for="quickWidth">Width (in):</label>
+                                <input type="number" class="form-control" id="quickWidth" step="0.1" value="8">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group text-left">
+                                <label for="quickHeight">Height (in):</label>
+                                <input type="number" class="form-control" id="quickHeight" step="0.1" value="6">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group text-left">
+                                <label for="quickQuantity">Quantity:</label>
+                                <input type="number" class="form-control" id="quickQuantity" value="1000">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group text-left">
+                                <label for="quickBoardType">Board Type:</label>
+                                <select class="form-control" id="quickBoardType">
+                                    <option value="3 Ply">3 Ply</option>
+                                    <option value="5 Ply">5 Ply</option>
+                                    <option value="7 Ply">7 Ply</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="quickResult" class="mt-3" style="display: none;">
+                        <div class="alert alert-success">
+                            <h5><i class="fas fa-calculator me-2"></i>Quick Calculation Result</h5>
+                            <div class="row">
+                                <div class="col-6">
+                                    <strong>Price per Box:</strong><br>
+                                    <span id="quickPricePerBox" class="h4 text-success">₹0.00</span>
+                                </div>
+                                <div class="col-6">
+                                    <strong>Total Order Value:</strong><br>
+                                    <span id="quickTotalValue" class="h4 text-primary">₹0.00</span>
+                                </div>
+                            </div>
+                            <small class="text-muted">* Based on default parameters. For detailed calculation, use the full calculator.</small>
+                        </div>
+                    </div>
+                `,
+                width: '600px',
+                showCancelButton: true,
+                showConfirmButton: true,
+                confirmButtonText: '<i class="fas fa-calculator me-2"></i>Calculate',
+                cancelButtonText: 'Full Calculator',
+                allowOutsideClick: false,
+                preConfirm: async () => {
+                    const length = parseFloat(document.getElementById('quickLength').value);
+                    const width = parseFloat(document.getElementById('quickWidth').value);
+                    const height = parseFloat(document.getElementById('quickHeight').value);
+                    const quantity = parseInt(document.getElementById('quickQuantity').value);
+                    const boardType = document.getElementById('quickBoardType').value;
+
+                    if (!length || !width || !height || !quantity) {
+                        Swal.showValidationMessage('Please fill all fields with valid values');
+                        return false;
+                    }
+
+                    try {
+                        // Show calculating message
+                        Swal.update({
+                            html: Swal.getHtmlContainer().innerHTML.replace(
+                                '<div id="quickResult"',
+                                '<div class="text-center"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><br>Calculating...</div><div id="quickResult"'
+                            )
+                        });
+
+                        const response = await fetch('/BoxCalculator/Calculate', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                Length: length,
+                                Width: width,
+                                Height: height,
+                                BoardType: boardType,
+                                GSM: 150,
+                                Quantity: quantity,
+                                SheetSize1Length: 40,
+                                SheetSize1Width: 30,
+                                SheetSize2Length: 36,
+                                SheetSize2Width: 28,
+                                PaperRatePerKg: 45.00,
+                                PrintingCostPerSheet: 2.50,
+                                DieCuttingCostPerSheet: 1.50,
+                                LaborCostPerBox: 0.50,
+                                OverheadPercentage: 15.0,
+                                ProfitMarginPercentage: 20.0,
+                                WastageFactorPercentage: 10.0,
+                                IncludeGST: true,
+                                GSTRate: 18.0
+                            })
+                        });
+
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            document.getElementById('quickPricePerBox').textContent = '₹' + result.result.finalPricePerBoxWithGST.toFixed(2);
+                            document.getElementById('quickTotalValue').textContent = '₹' + result.result.totalOrderValueWithGST.toFixed(2);
+                            document.getElementById('quickResult').style.display = 'block';
+                            
+                            // Update the HTML to show results
+                            Swal.update({
+                                html: Swal.getHtmlContainer().innerHTML.replace(
+                                    /<div class="text-center">.*?<\/div>/,
+                                    ''
+                                ),
+                                confirmButtonText: '<i class="fas fa-external-link-alt me-2"></i>Full Calculator',
+                                cancelButtonText: 'Close'
+                            });
+                            
+                            return { calculated: true, result: result.result };
+                        } else {
+                            throw new Error(result.message || 'Calculation failed');
+                        }
+                    } catch (error) {
+                        Swal.showValidationMessage('Calculation failed: ' + error.message);
+                        return false;
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed && result.value?.calculated) {
+                    // Go to full calculator
+                    window.location.href = '@Url.Action("Index", "BoxCalculator")';
+                } else if (result.dismiss === Swal.DismissReason.cancel) {
+                    // Go to full calculator
+                    window.location.href = '@Url.Action("Index", "BoxCalculator")';
+                }
+            });
+        }
     </script>
 }
 
@@ -770,6 +967,47 @@
             background: linear-gradient(135deg, #17a2b8, #117a8b);
         }
 
+        .btn-app-enhanced.btn-secondary {
+            background: linear-gradient(135deg, #6c757d, #545b62);
+        }
+
+        .btn-app-enhanced.btn-dark {
+            background: linear-gradient(135deg, #343a40, #23272b);
+        }
+
+        /* Outline button variants */
+        .btn-app-enhanced.btn-outline-primary {
+            background: transparent;
+            border: 2px solid #007bff;
+            color: #007bff;
+        }
+
+        .btn-app-enhanced.btn-outline-primary:hover {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-app-enhanced.btn-outline-success {
+            background: transparent;
+            border: 2px solid #28a745;
+            color: #28a745;
+        }
+
+        .btn-app-enhanced.btn-outline-success:hover {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-app-enhanced.btn-outline-primary .btn-app-icon,
+        .btn-app-enhanced.btn-outline-success .btn-app-icon {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .btn-app-enhanced.btn-outline-primary:hover .btn-app-icon,
+        .btn-app-enhanced.btn-outline-success:hover .btn-app-icon {
+            background: rgba(255,255,255,0.2);
+        }
+
         .currency {
             font-weight: 600;
             color: #28a745;
@@ -827,6 +1065,33 @@
             .btn-app-desc {
                 font-size: 10px;
             }
+        }
+
+        /* Additional styling for outline buttons */
+        .btn-outline-primary {
+            color: #007bff;
+            background-color: transparent;
+            background-image: none;
+            border: 1px solid #007bff;
+        }
+
+        .btn-outline-primary:hover {
+            color: white;
+            background-color: #007bff;
+            text-decoration: none;
+        }
+
+        .btn-outline-success {
+            color: #28a745;
+            background-color: transparent;
+            background-image: none;
+            border: 1px solid #28a745;
+        }
+
+        .btn-outline-success:hover {
+            color: white;
+            background-color: #28a745;
+            text-decoration: none;
         }
     </style>
 }

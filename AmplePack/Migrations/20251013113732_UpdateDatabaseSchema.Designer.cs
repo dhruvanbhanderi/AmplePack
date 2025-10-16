@@ -3,6 +3,7 @@ using System;
 using AmplePack.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AmplePack.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251013113732_UpdateDatabaseSchema")]
+    partial class UpdateDatabaseSchema
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.9");
@@ -201,11 +204,6 @@ namespace AmplePack.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ConstructionType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("TEXT");
-
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("TEXT");
 
@@ -288,22 +286,9 @@ namespace AmplePack.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("GSM")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Grade")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("ItemName")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("MaterialType")
-                        .IsRequired()
-                        .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("Quantity")
@@ -312,12 +297,6 @@ namespace AmplePack.Migrations
 
                     b.Property<decimal>("ReorderLevel")
                         .HasPrecision(10, 2)
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal?>("SheetLengthInches")
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal?>("SheetWidthInches")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Unit")
@@ -373,46 +352,21 @@ namespace AmplePack.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ConstructionType")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("TEXT");
-
                     b.Property<int?>("CustomerProductId")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("DeliveryDate")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("GSM")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<decimal>("HeightInches")
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal>("LengthInches")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Notes")
                         .IsRequired()
-                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("OrderId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("PaperType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT");
-
                     b.Property<decimal>("PricePerBox")
                         .HasPrecision(18, 2)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PrintingType")
-                        .IsRequired()
-                        .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Quantity")
@@ -420,10 +374,7 @@ namespace AmplePack.Migrations
 
                     b.Property<string>("Size")
                         .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal>("WidthInches")
+                        .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");

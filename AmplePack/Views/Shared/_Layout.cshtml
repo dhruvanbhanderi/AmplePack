@@ -195,15 +195,13 @@
                                 </a>
                             </li>
 
-                            <li class="nav-header">TOOLS</li>
+                            <li class="nav-header">ANALYTICS</li>
                             <li class="nav-item">
                                 <a asp-controller="BoxCalculator" asp-action="Index" class="nav-link" data-controller="boxcalculator" data-action="index">
                                     <i class="nav-icon fas fa-calculator"></i>
-                                    <p>Box Rate Calculator</p>
+                                    <p>Box Calculator</p>
                                 </a>
                             </li>
-
-                            <li class="nav-header">ANALYTICS</li>
                             <li class="nav-item">
                                 <a href="#" class="nav-link" data-section="reports">
                                     <i class="nav-icon fas fa-chart-line"></i>
@@ -358,10 +356,32 @@
     <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Toastr -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <!-- Custom App -->
     <script src="~/js/app.js" asp-append-version="true"></script>
 
     <script>
+        // Configure Toastr
+        toastr.options = {
+            "closeButton": true,
+            "debug": false,
+            "newestOnTop": true,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "preventDuplicates": false,
+            "onclick": null,
+            "showDuration": "300",
+            "hideDuration": "1000",
+            "timeOut": "5000",
+            "extendedTimeOut": "1000",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+            "showMethod": "fadeIn",
+            "hideMethod": "fadeOut"
+        };
+        
         // Simple modal functions
         function showProfileModal() {
             $('#profileModal').modal('show');
