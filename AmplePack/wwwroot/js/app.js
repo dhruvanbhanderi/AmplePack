@@ -200,9 +200,9 @@
         },
 
         formatCurrency: function(amount) {
-            return new Intl.NumberFormat('en-IN', {
-                style: 'currency',
-                currency: 'INR'
+            return 'Rs. ' + new Intl.NumberFormat('en-IN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
             }).format(amount);
         }
     };
@@ -227,14 +227,32 @@
                 }
             })
             .then(response => {
+                console.log('Response status:', response.status);
+                console.log('Response content-type:', response.headers.get('content-type'));
+                
                 if (!response.ok) {
-                    return response.json().then(errorData => {
-                        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+                    return response.text().then(errorText => {
+                        let errorMessage;
+                        try {
+                            const errorData = JSON.parse(errorText);
+                            errorMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
+                        } catch {
+                            errorMessage = errorText || `HTTP ${response.status}: ${response.statusText}`;
+                        }
+                        throw new Error(errorMessage);
                     });
                 }
+                
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/pdf')) {
+                    throw new Error(`Expected PDF but received: ${contentType}`);
+                }
+                
                 return response.blob();
             })
             .then(blob => {
+                console.log('Blob received, size:', blob.size);
+                
                 if (blob.size === 0) {
                     throw new Error('Generated file is empty');
                 }
@@ -247,8 +265,12 @@
                 
                 document.body.appendChild(link);
                 link.click();
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
+                
+                // Clean up
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                }, 100);
 
                 App.showToast(`${reportType.charAt(0).toUpperCase() + reportType.slice(1)} report downloaded successfully!`, 'success');
             })

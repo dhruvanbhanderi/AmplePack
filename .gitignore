@@ -14,6 +14,10 @@ bld/
 [Ll]og/
 [Ll]ogs/
 
+# Publish folders
+publish/
+Publish/
+
 # Visual Studio files
 .vs/
 *.user

@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace AmplePack.Models
 {
@@ -32,34 +32,36 @@ namespace AmplePack.Models
         [Display(Name = "Sheet Length (in)")]
         [Required(ErrorMessage = "Sheet length is required")]
         [Range(10, 200, ErrorMessage = "Sheet length must be between 10 and 200 inches")]
-        public decimal SheetLength { get; set; } = 40;
+        public decimal SheetLength { get; set; } = 42;
 
         [Display(Name = "Sheet Width (in)")]
         [Required(ErrorMessage = "Sheet width is required")]
         [Range(10, 200, ErrorMessage = "Sheet width must be between 10 and 200 inches")]
         public decimal SheetWidth { get; set; } = 30;
 
-        // Paper 1 (Outer Liner)
+        // Paper 1 (Top/Outer Liner) - Always Required
         [Display(Name = "Paper 1 - GSM")]
-        [Required(ErrorMessage = "Paper 1 GSM is required")]
+        [Required(ErrorMessage = "Top liner GSM is required")]
         [Range(100, 400, ErrorMessage = "GSM must be between 100 and 400")]
         public int Paper1GSM { get; set; } = 150;
 
         [Display(Name = "Paper 1 - Rate (Rs./kg)")]
-        [Required(ErrorMessage = "Paper 1 rate is required")]
-        [Range(0.01, 1000, ErrorMessage = "Paper 1 rate must be between 0.01 and 1000")]
-        public decimal Paper1RatePerKg { get; set; } = 45.00m;
+        [Required(ErrorMessage = "Top liner rate is required")]
+        [Range(0, 1000, ErrorMessage = "Top liner rate must be between 0 and 1000")]
+        public decimal Paper1RatePerKg { get; set; } = 50.00m;
 
-        // Paper 2 (Inner Liner) - Optional for 3-ply, Required for 5-ply and above
+        // Paper 2 (Bottom/Inner Liner) - Required for ALL ply types (Industry Standard)
         [Display(Name = "Paper 2 - GSM")]
-        [Range(0, 400, ErrorMessage = "GSM must be between 0 and 400")]
-        public int Paper2GSM { get; set; } = 0;
+        [Required(ErrorMessage = "Bottom liner GSM is required for all board types")]
+        [Range(100, 400, ErrorMessage = "Bottom liner GSM must be between 100 and 400")]
+        public int Paper2GSM { get; set; } = 125;
 
         [Display(Name = "Paper 2 - Rate (Rs./kg)")]
-        [Range(0, 1000, ErrorMessage = "Paper 2 rate must be between 0 and 1000")]
-        public decimal Paper2RatePerKg { get; set; } = 0;
+        [Required(ErrorMessage = "Bottom liner rate is required")]
+        [Range(0, 1000, ErrorMessage = "Bottom liner rate must be between 0 and 1000")]
+        public decimal Paper2RatePerKg { get; set; } = 45.00m;
 
-        // Medium Paper (Corrugated middle layer)
+        // Medium Paper (Corrugated middle layer) - Always Required
         [Display(Name = "Medium - GSM")]
         [Required(ErrorMessage = "Medium GSM is required")]
         [Range(80, 200, ErrorMessage = "Medium GSM must be between 80 and 200")]
@@ -67,37 +69,50 @@ namespace AmplePack.Models
 
         [Display(Name = "Medium - Rate (Rs./kg)")]
         [Required(ErrorMessage = "Medium rate is required")]
-        [Range(0.01, 1000, ErrorMessage = "Medium rate must be between 0.01 and 1000")]
+        [Range(0, 1000, ErrorMessage = "Medium rate must be between 0 and 1000")]
         public decimal MediumRatePerKg { get; set; } = 42.00m;
 
-        // Processing costs
+        // Flute Type - Industry Standard
+        [Display(Name = "Flute Type")]
+        public string FluteType { get; set; } = "B";
+
+        // ✅ FIXED - Processing costs - ZERO FIRST APPROACH (User adds as needed)
         [Display(Name = "Printing Cost (Rs./sheet)")]
         [Range(0, 100, ErrorMessage = "Printing cost must be between 0 and 100")]
-        public decimal PrintingCostPerSheet { get; set; } = 2.50m;
+        public decimal PrintingCostPerSheet { get; set; } = 0m;
 
         [Display(Name = "Die Cutting Cost (Rs./sheet)")]
         [Range(0, 100, ErrorMessage = "Die cutting cost must be between 0 and 100")]
-        public decimal DieCuttingCostPerSheet { get; set; } = 1.50m;
+        public decimal DieCuttingCostPerSheet { get; set; } = 0m;
 
         [Display(Name = "Labor Cost (Rs./box)")]
         [Range(0, 10, ErrorMessage = "Labor cost must be between 0 and 10")]
-        public decimal LaborCostPerBox { get; set; } = 0.50m;
+        public decimal LaborCostPerBox { get; set; } = 0m; // ✅ FIXED - Was 0.50m
 
-        // Business parameters
+        [Display(Name = "Pin Cost (Rs./box)")]
+        [Range(0, 5, ErrorMessage = "Pin cost must be between 0 and 5")]
+        public decimal PinCostPerBox { get; set; } = 0m; // ✅ FIXED - Was 0.10m
+
+        [Display(Name = "Transport Cost (Rs./box)")]
+        [Range(0, 20, ErrorMessage = "Transport cost must be between 0 and 20")]
+        public decimal TransportCostPerBox { get; set; } = 0m;
+
+        // ✅ FIXED - Business parameters - ZERO FIRST APPROACH
         [Display(Name = "Overhead Percentage (%)")]
         [Range(0, 50, ErrorMessage = "Overhead percentage must be between 0 and 50")]
-        public decimal OverheadPercentage { get; set; } = 15.0m;
+        public decimal OverheadPercentage { get; set; } = 0m;
 
         [Display(Name = "Profit Margin (%)")]
         [Range(0, 100, ErrorMessage = "Profit margin must be between 0 and 100")]
-        public decimal ProfitMarginPercentage { get; set; } = 20.0m;
+        public decimal ProfitMarginPercentage { get; set; } = 0m; // ✅ FIXED - Was 10.0m, now matches Controller
 
         [Display(Name = "Wastage Factor (%)")]
         [Range(5, 25, ErrorMessage = "Wastage factor must be between 5 and 25")]
-        public decimal WastageFactorPercentage { get; set; } = 10.0m;
+        public decimal WastageFactorPercentage { get; set; } = 5.0m; // ✅ KEPT - Minimum industry standard
 
+        // ✅ FIXED - GST Settings - START WITH NO GST
         [Display(Name = "Include GST")]
-        public bool IncludeGST { get; set; } = true;
+        public bool IncludeGST { get; set; } = false; // ✅ FIXED - Was true, now matches Controller
 
         [Display(Name = "GST Rate (%)")]
         [Range(0, 50, ErrorMessage = "GST rate must be between 0 and 50")]
@@ -180,6 +195,8 @@ namespace AmplePack.Models
         public decimal PrintingCostPerBox { get; set; }
         public decimal DieCuttingCostPerBox { get; set; }
         public decimal LaborCostPerBox { get; set; }
+        public decimal PinCostPerBox { get; set; }
+        public decimal TransportCostPerBox { get; set; }
         
         // Business costs
         public decimal SubtotalPerBox { get; set; }
@@ -205,9 +222,9 @@ namespace AmplePack.Models
         public bool IsUserEditable { get; set; }
     }
 
+    // ✅ ENHANCED Industry-Standard Board Configurations WITHOUT Duplex
     public static class BoardTypeConstants
     {
-        // Industry standard board configurations
         public static readonly Dictionary<string, BoardConfiguration> BoardConfigurations = new()
         {
             { 
@@ -215,9 +232,14 @@ namespace AmplePack.Models
                 new BoardConfiguration 
                 { 
                     Name = "3 Ply (Single Wall)", 
-                    RequiredPapers = 2, // Outer + Medium
-                    Thickness = 3.5m,
-                    Description = "Single wall corrugated board"
+                    RequiredPapers = 3, // Top + Medium + Bottom
+                    Thickness = 4.0m,
+                    Description = "Single wall: Top Liner + Single Corrugated Medium + Bottom Liner",
+                    MediumLayers = 1,
+                    GSMMultiplier = 1.0m, // Standard single wall
+                    WasteFactor = 8.0m,
+                    EdgeCrushStrength = 5.5m,
+                    IsDuplex = false
                 } 
             },
             { 
@@ -225,9 +247,14 @@ namespace AmplePack.Models
                 new BoardConfiguration 
                 { 
                     Name = "5 Ply (Double Wall)", 
-                    RequiredPapers = 3, // Outer + Inner + 2 Mediums  
+                    RequiredPapers = 4, // Top + Inner + Medium + Bottom
                     Thickness = 6.5m,
-                    Description = "Double wall corrugated board"
+                    Description = "Double wall: Top + Inner Liner + Double Medium + Bottom Liner",
+                    MediumLayers = 2, // Two corrugated medium layers
+                    GSMMultiplier = 1.7m, // Increased material for double wall
+                    WasteFactor = 10.0m,
+                    EdgeCrushStrength = 8.5m,
+                    IsDuplex = false
                 } 
             },
             { 
@@ -235,11 +262,17 @@ namespace AmplePack.Models
                 new BoardConfiguration 
                 { 
                     Name = "7 Ply (Triple Wall)", 
-                    RequiredPapers = 4, // Outer + 2 Inner + 3 Mediums
+                    RequiredPapers = 7, // Top + 2×Inner + 3×Medium + Bottom
                     Thickness = 15.0m,
-                    Description = "Triple wall corrugated board"
+                    Description = "Triple wall: Multiple Liners + Triple Corrugated Medium (Heavy Duty)",
+                    MediumLayers = 3, // Three corrugated medium layers
+                    GSMMultiplier = 2.3m, // Significant increase for triple wall
+                    WasteFactor = 12.0m,
+                    EdgeCrushStrength = 12.0m,
+                    IsDuplex = false // ✅ CHANGED - 7-ply is now regular triple wall
                 } 
             }
+            // ✅ REMOVED - Duplex Box as requested
         };
 
         public static readonly List<string> AvailableBoardTypes = new()
@@ -247,11 +280,62 @@ namespace AmplePack.Models
             "3 Ply",
             "5 Ply", 
             "7 Ply"
+            // ✅ REMOVED - Duplex Box
         };
 
         public static readonly List<int> StandardGSMValues = new()
         {
-            80, 90, 100, 110, 120, 125, 130, 135, 140, 145, 150, 155, 160, 165, 170, 175, 180, 185, 190, 195, 200, 220, 250, 300
+            80, 90, 100, 110, 120, 125, 130, 135, 140, 145, 150, 155, 160, 165, 170, 175, 180, 185, 190, 195, 200, 220, 250, 300, 350, 400
+        };
+
+        // ✅ ENHANCED Industry-Standard Flute Factors
+        public static readonly Dictionary<string, decimal> FluteFactors = new()
+        {
+            { "B", 1.4m },   // B-Flute (3mm) - Most common for 3-ply
+            { "C", 1.45m },  // C-Flute (4mm) - Standard for 5-ply
+            { "E", 1.3m },   // E-Flute (1.5mm) - Fine printing applications
+            { "BC", 1.8m },  // BC-Flute (6.5mm) - Double wall, ideal for 5-ply
+            { "EB", 1.6m }   // EB-Flute combination - Heavy duty 7-ply
+        };
+
+        // ENHANCED: Board Type Recommendations
+        public static readonly Dictionary<string, string[]> RecommendedFlutes = new()
+        {
+            { "3 Ply", new[] { "B", "C", "E" } },
+            { "5 Ply", new[] { "C", "BC" } },
+            { "7 Ply", new[] { "BC", "EB" } }
+        };
+
+        // ENHANCED: Structure Definitions
+        public static readonly Dictionary<string, DuplexConfiguration> DuplexConfigurations = new()
+        {
+            { 
+                "3 Ply", 
+                new DuplexConfiguration 
+                { 
+                    IsDuplex = false,
+                    Structure = "Single Face",
+                    Description = "Single corrugated medium between two liners"
+                }
+            },
+            { 
+                "5 Ply", 
+                new DuplexConfiguration 
+                { 
+                    IsDuplex = false,
+                    Structure = "Double Wall",
+                    Description = "Two corrugated mediums with inner liner"
+                }
+            },
+            { 
+                "7 Ply", 
+                new DuplexConfiguration 
+                { 
+                    IsDuplex = false,
+                    Structure = "Triple Wall",
+                    Description = "Three corrugated mediums with multiple liners"
+                }
+            }
         };
     }
 
@@ -260,6 +344,18 @@ namespace AmplePack.Models
         public string Name { get; set; } = "";
         public int RequiredPapers { get; set; }
         public decimal Thickness { get; set; }
+        public string Description { get; set; } = "";
+        public int MediumLayers { get; set; } = 1;
+        public decimal GSMMultiplier { get; set; } = 1.0m;
+        public decimal WasteFactor { get; set; } = 8.0m;
+        public decimal EdgeCrushStrength { get; set; } = 5.0m;
+        public bool IsDuplex { get; set; } = false; // ✅ ADDED - Duplex flag
+    }
+
+    public class DuplexConfiguration
+    {
+        public bool IsDuplex { get; set; }
+        public string Structure { get; set; } = "";
         public string Description { get; set; } = "";
     }
 }

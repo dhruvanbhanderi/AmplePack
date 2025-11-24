@@ -107,6 +107,57 @@ namespace AmplePack.Data
 
             modelBuilder.Entity<AuditLog>()
                 .HasIndex(al => al.ChangedBy);
+
+            // ===================================================================
+            // CRITICAL PERFORMANCE INDEXES - Added for Factory Scale Operations
+            // ===================================================================
+            
+            // Orders table indexes - Most queried table
+            modelBuilder.Entity<Order>()
+                .HasIndex(o => o.CustomerId)
+                .HasDatabaseName("IX_Orders_CustomerId");
+
+            modelBuilder.Entity<Order>()
+                .HasIndex(o => o.Date)
+                .HasDatabaseName("IX_Orders_Date");
+
+            modelBuilder.Entity<Order>()
+                .HasIndex(o => o.Status)
+                .HasDatabaseName("IX_Orders_Status");
+
+            // Composite index for most common query pattern: Customer + Date + Status
+            modelBuilder.Entity<Order>()
+                .HasIndex(o => new { o.CustomerId, o.Date, o.Status })
+                .HasDatabaseName("IX_Orders_Customer_Date_Status");
+
+            // Customers table indexes
+            modelBuilder.Entity<Customer>()
+                .HasIndex(c => c.Email)
+                .IsUnique()
+                .HasDatabaseName("IX_Customers_Email");
+
+            modelBuilder.Entity<Customer>()
+                .HasIndex(c => c.Name)
+                .HasDatabaseName("IX_Customers_Name");
+
+            // Inventory table indexes
+            modelBuilder.Entity<Inventory>()
+                .HasIndex(i => i.Category)
+                .HasDatabaseName("IX_Inventory_Category");
+
+            modelBuilder.Entity<Inventory>()
+                .HasIndex(i => i.AvailableQuantity)
+                .HasDatabaseName("IX_Inventory_Quantity");
+
+            // Composite index for low stock alerts
+            modelBuilder.Entity<Inventory>()
+                .HasIndex(i => new { i.Category, i.AvailableQuantity })
+                .HasDatabaseName("IX_Inventory_Category_Quantity");
+
+            // OrderDetails index for order lookups
+            modelBuilder.Entity<OrderDetail>()
+                .HasIndex(od => od.OrderId)
+                .HasDatabaseName("IX_OrderDetails_OrderId");
         }
     }
 }

@@ -1,0 +1,311 @@
+/* ========================================
+   Box Calculator Dedicated CSS
+   Extracted from inline styles for better maintainability
+   ======================================== */
+
+/* Results Section Styling */
+.results-section {
+    margin-top: 30px;
+    display: none;
+}
+
+.results-section.show {
+    display: block;
+}
+
+/* Price Display Components */
+.main-price-display {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 30px;
+    text-align: center;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 20px rgba(0,123,255,0.3);
+}
+
+.main-price-value {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.main-price-label {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.live-price-display {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 15px;
+}
+
+.live-price-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    transition: all 0.3s ease;
+}
+
+.live-price-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+/* Metrics and Cards */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.metric-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    border-left: 4px solid #007bff;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+}
+
+.metric-card.success { border-left-color: #28a745; }
+.metric-card.info { border-left-color: #17a2b8; }
+.metric-card.warning { border-left-color: #ffc107; }
+.metric-card.danger { border-left-color: #dc3545; }
+
+.metric-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.metric-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.metric-mini {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.metric-mini-value {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+.metric-mini-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    text-transform: uppercase;
+}
+
+/* Tables and Breakdowns */
+.breakdown-table {
+    width: 100%;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.breakdown-header {
+    background: #f8f9fa;
+    padding: 15px 20px;
+    border-bottom: 1px solid #dee2e6;
+    font-weight: 600;
+    color: #495057;
+}
+
+.breakdown-table th {
+    background: #f8f9fa;
+    padding: 12px 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #495057;
+    border: none;
+    text-transform: uppercase;
+}
+
+.breakdown-table td {
+    padding: 10px 15px;
+    border: none;
+    border-bottom: 1px solid #f8f9fa;
+    font-size: 0.9rem;
+}
+
+.breakdown-table tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+.live-breakdown {
+    font-size: 0.9rem;
+}
+
+.breakdown-item {
+    padding: 8px 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.breakdown-item:last-child {
+    border-bottom: none;
+}
+
+/* Buttons */
+.calculate-button {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 12px 30px;
+    font-weight: 600;
+    color: white;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.calculate-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+    color: white;
+}
+
+/* Loading and States */
+.loading-indicator {
+    display: none;
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+}
+
+.loading-indicator.show {
+    display: block;
+}
+
+.calculating {
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+
+/* Information Sections */
+.industry-note {
+    background: #e8f5e8;
+    border-left: 4px solid #28a745;
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    border-radius: 0 5px 5px 0;
+}
+
+.section-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+/* GSM Display */
+.total-gsm-display {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+    text-align: center;
+}
+
+.gsm-breakdown {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-top: 5px;
+}
+
+/* Sheet Analysis */
+.sheet-info {
+    font-size: 0.9rem;
+}
+
+.info-row {
+    padding: 6px 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+/* Sticky Sidebar */
+.sticky-top {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 20px;
+    z-index: 1020;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .main-price-value {
+        font-size: 2rem;
+    }
+    
+    .live-price-value {
+        font-size: 1.5rem;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .metric-card {
+        padding: 15px;
+    }
+    
+    .breakdown-table {
+        font-size: 0.8rem;
+    }
+    
+    .sticky-top {
+        position: relative;
+        top: auto;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .calculate-button,
+    .btn,
+    .loading-indicator {
+        display: none !important;
+    }
+    
+    .main-price-display {
+        background: #f8f9fa !important;
+        color: #000 !important;
+        box-shadow: none !important;
+    }
+    
+    .metric-card {
+        box-shadow: none !important;
+        border: 1px solid #dee2e6 !important;
+    }
+}

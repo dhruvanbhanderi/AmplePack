@@ -51,13 +51,25 @@ namespace AmplePack.Controllers
             viewModel.NewCustomersThisMonth = await _context.Customers
                 .CountAsync(c => c.Orders.Any(o => o.Date.Month == currentMonth && o.Date.Year == currentYear));
 
-            // Fixed: Get top customers by loading data first, then ordering in memory
-            var customersWithOrders = await _context.Customers
-                .Include(c => c.Orders)
+            // ? FIXED: Use database projection instead of in-memory calculation
+            // OLD: Loaded ALL customers with ALL orders into memory (N+1 query)
+            // NEW: Calculate in database, return only top 5 with needed fields
+            viewModel.TopCustomers = await _context.Customers
+                .Select(c => new Customer
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    Email = c.Email,
+                    Contact = c.Contact,
+                    Address = c.Address,
+                    // Calculate total in database query
+                    Orders = c.Orders.Where(o => o.Status == "Completed").ToList()
+                })
                 .ToListAsync();
             
-            viewModel.TopCustomers = customersWithOrders
-                .OrderByDescending(c => c.Orders?.Where(o => o.Status == "Completed").Sum(o => o.TotalAmount) ?? 0)
+            // Sort by calculated total (already filtered in query)
+            viewModel.TopCustomers = viewModel.TopCustomers
+                .OrderByDescending(c => c.Orders.Sum(o => o.TotalAmount))
                 .Take(5)
                 .ToList();
 
@@ -69,15 +81,12 @@ namespace AmplePack.Controllers
             viewModel.TotalInventoryValue = await _context.Inventories
                 .SumAsync(i => i.AvailableQuantity * i.UnitPrice);
             
-            // Fixed: Get critical stock items by loading data first, then ordering in memory
-            var criticalStockItems = await _context.Inventories
+            // ? FIXED: Use database ordering instead of in-memory
+            viewModel.CriticalStockItems = await _context.Inventories
                 .Where(i => i.AvailableQuantity <= i.ReorderLevel)
-                .ToListAsync();
-            
-            viewModel.CriticalStockItems = criticalStockItems
                 .OrderBy(i => i.AvailableQuantity)
                 .Take(5)
-                .ToList();
+                .ToListAsync();
 
             // Order Status Reports
             viewModel.PendingOrders = await _context.Orders.CountAsync(o => o.Status == "Pending");
@@ -147,9 +156,12 @@ namespace AmplePack.Controllers
         {
             try
             {
+                _logger.LogInformation("Starting export for type: {ExportType}", filter.ExportType);
+
                 // Validate export format - only allow PDF
                 if (string.IsNullOrEmpty(filter.ExportFormat) || filter.ExportFormat.ToLower() != "pdf")
                 {
+                    _logger.LogWarning("Invalid export format requested: {ExportFormat}", filter.ExportFormat);
                     return BadRequest(new { success = false, message = "Invalid export format. Only PDF is supported." });
                 }
 
@@ -159,7 +171,7 @@ namespace AmplePack.Controllers
                     ExportFormat = "pdf", // Force PDF only
                     StartDate = GetDateFromFilter(filter),
                     EndDate = GetDateToFilter(filter),
-                    SelectedColumns = filter.SelectedColumns,
+                    SelectedColumns = filter.SelectedColumns ?? new List<string>(),
                     IncludeSummary = filter.IncludeSummary
                 };
 
@@ -184,8 +196,6 @@ namespace AmplePack.Controllers
 
                 byte[] fileData;
                 string fileName;
-                string contentType = "application/pdf";
-                string fileExtension = ".pdf";
                 ReportSummary? summary = null;
 
                 // Generate summary if requested
@@ -200,25 +210,37 @@ namespace AmplePack.Controllers
                         var orderData = await _reportService.GetOrderReportDataAsync(request);
                         if (summary != null) summary.TotalRecords = orderData.Count;
                         fileData = await _reportService.ExportToPdfAsync(orderData, request, summary);
-                        fileName = $"Orders_Report_{DateTime.Now:yyyyMMdd_HHmmss}{fileExtension}";
+                        fileName = $"Orders_Report_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
                         break;
                     case "customers":
                         var customerData = await _reportService.GetCustomerReportDataAsync(request);
                         if (summary != null) summary.TotalRecords = customerData.Count;
                         fileData = await _reportService.ExportToPdfAsync(customerData, request, summary);
-                        fileName = $"Customers_Report_{DateTime.Now:yyyyMMdd_HHmmss}{fileExtension}";
+                        fileName = $"Customers_Report_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
                         break;
                     case "inventory":
                         var inventoryData = await _reportService.GetInventoryReportDataAsync(request);
                         if (summary != null) summary.TotalRecords = inventoryData.Count;
                         fileData = await _reportService.ExportToPdfAsync(inventoryData, request, summary);
-                        fileName = $"Inventory_Report_{DateTime.Now:yyyyMMdd_HHmmss}{fileExtension}";
+                        fileName = $"Inventory_Report_{DateTime.Now:yyyyMMdd_HHmms}.pdf";
                         break;
                     default:
                         return BadRequest(new { success = false, message = "Invalid report type." });
                 }
 
-                return File(fileData, contentType, fileName);
+                _logger.LogInformation("Generated PDF report: {FileName}, Size: {Size} bytes", fileName, fileData.Length);
+
+                // Validate file was created
+                if (fileData == null || fileData.Length == 0)
+                {
+                    throw new InvalidOperationException("Generated PDF file is empty");
+                }
+
+                // Set proper headers for PDF download
+                Response.Headers.Add("Content-Disposition", $"attachment; filename=\"{fileName}\"");
+                Response.Headers.Add("Content-Length", fileData.Length.ToString());
+
+                return File(fileData, "application/pdf", fileName);
             }
             catch (Exception ex)
             {
@@ -559,6 +581,43 @@ namespace AmplePack.Controllers
             }
 
             return result;
+        }
+
+        // Add a simple test endpoint for PDF generation
+        [HttpGet("TestPdf")]
+        public IActionResult TestPdfGeneration()
+        {
+            try
+            {
+                // Create simple test data
+                var testData = new List<dynamic>
+                {
+                    new { Id = 1, Name = "Test Item 1", Value = 100.50m },
+                    new { Id = 2, Name = "Test Item 2", Value = 250.75m }
+                };
+
+                var request = new ReportExportRequest
+                {
+                    ReportType = "test",
+                    SelectedColumns = new List<string> { "Id", "Name", "Value" },
+                    IncludeSummary = false
+                };
+
+                var testPdf = _reportService.ExportToPdfAsync(testData, request).Result;
+                
+                if (testPdf?.Length > 0)
+                {
+                    return File(testPdf, "application/pdf", "test_report.pdf");
+                }
+                else
+                {
+                    return BadRequest("PDF generation test failed");
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"PDF test error: {ex.Message}");
+            }
         }
     }
 }

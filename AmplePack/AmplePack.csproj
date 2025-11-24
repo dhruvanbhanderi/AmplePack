@@ -20,17 +20,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Pages\**" />
-    <Compile Remove="Tests\**" />
-    <Content Remove="Pages\**" />
-    <Content Remove="Tests\**" />
-    <EmbeddedResource Remove="Pages\**" />
-    <EmbeddedResource Remove="Tests\**" />
-    <None Remove="Pages\**" />
-    <None Remove="Tests\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.9" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="9.0.9" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.9" />
@@ -45,11 +34,6 @@
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0" />
     <PackageReference Include="QuestPDF" Version="2025.7.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Documentation\" />
-    <Folder Include="Views\SheetCalculator\" />
   </ItemGroup>
 
 </Project>

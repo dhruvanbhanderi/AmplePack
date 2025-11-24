@@ -1,4 +1,4 @@
-@model BoxCalculatorRequest
+﻿@model BoxCalculatorRequest
 @{
     ViewData["Title"] = "Box Rate Calculator - Industry Standard";
 }
@@ -75,14 +75,8 @@
             letter-spacing: 0.5px;
         }
         
-        .breakdown-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 25px;
-        }
-        
-        .breakdown-card {
+        .breakdown-table {
+            width: 100%;
             background: white;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -95,10 +89,6 @@
             border-bottom: 1px solid #dee2e6;
             font-weight: 600;
             color: #495057;
-        }
-        
-        .breakdown-table {
-            width: 100%;
         }
         
         .breakdown-table th {
@@ -120,32 +110,6 @@
         
         .breakdown-table tbody tr:hover {
             background-color: rgba(0, 123, 255, 0.05);
-        }
-        
-        .apps-visualization {
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        
-        .apps-grid {
-            display: grid;
-            gap: 3px;
-            margin: 15px 0;
-            justify-content: center;
-        }
-        
-        .apps-box {
-            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-            color: white;
-            text-align: center;
-            padding: 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .calculate-button {
@@ -185,6 +149,113 @@
             padding-bottom: 10px;
             border-bottom: 2px solid #e9ecef;
         }
+        
+        .industry-note {
+            background: #e8f5e8;
+            border-left: 4px solid #28a745;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .live-price-display {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .live-price-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .live-price-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .metric-mini {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .metric-mini-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .metric-mini-label {
+            font-size: 0.75rem;
+            color: #6c757d;
+            text-transform: uppercase;
+        }
+        
+        .live-breakdown {
+            font-size: 0.9rem;
+        }
+        
+        .breakdown-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        
+        .breakdown-item:last-child {
+            border-bottom: none;
+        }
+        
+        .sheet-info {
+            font-size: 0.9rem;
+        }
+        
+        .info-row {
+            padding: 6px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .sticky-top {
+            position: -webkit-sticky;
+            position: sticky;
+            top: 20px;
+            z-index: 1020;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+        
+        .calculating {
+            opacity: 0.6;
+            transition: opacity 0.2s ease;
+        }
+        
+        .live-price-value {
+            transition: all 0.3s ease;
+        }
+
+        /* ✅ ADDED - Total GSM Display Styling */
+        .total-gsm-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .gsm-breakdown {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
     </style>
 }
 
@@ -211,268 +282,408 @@
 <!-- Main content -->
 <section class="content">
     <div class="container-fluid">
-        
-        <form id="calculatorForm">
+        <div class="row">
             
-            <!-- Box Specifications Card -->
-            <div class="card card-primary card-outline">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-box mr-2"></i>Box Specifications
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label asp-for="Length">Length (inches)</label>
-                                <input asp-for="Length" class="form-control" type="number" step="0.1" min="0.1" />
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label asp-for="Width">Width (inches)</label>
-                                <input asp-for="Width" class="form-control" type="number" step="0.1" min="0.1" />
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label asp-for="Height">Height (inches)</label>
-                                <input asp-for="Height" class="form-control" type="number" step="0.1" min="0.1" />
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label asp-for="Quantity">Quantity</label>
-                                <input asp-for="Quantity" class="form-control" type="number" min="1" />
-                            </div>
-                        </div>
-                    </div>
+            <!-- Left Column - Form (8/12) -->
+            <div class="col-md-8">
+                <form id="calculatorForm">
                     
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="BoardType">Board Type</label>
-                                <select asp-for="BoardType" class="form-control" id="boardTypeSelect">
-                                    @foreach (var boardType in ViewBag.BoardTypes as List<string>)
-                                    {
-                                        <option value="@boardType">@boardType</option>
-                                    }
-                                </select>
-                                <div id="boardInfo" class="small text-muted mt-1"></div>
-                            </div>
+                    <!-- Box Specifications Card -->
+                    <div class="card card-primary card-outline">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-box mr-2"></i>Box Specifications
+                            </h3>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>GST Settings</label>
-                                <div class="form-check mt-2">
-                                    <input asp-for="IncludeGST" type="checkbox" class="form-check-input" />
-                                    <label class="form-check-label">Include GST (@Model.GSTRate%)</label>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="Length">Length (inches)</label>
+                                        <input asp-for="Length" class="form-control live-input" type="number" step="0.1" min="0.1" />
+                                    </div>
                                 </div>
-                                <input asp-for="GSTRate" type="hidden" />
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="Width">Width (inches)</label>
+                                        <input asp-for="Width" class="form-control live-input" type="number" step="0.1" min="0.1" />
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Sheet Size Card -->
-            <div class="card card-info card-outline">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-ruler-combined mr-2"></i>Sheet Size
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="SheetLength">Sheet Length (inches)</label>
-                                <input asp-for="SheetLength" class="form-control" type="number" step="0.1" />
-                                <small class="form-text text-muted">Standard: 40", 42", 44"</small>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="Height">Height (inches)</label>
+                                        <input asp-for="Height" class="form-control live-input" type="number" step="0.1" min="0.1" />
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="Quantity">Quantity</label>
+                                        <input asp-for="Quantity" class="form-control live-input" type="number" min="1" />
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="SheetWidth">Sheet Width (inches)</label>
-                                <input asp-for="SheetWidth" class="form-control" type="number" step="0.1" />
-                                <small class="form-text text-muted">Standard: 30", 32", 36"</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Paper Specifications Card -->
-            <div class="card card-warning card-outline">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-layer-group mr-2"></i>Paper Specifications
-                    </h3>
-                </div>
-                <div class="card-body">
-                    
-                    <!-- Paper 1 -->
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label asp-for="Paper1GSM">Paper 1 - GSM</label>
-                                <select asp-for="Paper1GSM" class="form-control">
-                                    @foreach (var gsm in ViewBag.GSMValues as List<int>)
-                                    {
-                                        <option value="@gsm">@gsm</option>
-                                    }
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label asp-for="Paper1RatePerKg">Rate (Rs./kg)</label>
-                                <input asp-for="Paper1RatePerKg" class="form-control" type="number" step="0.01" />
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Type</label>
-                                <input type="text" class="form-control" value="Outer Liner" readonly />
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="BoardType">Board Type</label>
+                                        <select asp-for="BoardType" class="form-control live-input" id="boardTypeSelect">
+                                            @foreach (var boardType in ViewBag.BoardTypes as List<string>)
+                                            {
+                                                <option value="@boardType">@boardType</option>
+                                            }
+                                        </select>
+                                        <div id="boardInfo" class="small text-muted mt-1"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>GST Settings</label>
+                                        <div class="form-check mt-2">
+                                            <input asp-for="IncludeGST" type="checkbox" class="form-check-input live-input" />
+                                            <label class="form-check-label">Include GST (@Model.GSTRate%)</label>
+                                        </div>
+                                        <input asp-for="GSTRate" type="hidden" />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Paper 2 -->
-                    <div class="row" id="paper2Section">
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label asp-for="Paper2GSM">Paper 2 - GSM</label>
-                                <select asp-for="Paper2GSM" class="form-control">
-                                    <option value="0">Not Required</option>
-                                    @foreach (var gsm in ViewBag.GSMValues as List<int>)
-                                    {
-                                        <option value="@gsm">@gsm</option>
-                                    }
-                                </select>
-                            </div>
+                    <!-- Sheet Size Card -->
+                    <div class="card card-info card-outline">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-ruler-combined mr-2"></i>Sheet Size
+                            </h3>
                         </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label asp-for="Paper2RatePerKg">Rate (Rs./kg)</label>
-                                <input asp-for="Paper2RatePerKg" class="form-control" type="number" step="0.01" />
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Type</label>
-                                <input type="text" class="form-control" value="Inner Liner" readonly />
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Medium -->
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label asp-for="MediumGSM">Medium - GSM</label>
-                                <select asp-for="MediumGSM" class="form-control">
-                                    @foreach (var gsm in ViewBag.GSMValues as List<int>)
-                                    {
-                                        if (gsm >= 80 && gsm <= 200)
-                                        {
-                                            <option value="@gsm">@gsm</option>
-                                        }
-                                    }
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label asp-for="MediumRatePerKg">Rate (Rs./kg)</label>
-                                <input asp-for="MediumRatePerKg" class="form-control" type="number" step="0.01" />
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Type</label>
-                                <input type="text" class="form-control" value="Corrugated Medium" readonly />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Processing & Business Costs Card -->
-            <div class="card card-secondary card-outline">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-cogs mr-2"></i>Processing & Business Costs
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label asp-for="PrintingCostPerSheet">Printing (Rs./sheet)</label>
-                                <input asp-for="PrintingCostPerSheet" class="form-control" type="number" step="0.01" />
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label asp-for="DieCuttingCostPerSheet">Die Cutting (Rs./sheet)</label>
-                                <input asp-for="DieCuttingCostPerSheet" class="form-control" type="number" step="0.01" />
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label asp-for="LaborCostPerBox">Labor (Rs./box)</label>
-                                <input asp-for="LaborCostPerBox" class="form-control" type="number" step="0.01" />
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label>Pasting Cost (Rs./sheet)</label>
-                                <input id="PastingCostPerSheet" class="form-control" type="number" step="0.01" value="0" />
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="SheetLength">Sheet Length (inches)</label>
+                                        <input asp-for="SheetLength" class="form-control live-input" type="number" step="0.1" />
+                                        <small class="form-text text-muted">Standard: 40", 42", 44"</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="SheetWidth">Sheet Width (inches)</label>
+                                        <input asp-for="SheetWidth" class="form-control live-input" type="number" step="0.1" />
+                                        <small class="form-text text-muted">Standard: 30", 32", 36"</small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label asp-for="WastageFactorPercentage">Wastage (%)</label>
-                                <input asp-for="WastageFactorPercentage" class="form-control" type="number" step="0.1" />
-                            </div>
+                    <!-- Paper/Liner Specifications Card -->
+                    <div class="card card-warning card-outline">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-layer-group mr-2"></i>Liner/Paper Specifications
+                            </h3>
                         </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label asp-for="OverheadPercentage">Overhead (%)</label>
-                                <input asp-for="OverheadPercentage" class="form-control" type="number" step="0.1" />
+                        <div class="card-body">
+                        
+                            <div class="industry-note">
+                                <strong><i class="fas fa-check-circle mr-1"></i> Industry Standard Corrected:</strong>
+                                All corrugated boxes require Top Liner + Bottom Liner + Medium layer(s). Separate pricing ensures accurate costing.
                             </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label asp-for="ProfitMarginPercentage">Profit (%)</label>
-                                <input asp-for="ProfitMarginPercentage" class="form-control" type="number" step="0.1" />
+                            
+                            <!-- Top Liner -->
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label asp-for="Paper1GSM">Top Liner GSM <span class="text-danger">*</span></label>
+                                        <input asp-for="Paper1GSM" class="form-control live-input" type="number" step="1" min="100" max="400" id="topLinerGSM" />
+                                        <small class="text-muted">125, 150, 175, 200</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label asp-for="Paper1RatePerKg">Top Liner Rate (Rs./kg)</label>
+                                        <input asp-for="Paper1RatePerKg" class="form-control live-input" type="number" step="0.01" />
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Manual Quantity</label>
+                                        <input id="manualQuantity" class="form-control live-input" type="number" min="1" value="1000" />
+                                        <small class="text-muted">For pricing only</small>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label>Transport Cost (Rs./box)</label>
-                                <input id="TransportCostPerBox" class="form-control" type="number" step="0.01" value="0" />
+                            
+                            <!-- Bottom Liner + Medium -->
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label asp-for="Paper2GSM">Bottom Liner GSM <span class="text-danger">*</span></label>
+                                        <input asp-for="Paper2GSM" class="form-control live-input" type="number" step="1" min="100" max="400" id="bottomLinerGSM" />
+                                        <small class="text-success">Required for ALL board types</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label asp-for="Paper2RatePerKg">Bottom Liner Rate (Rs./kg)</label>
+                                        <input asp-for="Paper2RatePerKg" class="form-control live-input" type="number" step="0.01" id="bottomLinerRate" />
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label asp-for="MediumGSM">Medium GSM <span class="text-danger">*</span></label>
+                                        <input asp-for="MediumGSM" class="form-control live-input" type="number" step="1" min="80" max="200" id="mediumGSM" />
+                                        <small class="text-muted">120, 140, 160</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label asp-for="MediumRatePerKg">Medium Rate (Rs./kg)</label>
+                                        <input asp-for="MediumRatePerKg" class="form-control live-input" type="number" step="0.01" id="mediumRate" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Flute Type Selection -->
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label asp-for="FluteType">Flute Type</label>
+                                        <select asp-for="FluteType" class="form-control live-input" id="fluteType">
+                                            <option value="B">B-Flute (3mm) - Standard</option>
+                                            <option value="C">C-Flute (4mm) - Heavy Duty</option>
+                                            <option value="E">E-Flute (1.5mm) - Fine Print</option>
+                                            <option value="BC">BC-Flute (6.5mm) - Double Wall</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- ✅ RESTORED - Total Board GSM Display Section -->
+                            <div class="total-gsm-display">
+                                <strong>Total Board GSM: <span id="totalBoardGSM">395</span></strong>
+                                <div class="gsm-breakdown" id="gsmBreakdown">
+                                    Top: 150 + Bottom: 125 + Medium: 120 (×1.4×1.0) = 395 GSM
+                                </div>
+                                <small class="text-info mt-2 d-block">
+                                    <i class="fas fa-info-circle"></i> 
+                                    GSM calculation includes flute factor and board type multipliers for accurate material costing.
+                                </small>
+                            </div>
+                            
+                            <!-- Live Pricing Display -->
+                            <div class="row mt-3">
+                                <div class="col-md-12">
+                                    <div class="alert alert-light">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <strong>Cost per Sheet:</strong> 
+                                                <span class="text-primary" id="pricePerSheet">Rs. 0.00</span>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <strong>Total for Quantity:</strong> 
+                                                <span class="text-success" id="totalForQuantity">Rs. 0.00</span>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <strong>Weight per Sheet:</strong> 
+                                                <span class="text-info" id="weightPerSheet">0 kg</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                    
+                    <!-- Processing Costs -->
+                    <div class="card card-secondary card-outline">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-industry mr-2"></i>Processing & Business Costs
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label asp-for="PrintingCostPerSheet">Printing (Rs./sheet)</label>
+                                        <input asp-for="PrintingCostPerSheet" class="form-control live-input" type="number" step="0.01" />
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label asp-for="DieCuttingCostPerSheet">Die Cutting (Rs./sheet)</label>
+                                        <input asp-for="DieCuttingCostPerSheet" class="form-control live-input" type="number" step="0.01" />
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label asp-for="LaborCostPerBox">Labor (Rs./box)</label>
+                                        <input asp-for="LaborCostPerBox" class="form-control live-input" type="number" step="0.01" />
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label asp-for="TransportCostPerBox">Transport (Rs./box)</label>
+                                        <input asp-for="TransportCostPerBox" class="form-control live-input" type="number" step="0.01" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label asp-for="PinCostPerBox">Pin Cost (Rs./box)</label>
+                                        <input asp-for="PinCostPerBox" class="form-control live-input" type="number" step="0.01" />
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label asp-for="WastageFactorPercentage">Wastage (%)</label>
+                                        <input asp-for="WastageFactorPercentage" class="form-control live-input" type="number" step="0.1" />
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label asp-for="OverheadPercentage">Overhead (%)</label>
+                                        <input asp-for="OverheadPercentage" class="form-control live-input" type="number" step="0.1" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="ProfitMarginPercentage">Profit Margin (%)</label>
+                                        <input asp-for="ProfitMarginPercentage" class="form-control live-input" type="number" step="0.1" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Calculate Button -->
+                    <div class="text-center mb-4">
+                        <button type="button" id="calculateBtn" class="btn calculate-button mr-3">
+                            <i class="fas fa-calculator mr-2"></i>Calculate Box Rate
+                        </button>
+                        <button type="button" id="clearBtn" class="btn btn-outline-secondary">
+                            <i class="fas fa-eraser mr-2"></i>Reset Defaults
+                        </button>
+                    </div>
+                </form>
             </div>
             
-            <!-- Calculate Button -->
-            <div class="text-center mb-4">
-                <button type="button" id="calculateBtn" class="btn calculate-button mr-3">
-                    <i class="fas fa-calculator mr-2"></i>Calculate Box Rate
-                </button>
-                <button type="button" id="clearBtn" class="btn btn-outline-secondary">
-                    <i class="fas fa-eraser mr-2"></i>Reset to Defaults
-                </button>
+            <!-- Right Sidebar - Live Summary (4/12) -->
+            <div class="col-md-4">
+                <div class="sticky-top" style="top: 20px;">
+                    
+                    <!-- Live Price Card -->
+                    <div class="card card-success card-outline">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-chart-line mr-2"></i>Live Summary
+                            </h3>
+                        </div>
+                        <div class="card-body text-center">
+                            <div class="live-price-display">
+                                <div class="live-price-value" id="liveFinalPrice">Rs. 0.00</div>
+                                <div class="live-price-label">Estimated Price Per Box</div>
+                            </div>
+                            <div class="live-metrics mt-3">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="metric-mini">
+                                            <div class="metric-mini-value" id="liveApps">0</div>
+                                            <div class="metric-mini-label">Apps/Sheet</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="metric-mini">
+                                            <div class="metric-mini-value" id="liveEfficiency">0%</div>
+                                            <div class="metric-mini-label">Efficiency</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Live Breakdown -->
+                    <div class="card card-info card-outline">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-list mr-2"></i>Live Breakdown
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="live-breakdown">
+                                <div class="breakdown-item">
+                                    <span>Material Cost:</span>
+                                    <span class="float-right" id="liveMaterialCost">Rs. 0.00</span>
+                                </div>
+                                <div class="breakdown-item">
+                                    <span>Processing Cost:</span>
+                                    <span class="float-right" id="liveProcessingCost">Rs. 0.00</span>
+                                </div>
+                                <div class="breakdown-item">
+                                    <span>Labor & Other:</span>
+                                    <span class="float-right" id="liveLaborCost">Rs. 0.00</span>
+                                </div>
+                                <div class="breakdown-item">
+                                    <span>Overhead & Profit:</span>
+                                    <span class="float-right" id="liveBusinessCost">Rs. 0.00</span>
+                                </div>
+                                <div class="breakdown-item font-weight-bold border-top pt-2">
+                                    <span>Total Order Value:</span>
+                                    <span class="float-right" id="liveOrderValue">Rs. 0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sheet Info -->
+                    <div class="card card-warning card-outline">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-ruler-combined mr-2"></i>Sheet Analysis
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="sheet-info">
+                                <div class="info-row">
+                                    <span>Sheet Size:</span>
+                                    <span class="float-right" id="liveSheetSize">42" × 30"</span>
+                                </div>
+                                <div class="info-row">
+                                    <span>Box Layout:</span>
+                                    <span class="float-right" id="liveBoxLayout">16" × 14"</span>
+                                </div>
+                                <div class="info-row">
+                                    <span>Total GSM:</span>
+                                    <span class="float-right" id="liveTotalGSM">293</span>
+                                </div>
+                                <div class="info-row">
+                                    <span>Weight/Sheet:</span>
+                                    <span class="float-right" id="liveSheetWeight">0.45 kg</span>
+                                </div>
+                                <div class="info-row">
+                                    <span>Sheets Needed:</span>
+                                    <span class="float-right" id="liveSheetsNeeded">84</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
             </div>
-        </form>
+        </div>
+        
+        <!-- Results Section -->
+        <div id="resultsSection" class="results-section">
+            <!-- Results will be loaded here by JavaScript -->
+        </div>
         
         <!-- Loading Indicator -->
         <div id="loadingIndicator" class="loading-indicator">
@@ -481,160 +692,338 @@
             </div>
             <p class="mt-2">Calculating your box rate...</p>
         </div>
-        
-        <!-- Results Section (Hidden initially) -->
-        <div id="resultsSection" class="results-section">
-            
-            <!-- Main Price Display -->
-            <div class="main-price-display">
-                <div class="main-price-value" id="finalPricePerBox">Rs. 0.00</div>
-                <div class="main-price-label">Final Price Per Box (with GST)</div>
-            </div>
-            
-            <!-- Key Metrics Grid -->
-            <div class="section-title">
-                <i class="fas fa-chart-line mr-2"></i>Key Metrics
-            </div>
-            <div class="metrics-grid">
-                <div class="metric-card success">
-                    <div class="metric-value" id="totalOrderValue">Rs. 0</div>
-                    <div class="metric-label">Total Order Value</div>
-                </div>
-                <div class="metric-card info">
-                    <div class="metric-value" id="appsPerSheet">0</div>
-                    <div class="metric-label">Apps per Sheet</div>
-                </div>
-                <div class="metric-card warning">
-                    <div class="metric-value" id="materialEfficiency">0%</div>
-                    <div class="metric-label">Material Efficiency</div>
-                </div>
-                <div class="metric-card danger">
-                    <div class="metric-value" id="profitPerBox">Rs. 0</div>
-                    <div class="metric-label">Profit per Box</div>
-                </div>
-            </div>
-            
-            <!-- Breakdown Grid -->
-            <div class="section-title">
-                <i class="fas fa-list-alt mr-2"></i>Detailed Analysis
-            </div>
-            <div class="breakdown-grid">
-                
-                <!-- Cost Breakdown -->
-                <div class="breakdown-card">
-                    <div class="breakdown-header">
-                        <i class="fas fa-money-bill-wave mr-2"></i>Cost Breakdown
-                    </div>
-                    <table class="table breakdown-table mb-0">
-                        <thead>
-                            <tr>
-                                <th>Component</th>
-                                <th class="text-right">Per Box</th>
-                                <th class="text-right">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody id="costBreakdownTable">
-                            <tr>
-                                <td colspan="3" class="text-center text-muted py-4">
-                                    <i class="fas fa-calculator fa-2x mb-2"></i><br>
-                                    Click "Calculate" to see breakdown
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                
-                <!-- Apps Visualization -->
-                <div class="apps-visualization">
-                    <div class="breakdown-header">
-                        <i class="fas fa-th mr-2"></i>Apps Layout Visualization
-                    </div>
-                    <div id="appsGrid" class="apps-grid"></div>
-                    <small id="appsInfo" class="text-muted">Apps layout will appear here</small>
-                </div>
-            </div>
-            
-        </div>
     </div>
 </section>
 
 @section Scripts {
+    <script src="~/js/box-calculator-results.js?v=@DateTime.Now.Ticks"></script>
     <script>
+        // Debounce timer for performance
+        let liveCalcTimer;
+        
         $(document).ready(function() {
-            $('#boardTypeSelect').change(function() {
-                updateBoardConfiguration($(this).val());
+            // Initialize with corrected defaults
+            setIndustryStandardDefaults();
+            updateBoardConfiguration($('#boardTypeSelect').val());
+            
+            // Trigger initial calculation after DOM is ready
+            setTimeout(() => {
+                updateAllCalculations();
+            }, 100);
+            
+            // Live updates on any input change
+            $('.live-input').on('input change', function() {
+                updateAllCalculations();
             });
             
-            updateBoardConfiguration($('#boardTypeSelect').val());
+            $('#boardTypeSelect').change(function() {
+                updateBoardConfiguration($(this).val());
+                updateAllCalculations();
+            });
             
             $('#calculateBtn').click(function() {
                 calculateBoxRate();
             });
             
             $('#clearBtn').click(function() {
-                resetToDefaults();
+                resetToIndustryDefaults();
             });
         });
         
+        function setIndustryStandardDefaults() {
+            // Set only if empty - don't override existing values
+            if (!$('#Length').val()) $('#Length').val('12');
+            if (!$('#Width').val()) $('#Width').val('10');
+            if (!$('#Height').val()) $('#Height').val('8');
+            if (!$('#Quantity').val()) $('#Quantity').val('1000');
+            if (!$('#SheetLength').val()) $('#SheetLength').val('42');
+            if (!$('#SheetWidth').val()) $('#SheetWidth').val('30');
+            
+            // Material rates - REQUIRED VALUES ONLY
+            if (!$('#topLinerGSM').val()) $('#topLinerGSM').val('150');
+            if (!$('#Paper1RatePerKg').val()) $('#Paper1RatePerKg').val('50.00');
+            if (!$('#bottomLinerGSM').val()) $('#bottomLinerGSM').val('125');
+            if (!$('#bottomLinerRate').val()) $('#bottomLinerRate').val('45.00');
+            if (!$('#mediumGSM').val()) $('#mediumGSM').val('120');
+            if (!$('#mediumRate').val()) $('#mediumRate').val('42.00');
+            
+            // ALL OPTIONAL COSTS DEFAULT TO 0 - USER ADDS AS NEEDED
+            if ($('#PrintingCostPerSheet').val() === '') $('#PrintingCostPerSheet').val('0');
+            if ($('#DieCuttingCostPerSheet').val() === '') $('#DieCuttingCostPerSheet').val('0');
+            if ($('#LaborCostPerBox').val() === '') $('#LaborCostPerBox').val('0');
+            if ($('#PinCostPerBox').val() === '') $('#PinCostPerBox').val('0');
+            if ($('#OverheadPercentage').val() === '') $('#OverheadPercentage').val('0');
+            if ($('#ProfitMarginPercentage').val() === '') $('#ProfitMarginPercentage').val('0');  // START WITH 0
+            if ($('#WastageFactorPercentage').val() === '') $('#WastageFactorPercentage').val('5.0');  // MINIMUM
+            
+            // GST OFF BY DEFAULT - USER ENABLES IF NEEDED
+            if (!$('#IncludeGST').is(':checked')) $('#IncludeGST').prop('checked', false);
+        }
+        
+        function updateAllCalculations() {
+            updateTotalGSMCalculation(); // ✅ ADDED - Live GSM calculation
+            updateManualPricing();
+            
+            // Debounce the live calculation API call (200ms delay)
+            clearTimeout(liveCalcTimer);
+            liveCalcTimer = setTimeout(() => {
+                performLiveCalculation();
+            }, 200);
+        }
+        
+        // ✅ NEW FUNCTION - Live Total GSM Calculation with Board-Specific Logic
+        function updateTotalGSMCalculation() {
+            const topLinerGSM = parseInt($('#topLinerGSM').val()) || 0;
+            const bottomLinerGSM = parseInt($('#bottomLinerGSM').val()) || 0;
+            const mediumGSM = parseInt($('#mediumGSM').val()) || 0;
+            const fluteType = $('#fluteType').val();  // ✅ FIXED: Use lowercase fluteType to match HTML
+            const boardType = $('#boardTypeSelect').val();
+            
+            // Apply flute factor
+            const fluteFactors = {
+                'B': 1.4, 'C': 1.45, 'E': 1.3, 'BC': 1.8, 'EB': 1.6
+            };
+            const fluteFactor = fluteFactors[fluteType] || 1.4;
+            
+            let totalGSM = 0;
+            let breakdown = '';
+            
+            // Calculate based on board type structure
+            switch (boardType) {
+                case '3 Ply': // Single Wall: Top + Bottom + Medium
+                    totalGSM = topLinerGSM + bottomLinerGSM + (mediumGSM * fluteFactor);
+                    breakdown = `Top: ${topLinerGSM} + Bottom: ${bottomLinerGSM} + Medium: ${mediumGSM} (×${fluteFactor}) = ${Math.round(totalGSM)} GSM`;
+                    break;
+                case '5 Ply': // Double Wall: Top + Inner + Bottom + 2×Medium
+                    const innerLinerGSM = Math.round(topLinerGSM * 0.85);
+                    totalGSM = topLinerGSM + innerLinerGSM + bottomLinerGSM + (mediumGSM * fluteFactor * 2);
+                    breakdown = `Top: ${topLinerGSM} + Inner: ${innerLinerGSM} + Bottom: ${bottomLinerGSM} + 2×Medium: ${mediumGSM} (×${fluteFactor}×2) = ${Math.round(totalGSM)} GSM`;
+                    break;
+                case '7 Ply': // Triple Wall: Multiple liners + 3×Medium
+                    const innerLiner1GSM = Math.round(topLinerGSM * 0.9);
+                    const innerLiner2GSM = Math.round(bottomLinerGSM * 0.85);
+                    totalGSM = topLinerGSM + innerLiner1GSM + innerLiner2GSM + bottomLinerGSM + (mediumGSM * fluteFactor * 3);
+                    breakdown = `Top: ${topLinerGSM} + Inner1: ${innerLiner1GSM} + Inner2: ${innerLiner2GSM} + Bottom: ${bottomLinerGSM} + 3×Medium: ${mediumGSM} (×${fluteFactor}×3) = ${Math.round(totalGSM)} GSM`;
+                    break;
+                default:
+                    totalGSM = topLinerGSM + bottomLinerGSM + (mediumGSM * fluteFactor);
+                    breakdown = `Top: ${topLinerGSM} + Bottom: ${bottomLinerGSM} + Medium: ${mediumGSM} (×${fluteFactor}) = ${Math.round(totalGSM)} GSM`;
+                    break;
+            }
+            
+            // Update display
+            $('#totalBoardGSM').text(Math.round(totalGSM));
+            $('#gsmBreakdown').text(breakdown);
+        }
+        
+        async function performLiveCalculation() {
+            try {
+                // Show calculating indicator
+                $('#liveFinalPrice').html('<i class="fas fa-spinner fa-spin"></i>');
+                
+                // Gather all form data - FIXED: Handle zero values properly
+                const formData = gatherFormData();
+                
+                // Validate minimum required fields
+                if (!formData.Length || !formData.Width || !formData.Height || formData.Length <= 0 || formData.Width <= 0 || formData.Height <= 0) {
+                    resetLiveDisplay();
+                    return;
+                }
+                
+                // Call live calculation API
+                const response = await fetch('@Url.Action("LiveCalculate", "BoxCalculator")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateLiveDisplay(result);
+                } else {
+                    console.error('Live calculation failed:', result.message);
+                    resetLiveDisplay();
+                }
+            } catch (error) {
+                console.error('Live calculation error:', error);
+                resetLiveDisplay();
+            }
+        }
+        
+        function gatherFormData() {
+            // ✅ FIXED: Use correct element IDs that match the HTML form
+            return {
+                Length: parseFloat($('#Length').val()) || 0,
+                Width: parseFloat($('#Width').val()) || 0,
+                Height: parseFloat($('#Height').val()) || 0,
+                BoardType: $('#boardTypeSelect').val() || "3 Ply",
+                Quantity: parseInt($('#Quantity').val()) || 1000,
+                SheetLength: parseFloat($('#SheetLength').val()) || 42,
+                SheetWidth: parseFloat($('#SheetWidth').val()) || 30,
+                
+                // ✅ CRITICAL FIX: Use correct HTML element IDs from the actual form
+                Paper1GSM: parseInt($('#topLinerGSM').val()) || 0,  // FIXED: Using topLinerGSM from HTML
+                Paper1RatePerKg: parseFloat($('#Paper1RatePerKg').val()) || 0,
+                Paper2GSM: parseInt($('#bottomLinerGSM').val()) || 0,  // FIXED: Using bottomLinerGSM from HTML
+                Paper2RatePerKg: parseFloat($('#bottomLinerRate').val()) || 0,  // FIXED: Using bottomLinerRate from HTML
+                MediumGSM: parseInt($('#mediumGSM').val()) || 0,  // FIXED: Using mediumGSM from HTML
+                MediumRatePerKg: parseFloat($('#mediumRate').val()) || 0,  // FIXED: Using mediumRate from HTML
+                
+                FluteType: $('#fluteType').val() || 'B',  // ✅ FIXED: Use lowercase fluteType from HTML
+                
+                // ✅ FIXED: Processing costs - proper zero handling
+                PrintingCostPerSheet: parseFloat($('#PrintingCostPerSheet').val()) || 0,
+                DieCuttingCostPerSheet: parseFloat($('#DieCuttingCostPerSheet').val()) || 0,
+                LaborCostPerBox: parseFloat($('#LaborCostPerBox').val()) || 0,
+                PinCostPerBox: parseFloat($('#PinCostPerBox').val()) || 0,
+                TransportCostPerBox: parseFloat($('#TransportCostPerBox').val()) || 0,
+                
+                // ✅ CRITICAL FIX: Business parameters - NO MORE DEFAULTING TO 10%
+                OverheadPercentage: parseFloat($('#OverheadPercentage').val()) || 0,
+                ProfitMarginPercentage: parseFloat($('#ProfitMarginPercentage').val()) || 0, // ✅ FIXED - No more defaulting to 10%
+                WastageFactorPercentage: parseFloat($('#WastageFactorPercentage').val()) || 5.0,
+                IncludeGST: $('#IncludeGST').is(':checked'),
+                GSTRate: parseFloat($('#GSTRate').val()) || 18.0
+            };
+        }
+        
+        function updateLiveDisplay(result) {
+            // Main price - Change to Rs.
+            $('#liveFinalPrice').text('Rs. ' + result.livePricePerBox.toFixed(2));
+            
+            // Metrics
+            $('#liveApps').text(result.apps);
+            $('#liveEfficiency').text(result.efficiency.toFixed(1) + '%');
+            
+            // Breakdown - Change to Rs.
+            $('#liveMaterialCost').text('Rs. ' + result.materialCost.toFixed(2));
+            $('#liveProcessingCost').text('Rs. ' + result.processingCost.toFixed(2));
+            $('#liveLaborCost').text('Rs. ' + result.laborCost.toFixed(2));
+            $('#liveBusinessCost').text('Rs. ' + result.businessCost.toFixed(2));
+            $('#liveOrderValue').text('Rs. ' + result.orderValue.toFixed(2));
+            
+            // Sheet info
+            $('#liveSheetSize').text(result.sheetSize);
+            $('#liveBoxLayout').text(result.boxLayout);
+            $('#liveTotalGSM').text(result.totalGSM);
+            $('#liveSheetWeight').text(result.sheetWeight + ' kg');
+            $('#liveSheetsNeeded').text(result.sheetsNeeded);
+        }
+        
+        function resetLiveDisplay() {
+            // Change to Rs.
+            $('#liveFinalPrice').text('Rs. 0.00');
+            $('#liveApps').text('0');
+            $('#liveEfficiency').text('0%');
+            $('#liveMaterialCost').text('Rs. 0.00');
+            $('#liveProcessingCost').text('Rs. 0.00');
+            $('#liveLaborCost').text('Rs. 0.00');
+            $('#liveBusinessCost').text('Rs. 0.00');
+            $('#liveOrderValue').text('Rs. 0.00');
+        }
+        
+        // SIMPLIFIED: Board Configuration without GSM validation
         function updateBoardConfiguration(boardType) {
             const boardInfo = {
-                '3 Ply': { description: 'Single Wall - Outer + Medium', paper2Required: false },
-                '5 Ply': { description: 'Double Wall - Outer + Inner + 2�Medium', paper2Required: true },
-                '7 Ply': { description: 'Triple Wall - Outer + 2�Inner + 3�Medium', paper2Required: true }
+                '3 Ply': { 
+                    description: 'Single Wall - Top + Bottom Liner + Medium (Single Face)', 
+                    structure: '2 Liners + 1 Corrugated Medium',
+                    mediumLayers: 1,
+                    gsmMultiplier: 1.0,
+                    note: 'Standard single wall corrugated board'
+                },
+                '5 Ply': { 
+                    description: 'Double Wall - Top + Inner + Bottom + 2×Medium', 
+                    structure: '3 Liners + 2 Corrugated Mediums',
+                    mediumLayers: 2,
+                    gsmMultiplier: 1.7,
+                    note: 'Double wall with inner liner and dual mediums'
+                },
+                '7 Ply': { 
+                    description: 'Triple Wall - Multiple Liners + 3×Medium (Duplex)', 
+                    structure: '4 Liners + 3 Corrugated Mediums',
+                    mediumLayers: 3,
+                    gsmMultiplier: 2.3,
+                    note: 'Heavy duty triple wall with duplex structure'
+                }
             };
             
             const info = boardInfo[boardType];
             if (info) {
-                $('#boardInfo').text(info.description);
-                
-                if (info.paper2Required) {
-                    $('#paper2Section').show();
-                    $('#Paper2GSM').prop('disabled', false);
-                    $('#Paper2RatePerKg').prop('disabled', false);
-                } else {
-                    $('#paper2Section').show();
-                    $('#Paper2GSM').val('0');
-                    $('#Paper2RatePerKg').val('0');
-                }
+                $('#boardInfo').html(`
+                    <strong>${info.description}</strong><br>
+                    <small>Structure: ${info.structure}</small><br>
+                    <small class="text-info">${info.note}</small>
+                `);
             }
         }
         
+        // FIXED: Manual Pricing with correct element IDs
+        function updateManualPricing() {
+            const topLinerGSM = parseInt($('#topLinerGSM').val()) || 0;
+            const bottomLinerGSM = parseInt($('#bottomLinerGSM').val()) || 0;
+            const mediumGSM = parseInt($('#mediumGSM').val()) || 0;
+            const topLinerRate = $('#Paper1RatePerKg').val() === '' ? 0 : parseFloat($('#Paper1RatePerKg').val());
+            const bottomLinerRate = $('#bottomLinerRate').val() === '' ? 0 : parseFloat($('#bottomLinerRate').val());
+            const mediumRate = $('#mediumRate').val() === '' ? 0 : parseFloat($('#mediumRate').val());
+            const sheetLength = parseFloat($('#SheetLength').val()) || 42;
+            const sheetWidth = parseFloat($('#SheetWidth').val()) || 30;
+            const manualQuantity = parseInt($('#manualQuantity').val()) || 1000;
+            const fluteType = $('#fluteType').val();  // ✅ FIXED: Use lowercase fluteType from HTML
+            const boardType = $('#boardTypeSelect').val();
+            
+            // Calculate sheet area in square meters
+            const sheetAreaSqM = (sheetLength * sheetWidth) / 1550;
+            
+            // Apply flute factor and board type multiplier
+            const fluteFactors = {
+                'B': 1.4, 'C': 1.45, 'E': 1.3, 'BC': 1.8, 'EB': 1.6
+            };
+            const boardMultipliers = {
+                '3 Ply': 1.0, '5 Ply': 1.7, '7 Ply': 2.3
+            };
+            
+            const fluteFactor = fluteFactors[fluteType] || 1.4;
+            const boardMultiplier = boardMultipliers[boardType] || 1.0;
+            const adjustedMediumGSM = mediumGSM * fluteFactor * boardMultiplier;
+            
+            // Calculate weights per sheet (kg)
+            const topLinerWeight = (topLinerGSM * sheetAreaSqM) / 1000;
+            const bottomLinerWeight = (bottomLinerGSM * sheetAreaSqM) / 1000;
+            const mediumWeight = (adjustedMediumGSM * sheetAreaSqM) / 1000;
+            
+            // Calculate costs separately
+            const topLinerCost = topLinerWeight * topLinerRate;
+            const bottomLinerCost = bottomLinerWeight * bottomLinerRate;
+            const mediumCost = mediumWeight * mediumRate;
+            const totalCostPerSheet = topLinerCost + bottomLinerCost + mediumCost;
+            const totalWeight = topLinerWeight + bottomLinerWeight + mediumWeight;
+            
+            // Update display - Change to Rs.
+            $('#pricePerSheet').text('Rs. ' + totalCostPerSheet.toFixed(2));
+            $('#totalForQuantity').text('Rs. ' + (totalCostPerSheet * manualQuantity).toFixed(2));
+            $('#weightPerSheet').text(totalWeight.toFixed(3) + ' kg');
+        }
+        
         function calculateBoxRate() {
-            // Show loading
             $('#loadingIndicator').addClass('show');
             $('#resultsSection').removeClass('show');
             
-            const formData = {
-                Length: parseFloat($('#Length').val()) || 0,
-                Width: parseFloat($('#Width').val()) || 0,
-                Height: parseFloat($('#Height').val()) || 0,
-                BoardType: $('#BoardType').val() || "3 Ply",
-                Quantity: parseInt($('#Quantity').val()) || 0,
-                SheetLength: parseFloat($('#SheetLength').val()) || 42,
-                SheetWidth: parseFloat($('#SheetWidth').val()) || 30,
-                Paper1GSM: parseInt($('#Paper1GSM').val()) || 125,
-                Paper1RatePerKg: parseFloat($('#Paper1RatePerKg').val()) || 50.00,
-                Paper2GSM: parseInt($('#Paper2GSM').val()) || 0,
-                Paper2RatePerKg: parseFloat($('#Paper2RatePerKg').val()) || 0,
-                MediumGSM: parseInt($('#MediumGSM').val()) || 120,
-                MediumRatePerKg: parseFloat($('#MediumRatePerKg').val()) || 45.00,
-                PrintingCostPerSheet: parseFloat($('#PrintingCostPerSheet').val()) || 0,
-                DieCuttingCostPerSheet: parseFloat($('#DieCuttingCostPerSheet').val()) || 3.00,
-                LaborCostPerBox: parseFloat($('#LaborCostPerBox').val()) || 0.50,
-                OverheadPercentage: parseFloat($('#OverheadPercentage').val()) || 12.0,
-                ProfitMarginPercentage: parseFloat($('#ProfitMarginPercentage').val()) || 15.0,
-                WastageFactorPercentage: parseFloat($('#WastageFactorPercentage').val()) || 8.0,
-                IncludeGST: $('#IncludeGST').is(':checked'),
-                GSTRate: parseFloat($('#GSTRate').val()) || 18.0,
-                // Additional costs (nullable, defaulting to 0)
-                PastingCostPerSheet: parseFloat($('#PastingCostPerSheet').val()) || 0,
-                TransportCostPerBox: parseFloat($('#TransportCostPerBox').val()) || 0
-            };
+            const formData = gatherFormData();
             
             // Basic validation
             if (!formData.Length || !formData.Width || !formData.Height || !formData.Quantity) {
                 $('#loadingIndicator').removeClass('show');
-                toastr.error('Please fill in all required box dimensions and quantity.');
+                alert('Please fill in all required box dimensions and quantity.');
+                return;
+            }
+            
+            if (!formData.Paper1GSM || !formData.Paper2GSM || !formData.MediumGSM) {
+                $('#loadingIndicator').removeClass('show');
+                alert('All paper GSM values are required for accurate calculation.');
                 return;
             }
             
@@ -658,105 +1047,54 @@
                             }, 500);
                         }, 100);
                         
-                        toastr.success('Box rate calculated successfully!');
+                        console.log('Box rate calculated successfully!');
                     } else {
-                        toastr.error(response.message || 'Calculation failed. Please check your inputs.');
+                        alert(response.message || 'Calculation failed. Please check your inputs.');
                     }
                 },
                 error: function(xhr, status, error) {
                     $('#loadingIndicator').removeClass('show');
-                    toastr.error('Network error. Please check your connection and try again.');
+                    alert('Network error. Please check your connection and try again.');
                     console.error('Ajax error:', error);
                 }
             });
         }
         
-        function displayResults(result) {
-            // Update main price
-            $('#finalPricePerBox').text('Rs. ' + result.finalPricePerBoxWithGST.toFixed(2));
-            
-            // Update metrics
-            $('#totalOrderValue').text('Rs. ' + result.totalOrderValueWithGST.toFixed(2));
-            $('#materialEfficiency').text(result.materialEfficiency.toFixed(1) + '%');
-            $('#appsPerSheet').text(result.sheetAnalysis.totalApps);
-            $('#profitPerBox').text('Rs. ' + result.profitPerBox.toFixed(2));
-            
-            // Update apps visualization
-            updateAppsVisualization(result.sheetAnalysis);
-            
-            // Update cost breakdown
-            updateCostBreakdown(result.costBreakdown.costItems);
-        }
-        
-        function updateAppsVisualization(sheetAnalysis) {
-            const maxCols = 8;
-            const maxRows = 5;
-            const cols = Math.min(sheetAnalysis.appsLength, maxCols);
-            const rows = Math.min(sheetAnalysis.appsWidth, maxRows);
-            
-            $('#appsGrid').css({
-                'grid-template-columns': `repeat(${cols}, 1fr)`,
-                'grid-template-rows': `repeat(${rows}, 1fr)`,
-                'max-width': '300px',
-                'margin': '0 auto'
-            });
-            
-            let html = '';
-            for (let i = 0; i < Math.min(sheetAnalysis.totalApps, cols * rows); i++) {
-                html += '<div class="apps-box">BOX</div>';
-            }
-            
-            $('#appsGrid').html(html);
-            $('#appsInfo').text(`${sheetAnalysis.appsLength} � ${sheetAnalysis.appsWidth} = ${sheetAnalysis.totalApps} boxes per sheet | ${sheetAnalysis.utilizationPercentage.toFixed(1)}% efficiency`);
-        }
-        
-        function updateCostBreakdown(costItems) {
-            const tbody = $('#costBreakdownTable');
-            tbody.empty();
-            
-            costItems.forEach(function(item) {
-                const row = `
-                    <tr>
-                        <td>${item.description}</td>
-                        <td class="text-right"><strong>Rs. ${item.amountPerBox.toFixed(2)}</strong></td>
-                        <td class="text-right">Rs. ${item.totalAmount.toFixed(2)}</td>
-                    </tr>
-                `;
-                tbody.append(row);
-            });
-        }
-        
-        function resetToDefaults() {
-            // Excel-based industry standard defaults
+        function resetToIndustryDefaults() {
+            // Reset all values with correct element IDs
             $('#Length').val('12');
             $('#Width').val('10');
             $('#Height').val('8');
-            $('#BoardType').val('3 Ply');
+            $('#boardTypeSelect').val('3 Ply');
             $('#Quantity').val('1000');
             $('#SheetLength').val('42');
             $('#SheetWidth').val('30');
-            $('#Paper1GSM').val('125');
-            $('#Paper1RatePerKg').val('50.00');
-            $('#Paper2GSM').val('0');
-            $('#Paper2RatePerKg').val('0');
-            $('#MediumGSM').val('120');
-            $('#MediumRatePerKg').val('45.00');
-            $('#PrintingCostPerSheet').val('0');
-            $('#DieCuttingCostPerSheet').val('3.00');
-            $('#LaborCostPerBox').val('0.50');
-            $('#OverheadPercentage').val('12.0');
-            $('#ProfitMarginPercentage').val('15.0');
-            $('#WastageFactorPercentage').val('8.0');
-            $('#IncludeGST').prop('checked', true);
-            $('#PastingCostPerSheet').val('0');
-            $('#TransportCostPerBox').val('0');
             
-            // Hide results
-            $('#resultsSection').removeClass('show');
-            $('#loadingIndicator').removeClass('show');
+            // REQUIRED material values only
+            $('#topLinerGSM').val('150');
+            $('#Paper1RatePerKg').val('50.00');
+            $('#bottomLinerGSM').val('125');
+            $('#bottomLinerRate').val('45.00');
+            $('#mediumGSM').val('120');
+            $('#mediumRate').val('42.00');
+            $('#fluteType').val('B');
+            
+            // ALL OPTIONAL COSTS START AT 0 - USER ADDS AS NEEDED
+            $('#PrintingCostPerSheet').val('0');
+            $('#DieCuttingCostPerSheet').val('0');
+            $('#LaborCostPerBox').val('0');
+            $('#PinCostPerBox').val('0');
+            $('#TransportCostPerBox').val('0');
+            $('#OverheadPercentage').val('0');
+            $('#ProfitMarginPercentage').val('0');    // START WITH 0 - USER ADDS PROFIT
+            $('#WastageFactorPercentage').val('5.0'); // MINIMUM INDUSTRY WASTAGE
+            
+            // GST OFF BY DEFAULT
+            $('#IncludeGST').prop('checked', false);
             
             updateBoardConfiguration('3 Ply');
-            toastr.info('Form reset to Excel-based industry standard defaults.');
+            updateAllCalculations();
+            console.log('Form reset to zero-first defaults - user can add costs as needed.');
         }
     </script>
 }

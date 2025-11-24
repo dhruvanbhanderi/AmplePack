@@ -763,12 +763,46 @@
                 });
 
                 if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(errorText || 'Export failed');
+                    let errorText;
+                    try {
+                        const errorData = await response.json();
+                        errorText = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
+                    } catch {
+                        errorText = await response.text() || `HTTP ${response.status}: ${response.statusText}`;
+                    }
+                    throw new Error(errorText);
+                }
+
+                // Check if response is actually a PDF
+                const contentType = response.headers.get('content-type');
+                console.log('Response content type:', contentType);
+                
+                if (!contentType || !contentType.includes('application/pdf')) {
+                    throw new Error('Server did not return a PDF file. Content-Type: ' + contentType);
                 }
 
                 // Download the file
                 const blob = await response.blob();
+                console.log('Blob size:', blob.size, 'bytes');
+                
+                if (blob.size === 0) {
+                    throw new Error('Generated PDF file is empty');
+                }
+
+                // Check if blob is actually a PDF by reading first few bytes
+                const arrayBuffer = await blob.slice(0, 10).arrayBuffer();
+                const uint8Array = new Uint8Array(arrayBuffer);
+                const header = String.fromCharCode.apply(null, Array.from(uint8Array.slice(0, 4)));
+                
+                if (header !== '%PDF') {
+                    console.warn('File does not appear to be a valid PDF. Header:', header);
+                    // Try to read as text to see if there's an error message
+                    const text = await blob.text();
+                    if (text.length < 1000) { // Likely an error message
+                        throw new Error('Server error: ' + text);
+                    }
+                }
+
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.style.display = 'none';
@@ -777,8 +811,12 @@
                 
                 document.body.appendChild(a);
                 a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
+                
+                // Clean up
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                }, 100);
 
                 showAlert('Report generated and downloaded successfully!', 'success');
 

@@ -463,7 +463,7 @@
                     data: {
                         labels: result.data.map(d => d.month),
                         datasets: [{
-                            label: 'Revenue (₹)',
+                            label: 'Revenue (Rs.)',
                             data: result.data.map(d => d.revenue),
                             borderColor: 'rgb(54, 162, 235)',
                             backgroundColor: 'rgba(54, 162, 235, 0.1)',
@@ -495,7 +495,7 @@
                                 callbacks: {
                                     label: function(context) {
                                         if (context.datasetIndex === 0) {
-                                            return 'Revenue: ₹' + context.parsed.y.toLocaleString('en-IN');
+                                            return 'Revenue: Rs. ' + context.parsed.y.toLocaleString('en-IN');
                                         } else {
                                             return 'Orders: ' + context.parsed.y;
                                         }
@@ -517,11 +517,11 @@
                                 position: 'left',
                                 title: {
                                     display: true,
-                                    text: 'Revenue (₹)'
+                                    text: 'Revenue (Rs.)'
                                 },
                                 ticks: {
                                     callback: function(value) {
-                                        return '₹' + value.toLocaleString('en-IN');
+                                        return 'Rs. ' + value.toLocaleString('en-IN');
                                     }
                                 }
                             },
@@ -778,11 +778,11 @@
                             <div class="row">
                                 <div class="col-6">
                                     <strong>Price per Box:</strong><br>
-                                    <span id="quickPricePerBox" class="h4 text-success">₹0.00</span>
+                                    <span id="quickPricePerBox" class="h4 text-success">Rs. 0.00</span>
                                 </div>
                                 <div class="col-6">
                                     <strong>Total Order Value:</strong><br>
-                                    <span id="quickTotalValue" class="h4 text-primary">₹0.00</span>
+                                    <span id="quickTotalValue" class="h4 text-primary">Rs. 0.00</span>
                                 </div>
                             </div>
                             <small class="text-muted">* Based on default parameters. For detailed calculation, use the full calculator.</small>
@@ -847,8 +847,8 @@
                         const result = await response.json();
                         
                         if (result.success) {
-                            document.getElementById('quickPricePerBox').textContent = '₹' + result.result.finalPricePerBoxWithGST.toFixed(2);
-                            document.getElementById('quickTotalValue').textContent = '₹' + result.result.totalOrderValueWithGST.toFixed(2);
+                            document.getElementById('quickPricePerBox').textContent = 'Rs. ' + result.result.finalPricePerBoxWithGST.toFixed(2);
+                            document.getElementById('quickTotalValue').textContent = 'Rs. ' + result.result.totalOrderValueWithGST.toFixed(2);
                             document.getElementById('quickResult').style.display = 'block';
                             
                             // Update the HTML to show results

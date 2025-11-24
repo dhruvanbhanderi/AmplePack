@@ -1,6 +1,7 @@
 using AmplePack.Data;
 using AmplePack.Models;
 using AmplePack.Services;
+using AmplePack.Middleware;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Infrastructure;
@@ -86,6 +87,18 @@ namespace AmplePack
             builder.Services.AddScoped<OrderManagementService>();
             builder.Services.AddScoped<IBoxCalculatorService, BoxCalculatorService>();
 
+            // ? CRITICAL PERFORMANCE ADDITIONS
+            // Add memory cache for high-performance data access
+            builder.Services.AddMemoryCache(options =>
+            {
+                options.SizeLimit = 1024; // Limit cache size
+                options.CompactionPercentage = 0.25; // Remove 25% when limit reached
+                options.ExpirationScanFrequency = TimeSpan.FromMinutes(5);
+            });
+            
+            // Register cache service
+            builder.Services.AddScoped<CacheService>();
+
             var app = builder.Build();
 
             // Database initialization - only for non-testing environments
@@ -109,6 +122,9 @@ namespace AmplePack
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
+            
+            // ? Add performance monitoring
+            app.UsePerformanceMonitoring();
             
             // Use request localization
             app.UseRequestLocalization();
