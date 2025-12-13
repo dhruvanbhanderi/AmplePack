@@ -81,12 +81,15 @@ namespace AmplePack.Controllers
             viewModel.TotalInventoryValue = await _context.Inventories
                 .SumAsync(i => i.AvailableQuantity * i.UnitPrice);
             
-            // ? FIXED: Use database ordering instead of in-memory
-            viewModel.CriticalStockItems = await _context.Inventories
+            // ? FIXED: Load data first then order in memory (SQLite doesn't support decimal ordering)
+            var lowStockItems = await _context.Inventories
                 .Where(i => i.AvailableQuantity <= i.ReorderLevel)
+                .ToListAsync();
+            
+            viewModel.CriticalStockItems = lowStockItems
                 .OrderBy(i => i.AvailableQuantity)
                 .Take(5)
-                .ToListAsync();
+                .ToList();
 
             // Order Status Reports
             viewModel.PendingOrders = await _context.Orders.CountAsync(o => o.Status == "Pending");
