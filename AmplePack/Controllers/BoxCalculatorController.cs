@@ -22,10 +22,8 @@ namespace AmplePack.Controllers
         {
             var request = new BoxCalculatorRequest
             {
-                // Box specifications (industry standard)
-                Length = 12,
-                Width = 10,
-                Height = 8,
+                // ? SIMPLIFIED - Only essential fields
+                AppsPerSheet = 1, // ? CHANGED - Default 1 (minimum)
                 BoardType = "3 Ply",
                 Quantity = 1000,
                 
@@ -34,27 +32,27 @@ namespace AmplePack.Controllers
                 SheetWidth = 30,
                 
                 // Paper specifications for 3-ply corrugated box - REQUIRED VALUES ONLY
-                Paper1GSM = 150,          // Top liner - REQUIRED
-                Paper1RatePerKg = 50.00m, // Top liner rate - REQUIRED
-                Paper2GSM = 125,          // Bottom liner - REQUIRED
-                Paper2RatePerKg = 45.00m, // Bottom liner rate - REQUIRED  
-                MediumGSM = 120,          // Medium - REQUIRED
-                MediumRatePerKg = 42.00m, // Medium rate - REQUIRED
+                Paper1GSM = 150,
+                Paper1RatePerKg = 50.00m,
+                Paper2GSM = 125,
+                Paper2RatePerKg = 45.00m,
+                MediumGSM = 120,
+                MediumRatePerKg = 42.00m,
                 
                 // ALL OPTIONAL COSTS START WITH ZERO
                 PrintingCostPerSheet = 0m,
                 DieCuttingCostPerSheet = 0m,
                 LaborCostPerBox = 0m,
                 PinCostPerBox = 0m,
+                LaminationCostPerBox = 0m,
                 TransportCostPerBox = 0m,
                 
-                // ALL BUSINESS PARAMETERS START WITH ZERO EXCEPT MINIMUM WASTAGE
-                OverheadPercentage = 0m,
-                ProfitMarginPercentage = 0m,  // ? FIXED - Consistent with frontend
-                WastageFactorPercentage = 5.0m, // MINIMUM INDUSTRY STANDARD
+                // ? REMOVED - OverheadPercentage and WastageFactorPercentage
+                // Only profit margin remains
+                ProfitMarginPercentage = 0m,
                 
                 // GST Settings
-                IncludeGST = false,  // START WITH NO GST
+                IncludeGST = false,
                 GSTRate = 18.0m
             };
 
@@ -127,7 +125,8 @@ namespace AmplePack.Controllers
                 _logger.LogWarning(ex, "Validation error in box calculation");
                 return Json(new { 
                     success = false, 
-                    message = ex.Message 
+                    message = $"Validation Error: {ex.Message}",
+                    errorType = "validation"
                 });
             }
             catch (InvalidOperationException ex)
@@ -135,7 +134,8 @@ namespace AmplePack.Controllers
                 _logger.LogWarning(ex, "Invalid operation in box calculation");
                 return Json(new { 
                     success = false, 
-                    message = ex.Message 
+                    message = $"Operation Error: {ex.Message}",
+                    errorType = "operation"
                 });
             }
             catch (NullReferenceException ex)
@@ -143,7 +143,17 @@ namespace AmplePack.Controllers
                 _logger.LogError(ex, "Null reference error in box calculation");
                 return Json(new { 
                     success = false, 
-                    message = "Data validation error. Please ensure all required fields are filled." 
+                    message = "Data validation error. Please ensure all required fields are filled correctly.",
+                    errorType = "data"
+                });
+            }
+            catch (OverflowException ex)
+            {
+                _logger.LogError(ex, "Overflow in box calculation");
+                return Json(new {
+                    success = false,
+                    message = "Calculation overflow: The order total is too large. Please reduce quantity or check pricing values.",
+                    errorType = "overflow"
                 });
             }
             catch (Exception ex)
@@ -151,7 +161,8 @@ namespace AmplePack.Controllers
                 _logger.LogError(ex, "Error calculating box rate");
                 return Json(new { 
                     success = false, 
-                    message = "An error occurred while calculating the box rate. Please try again." 
+                    message = "An unexpected error occurred during calculation. Please check your input values and try again.",
+                    errorType = "general"
                 });
             }
         }
@@ -167,10 +178,10 @@ namespace AmplePack.Controllers
                     return Json(new { success = false, message = "Invalid request data" });
                 }
 
-                // Basic validation for live preview - skip full model validation
-                if (request.Length <= 0 || request.Width <= 0 || request.Height <= 0)
+                // ? SIMPLIFIED - Basic validation for manual apps
+                if (request.AppsPerSheet <= 0)
                 {
-                    return Json(new { success = false, message = "Invalid dimensions" });
+                    return Json(new { success = false, message = "Invalid apps per sheet" });
                 }
 
                 if (request.Quantity <= 0)
@@ -181,71 +192,88 @@ namespace AmplePack.Controllers
                 // Ensure required string properties are not null
                 if (string.IsNullOrEmpty(request.BoardType))
                 {
-                    request.BoardType = "3 Ply"; // Default value
+                    request.BoardType = "3 Ply";
                 }
 
                 if (string.IsNullOrEmpty(request.FluteType))
                 {
-                    request.FluteType = "B"; // Default value
+                    request.FluteType = "B";
                 }
 
                 // Perform calculation
                 var result = await _calculatorService.CalculateBoxRateAsync(request);
                 
-                // Check if result is null
                 if (result == null)
                 {
                     return Json(new { success = false, message = "Calculation failed" });
                 }
 
-                // Check if SheetAnalysis is null
                 if (result.SheetAnalysis == null)
                 {
                     return Json(new { success = false, message = "Sheet analysis failed" });
                 }
 
-                // Check if CostBreakdown is null
                 if (result.CostBreakdown == null)
                 {
                     return Json(new { success = false, message = "Cost breakdown failed" });
                 }
 
-                // ? ENHANCED - Calculate Total GSM with accurate board-specific logic (Duplex removed)
-                var boardConfig = BoardTypeConstants.BoardConfigurations[request.BoardType];
+                // ? FIXED - Safe dictionary access with TryGetValue
+                if (!BoardTypeConstants.BoardConfigurations.TryGetValue(request.BoardType, out var boardConfig))
+                {
+                    return Json(new { success = false, message = "Invalid board type configuration" });
+                }
+                
+                // Get flute factor
                 var fluteFactor = BoardTypeConstants.FluteFactors.GetValueOrDefault(request.FluteType, 1.4m);
                 
-                // Calculate total GSM based on board type structure
                 decimal totalGSM = 0m;
                 switch (request.BoardType)
                 {
-                    case "3 Ply": // Single Wall: Top + Bottom + Medium
+                    case "3 Ply": // Single Wall
                         totalGSM = request.Paper1GSM + request.Paper2GSM + (request.MediumGSM * fluteFactor);
                         break;
-                    case "5 Ply": // Double Wall: Top + Inner + Bottom + 2×Medium
-                        totalGSM = request.Paper1GSM + (request.Paper1GSM * 0.85m) + request.Paper2GSM + (request.MediumGSM * fluteFactor * 2);
-                        break;
-                    case "7 Ply": // Triple Wall: Multiple liners + 3×Medium
-                        totalGSM = request.Paper1GSM + (request.Paper1GSM * 0.9m) + (request.Paper2GSM * 0.85m) + request.Paper2GSM + (request.MediumGSM * fluteFactor * 3);
-                        break;
+                        
+                    case "5 Ply": // Double Wall - CORRECTED to match service logic
+                        {
+                            var topLiner = request.Paper1GSM;
+                            var innerLiner = request.Paper1GSM * CalculationConstants.FivePlyInnerLinerRatio;
+                            var bottomLiner = request.Paper2GSM;
+                            var medium1 = request.MediumGSM * fluteFactor;
+                            var medium2 = request.MediumGSM * fluteFactor * CalculationConstants.FivePlySecondMediumRatio;
+                            
+                            totalGSM = topLiner + innerLiner + bottomLiner + medium1 + medium2;
+                            break;
+                        }
+                        
+                    case "7 Ply": // Triple Wall - CORRECTED to match service logic
+                        {
+                            var topLiner = request.Paper1GSM;
+                            var innerLiner1 = request.Paper1GSM * CalculationConstants.SevenPlyInnerLiner1Ratio;
+                            var innerLiner2 = request.Paper2GSM * CalculationConstants.SevenPlyInnerLiner2Ratio;
+                            var bottomLiner = request.Paper2GSM;
+                            var medium1 = request.MediumGSM * fluteFactor;
+                            var medium2 = request.MediumGSM * fluteFactor * CalculationConstants.SevenPlySecondMediumRatio;
+                            var medium3 = request.MediumGSM * fluteFactor * CalculationConstants.SevenPlyThirdMediumRatio;
+                            
+                            totalGSM = topLiner + innerLiner1 + innerLiner2 + bottomLiner + medium1 + medium2 + medium3;
+                            break;
+                        }
+                        
                     default:
                         totalGSM = request.Paper1GSM + request.Paper2GSM + (request.MediumGSM * fluteFactor);
                         break;
                 }
                 
-                // Calculate sheet weight
-                var sheetAreaSqM = (result.SheetAnalysis.SheetArea / 1550m);
+                var sheetAreaSqM = (result.SheetAnalysis.SheetArea / CalculationConstants.SquareInchesPerSquareMeter);
                 var sheetWeight = (sheetAreaSqM * totalGSM) / 1000m;
-                
-                // Calculate sheets needed
                 var sheetsNeeded = (int)Math.Ceiling(request.Quantity / (decimal)Math.Max(result.SheetAnalysis.TotalApps, 1));
                 
-                // Detailed breakdown with per-sheet and per-box costs
                 return Json(new
                 {
                     success = true,
                     livePricePerBox = result.FinalPricePerBoxWithGST,
                     apps = result.SheetAnalysis.TotalApps,
-                    efficiency = result.MaterialEfficiency,
                     
                     // Material costs (per box)
                     materialCost = result.CostBreakdown.TotalMaterialCostPerBox,
@@ -253,7 +281,7 @@ namespace AmplePack.Controllers
                     paper2CostPerBox = result.CostBreakdown.Paper2CostPerBox,
                     mediumCostPerBox = result.CostBreakdown.MediumCostPerBox,
                     
-                    // Processing costs (show unit as entered)
+                    // Processing costs
                     printingCostPerSheet = request.PrintingCostPerSheet,
                     printingCostPerBox = result.CostBreakdown.PrintingCostPerBox,
                     dieCuttingCostPerSheet = request.DieCuttingCostPerSheet,
@@ -264,26 +292,23 @@ namespace AmplePack.Controllers
                     // Labor costs (per box)
                     laborCostPerBox = result.CostBreakdown.LaborCostPerBox,
                     pinCostPerBox = result.CostBreakdown.PinCostPerBox,
+                    laminationCostPerBox = result.CostBreakdown.LaminationCostPerBox,
                     transportCostPerBox = result.CostBreakdown.TransportCostPerBox,
-                    laborCost = result.CostBreakdown.LaborCostPerBox + result.CostBreakdown.PinCostPerBox + result.CostBreakdown.TransportCostPerBox,
+                    laborCost = result.CostBreakdown.LaborCostPerBox + result.CostBreakdown.PinCostPerBox + result.CostBreakdown.LaminationCostPerBox + result.CostBreakdown.TransportCostPerBox,
                     
                     // Business costs
-                    wastageCost = result.CostBreakdown.WastageCost,
-                    overheadCost = result.CostBreakdown.OverheadCostPerBox,
                     profitCost = result.CostBreakdown.ProfitPerBox,
-                    businessCost = result.CostBreakdown.OverheadCostPerBox + result.CostBreakdown.ProfitPerBox,
+                    businessCost = result.CostBreakdown.ProfitPerBox, // ? CHANGED - Only profit, no overhead/wastage
                     
                     // GST
                     gstAmount = result.CostBreakdown.GSTAmountPerBox,
                     
                     orderValue = result.TotalOrderValueWithGST,
                     sheetSize = $"{result.SheetAnalysis.SheetLength}\" × {result.SheetAnalysis.SheetWidth}\"",
-                    boxLayout = $"{result.SheetAnalysis.BoxLayoutLength:F1}\" × {result.SheetAnalysis.BoxLayoutWidth:F1}\"",
                     totalGSM = (int)Math.Round(totalGSM),
                     sheetWeight = sheetWeight.ToString("F3"),
                     sheetsNeeded = sheetsNeeded,
                     
-                    // Board configuration info
                     boardType = request.BoardType ?? "3 Ply",
                     fluteType = request.FluteType ?? "B",
                     isDuplex = boardConfig.IsDuplex
@@ -318,6 +343,7 @@ namespace AmplePack.Controllers
             {
                 var result = await _calculatorService.CalculateBoxRateAsync(request);
                 
+                // ? SIMPLIFIED - Remove references to removed properties
                 var visualization = new
                 {
                     sheetAnalysis = new
@@ -325,14 +351,7 @@ namespace AmplePack.Controllers
                         sheetLength = result.SheetAnalysis.SheetLength,
                         sheetWidth = result.SheetAnalysis.SheetWidth,
                         sheetArea = result.SheetAnalysis.SheetArea,
-                        appsLength = result.SheetAnalysis.AppsLength,
-                        appsWidth = result.SheetAnalysis.AppsWidth,
                         totalApps = result.SheetAnalysis.TotalApps,
-                        utilization = result.SheetAnalysis.UtilizationPercentage,
-                        boxLayoutLength = result.SheetAnalysis.BoxLayoutLength,
-                        boxLayoutWidth = result.SheetAnalysis.BoxLayoutWidth,
-                        usedArea = result.SheetAnalysis.UsedArea,
-                        wasteArea = result.SheetAnalysis.WasteArea,
                         materialCostPerBox = result.SheetAnalysis.MaterialCostPerBox,
                         processingCostPerBox = result.SheetAnalysis.ProcessingCostPerBox,
                         totalCostPerBox = result.SheetAnalysis.TotalCostPerBox
@@ -342,8 +361,7 @@ namespace AmplePack.Controllers
                         paper1Cost = result.CostBreakdown.Paper1CostPerBox,
                         paper2Cost = result.CostBreakdown.Paper2CostPerBox,
                         mediumCost = result.CostBreakdown.MediumCostPerBox,
-                        totalMaterialCost = result.CostBreakdown.TotalMaterialCostPerBox,
-                        wastageCost = result.CostBreakdown.WastageCost
+                        totalMaterialCost = result.CostBreakdown.TotalMaterialCostPerBox
                     }
                 };
 

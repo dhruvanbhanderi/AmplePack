@@ -292,41 +292,27 @@
                     <div class="card card-primary card-outline">
                         <div class="card-header">
                             <h3 class="card-title">
-                                <i class="fas fa-box mr-2"></i>Box Specifications
+                                <i class="fas fa-box mr-2"></i>Basic Specifications
                             </h3>
                         </div>
                         <div class="card-body">
+                            <!-- ✅ SIMPLIFIED - Removed Length, Width, Height -->
+                            <!-- ✅ ADDED - Manual Apps Input -->
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="form-group">
-                                        <label asp-for="Length">Length (inches)</label>
-                                        <input asp-for="Length" class="form-control live-input" type="number" step="0.1" min="0.1" />
+                                        <label asp-for="AppsPerSheet">Apps per Sheet <span class="text-danger">*</span></label>
+                                        <input asp-for="AppsPerSheet" class="form-control live-input" type="number" min="1" />
+                                        <small class="form-text text-muted">Number of boxes from one sheet</small>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label asp-for="Width">Width (inches)</label>
-                                        <input asp-for="Width" class="form-control live-input" type="number" step="0.1" min="0.1" />
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label asp-for="Height">Height (inches)</label>
-                                        <input asp-for="Height" class="form-control live-input" type="number" step="0.1" min="0.1" />
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="form-group">
                                         <label asp-for="Quantity">Quantity</label>
                                         <input asp-for="Quantity" class="form-control live-input" type="number" min="1" />
                                     </div>
                                 </div>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="form-group">
                                         <label asp-for="BoardType">Board Type</label>
                                         <select asp-for="BoardType" class="form-control live-input" id="boardTypeSelect">
@@ -338,6 +324,9 @@
                                         <div id="boardInfo" class="small text-muted mt-1"></div>
                                     </div>
                                 </div>
+                            </div>
+                            
+                            <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>GST Settings</label>
@@ -527,8 +516,8 @@
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label asp-for="TransportCostPerBox">Transport (Rs./box)</label>
-                                        <input asp-for="TransportCostPerBox" class="form-control live-input" type="number" step="0.01" />
+                                        <label asp-for="LaminationCostPerBox">Lamination (Rs./box)</label>
+                                        <input asp-for="LaminationCostPerBox" class="form-control live-input" type="number" step="0.01" />
                                     </div>
                                 </div>
                             </div>
@@ -541,25 +530,19 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label asp-for="WastageFactorPercentage">Wastage (%)</label>
-                                        <input asp-for="WastageFactorPercentage" class="form-control live-input" type="number" step="0.1" />
+                                        <label asp-for="TransportCostPerBox">Transport (Rs./box)</label>
+                                        <input asp-for="TransportCostPerBox" class="form-control live-input" type="number" step="0.01" />
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label asp-for="OverheadPercentage">Overhead (%)</label>
-                                        <input asp-for="OverheadPercentage" class="form-control live-input" type="number" step="0.1" />
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
                                     <div class="form-group">
                                         <label asp-for="ProfitMarginPercentage">Profit Margin (%)</label>
                                         <input asp-for="ProfitMarginPercentage" class="form-control live-input" type="number" step="0.1" />
                                     </div>
                                 </div>
                             </div>
+                            <!-- ✅ REMOVED - Wastage and Overhead fields -->
+
                         </div>
                     </div>
                     
@@ -601,8 +584,8 @@
                                     </div>
                                     <div class="col-6">
                                         <div class="metric-mini">
-                                            <div class="metric-mini-value" id="liveEfficiency">0%</div>
-                                            <div class="metric-mini-label">Efficiency</div>
+                                            <div class="metric-mini-value" id="liveEfficiency">Manual</div>
+                                            <div class="metric-mini-label">Mode</div>
                                         </div>
                                     </div>
                                 </div>
@@ -655,10 +638,6 @@
                                 <div class="info-row">
                                     <span>Sheet Size:</span>
                                     <span class="float-right" id="liveSheetSize">42" × 30"</span>
-                                </div>
-                                <div class="info-row">
-                                    <span>Box Layout:</span>
-                                    <span class="float-right" id="liveBoxLayout">16" × 14"</span>
                                 </div>
                                 <div class="info-row">
                                     <span>Total GSM:</span>
@@ -731,10 +710,8 @@
         });
         
         function setIndustryStandardDefaults() {
-            // Set only if empty - don't override existing values
-            if (!$('#Length').val()) $('#Length').val('12');
-            if (!$('#Width').val()) $('#Width').val('10');
-            if (!$('#Height').val()) $('#Height').val('8');
+            // ✅ SIMPLIFIED - Set only essential defaults
+            if (!$('#AppsPerSheet').val()) $('#AppsPerSheet').val('12');
             if (!$('#Quantity').val()) $('#Quantity').val('1000');
             if (!$('#SheetLength').val()) $('#SheetLength').val('42');
             if (!$('#SheetWidth').val()) $('#SheetWidth').val('30');
@@ -747,16 +724,16 @@
             if (!$('#mediumGSM').val()) $('#mediumGSM').val('120');
             if (!$('#mediumRate').val()) $('#mediumRate').val('42.00');
             
-            // ALL OPTIONAL COSTS DEFAULT TO 0 - USER ADDS AS NEEDED
+            // ALL OPTIONAL COSTS DEFAULT TO 0
             if ($('#PrintingCostPerSheet').val() === '') $('#PrintingCostPerSheet').val('0');
             if ($('#DieCuttingCostPerSheet').val() === '') $('#DieCuttingCostPerSheet').val('0');
             if ($('#LaborCostPerBox').val() === '') $('#LaborCostPerBox').val('0');
             if ($('#PinCostPerBox').val() === '') $('#PinCostPerBox').val('0');
-            if ($('#OverheadPercentage').val() === '') $('#OverheadPercentage').val('0');
-            if ($('#ProfitMarginPercentage').val() === '') $('#ProfitMarginPercentage').val('0');  // START WITH 0
-            if ($('#WastageFactorPercentage').val() === '') $('#WastageFactorPercentage').val('5.0');  // MINIMUM
+            if ($('#LaminationCostPerBox').val() === '') $('#LaminationCostPerBox').val('0');
+            // ✅ REMOVED - Wastage and Overhead defaults
+            if ($('#ProfitMarginPercentage').val() === '') $('#ProfitMarginPercentage').val('0');
             
-            // GST OFF BY DEFAULT - USER ENABLES IF NEEDED
+            // GST OFF BY DEFAULT
             if (!$('#IncludeGST').is(':checked')) $('#IncludeGST').prop('checked', false);
         }
         
@@ -818,19 +795,16 @@
         
         async function performLiveCalculation() {
             try {
-                // Show calculating indicator
                 $('#liveFinalPrice').html('<i class="fas fa-spinner fa-spin"></i>');
                 
-                // Gather all form data - FIXED: Handle zero values properly
                 const formData = gatherFormData();
                 
-                // Validate minimum required fields
-                if (!formData.Length || !formData.Width || !formData.Height || formData.Length <= 0 || formData.Width <= 0 || formData.Height <= 0) {
+                // ✅ SIMPLIFIED - Validate apps and quantity
+                if (!formData.AppsPerSheet || formData.AppsPerSheet <= 0) {
                     resetLiveDisplay();
                     return;
                 }
                 
-                // Call live calculation API
                 const response = await fetch('@Url.Action("LiveCalculate", "BoxCalculator")', {
                     method: 'POST',
                     headers: {
@@ -854,51 +828,46 @@
         }
         
         function gatherFormData() {
-            // ✅ FIXED: Use correct element IDs that match the HTML form
+            // ✅ SIMPLIFIED - Removed Length, Width, Height
             return {
-                Length: parseFloat($('#Length').val()) || 0,
-                Width: parseFloat($('#Width').val()) || 0,
-                Height: parseFloat($('#Height').val()) || 0,
+                AppsPerSheet: parseInt($('#AppsPerSheet').val()) || 12,
                 BoardType: $('#boardTypeSelect').val() || "3 Ply",
                 Quantity: parseInt($('#Quantity').val()) || 1000,
                 SheetLength: parseFloat($('#SheetLength').val()) || 42,
                 SheetWidth: parseFloat($('#SheetWidth').val()) || 30,
                 
-                // ✅ CRITICAL FIX: Use correct HTML element IDs from the actual form
-                Paper1GSM: parseInt($('#topLinerGSM').val()) || 0,  // FIXED: Using topLinerGSM from HTML
+                Paper1GSM: parseInt($('#topLinerGSM').val()) || 0,
                 Paper1RatePerKg: parseFloat($('#Paper1RatePerKg').val()) || 0,
-                Paper2GSM: parseInt($('#bottomLinerGSM').val()) || 0,  // FIXED: Using bottomLinerGSM from HTML
-                Paper2RatePerKg: parseFloat($('#bottomLinerRate').val()) || 0,  // FIXED: Using bottomLinerRate from HTML
-                MediumGSM: parseInt($('#mediumGSM').val()) || 0,  // FIXED: Using mediumGSM from HTML
-                MediumRatePerKg: parseFloat($('#mediumRate').val()) || 0,  // FIXED: Using mediumRate from HTML
+                Paper2GSM: parseInt($('#bottomLinerGSM').val()) || 0,
+                Paper2RatePerKg: parseFloat($('#bottomLinerRate').val()) || 0,
+                MediumGSM: parseInt($('#mediumGSM').val()) || 0,
+                MediumRatePerKg: parseFloat($('#mediumRate').val()) || 0,
                 
-                FluteType: $('#fluteType').val() || 'B',  // ✅ FIXED: Use lowercase fluteType from HTML
+                FluteType: $('#fluteType').val() || 'B',
                 
-                // ✅ FIXED: Processing costs - proper zero handling
                 PrintingCostPerSheet: parseFloat($('#PrintingCostPerSheet').val()) || 0,
                 DieCuttingCostPerSheet: parseFloat($('#DieCuttingCostPerSheet').val()) || 0,
                 LaborCostPerBox: parseFloat($('#LaborCostPerBox').val()) || 0,
                 PinCostPerBox: parseFloat($('#PinCostPerBox').val()) || 0,
+                LaminationCostPerBox: parseFloat($('#LaminationCostPerBox').val()) || 0,
                 TransportCostPerBox: parseFloat($('#TransportCostPerBox').val()) || 0,
                 
-                // ✅ CRITICAL FIX: Business parameters - NO MORE DEFAULTING TO 10%
-                OverheadPercentage: parseFloat($('#OverheadPercentage').val()) || 0,
-                ProfitMarginPercentage: parseFloat($('#ProfitMarginPercentage').val()) || 0, // ✅ FIXED - No more defaulting to 10%
-                WastageFactorPercentage: parseFloat($('#WastageFactorPercentage').val()) || 5.0,
+                // ✅ REMOVED - Wastage and Overhead parameters
+                ProfitMarginPercentage: parseFloat($('#ProfitMarginPercentage').val()) || 0,
                 IncludeGST: $('#IncludeGST').is(':checked'),
                 GSTRate: parseFloat($('#GSTRate').val()) || 18.0
             };
         }
         
         function updateLiveDisplay(result) {
-            // Main price - Change to Rs.
+            // Main price
             $('#liveFinalPrice').text('Rs. ' + result.livePricePerBox.toFixed(2));
             
-            // Metrics
+            // ✅ SIMPLIFIED - Remove efficiency (not applicable with manual apps)
             $('#liveApps').text(result.apps);
-            $('#liveEfficiency').text(result.efficiency.toFixed(1) + '%');
+            $('#liveEfficiency').text('Manual'); // Changed from percentage
             
-            // Breakdown - Change to Rs.
+            // Breakdown
             $('#liveMaterialCost').text('Rs. ' + result.materialCost.toFixed(2));
             $('#liveProcessingCost').text('Rs. ' + result.processingCost.toFixed(2));
             $('#liveLaborCost').text('Rs. ' + result.laborCost.toFixed(2));
@@ -907,7 +876,6 @@
             
             // Sheet info
             $('#liveSheetSize').text(result.sheetSize);
-            $('#liveBoxLayout').text(result.boxLayout);
             $('#liveTotalGSM').text(result.totalGSM);
             $('#liveSheetWeight').text(result.sheetWeight + ' kg');
             $('#liveSheetsNeeded').text(result.sheetsNeeded);
@@ -1014,10 +982,10 @@
             
             const formData = gatherFormData();
             
-            // Basic validation
-            if (!formData.Length || !formData.Width || !formData.Height || !formData.Quantity) {
+            // ✅ SIMPLIFIED - Basic validation for apps
+            if (!formData.AppsPerSheet || formData.AppsPerSheet <= 0 || !formData.Quantity) {
                 $('#loadingIndicator').removeClass('show');
-                alert('Please fill in all required box dimensions and quantity.');
+                alert('Please fill in apps per sheet and quantity.');
                 return;
             }
             
@@ -1040,7 +1008,6 @@
                         displayResults(response.result);
                         $('#resultsSection').addClass('show');
                         
-                        // Scroll to results
                         setTimeout(() => {
                             $('html, body').animate({
                                 scrollTop: $('#resultsSection').offset().top - 20
@@ -1061,10 +1028,8 @@
         }
         
         function resetToIndustryDefaults() {
-            // Reset all values with correct element IDs
-            $('#Length').val('12');
-            $('#Width').val('10');
-            $('#Height').val('8');
+            // ✅ SIMPLIFIED - Reset essential values only
+            $('#AppsPerSheet').val('12');
             $('#boardTypeSelect').val('3 Ply');
             $('#Quantity').val('1000');
             $('#SheetLength').val('42');
@@ -1079,22 +1044,22 @@
             $('#mediumRate').val('42.00');
             $('#fluteType').val('B');
             
-            // ALL OPTIONAL COSTS START AT 0 - USER ADDS AS NEEDED
+            // ALL OPTIONAL COSTS START AT 0
             $('#PrintingCostPerSheet').val('0');
             $('#DieCuttingCostPerSheet').val('0');
             $('#LaborCostPerBox').val('0');
             $('#PinCostPerBox').val('0');
+            $('#LaminationCostPerBox').val('0');
             $('#TransportCostPerBox').val('0');
-            $('#OverheadPercentage').val('0');
-            $('#ProfitMarginPercentage').val('0');    // START WITH 0 - USER ADDS PROFIT
-            $('#WastageFactorPercentage').val('5.0'); // MINIMUM INDUSTRY WASTAGE
+            // ✅ REMOVED - Wastage and Overhead reset
+            $('#ProfitMarginPercentage').val('0');
             
             // GST OFF BY DEFAULT
             $('#IncludeGST').prop('checked', false);
             
             updateBoardConfiguration('3 Ply');
             updateAllCalculations();
-            console.log('Form reset to zero-first defaults - user can add costs as needed.');
+            console.log('Form reset to zero-first defaults with manual apps.');
         }
     </script>
-}
+}}}}}}}}}}}}}}

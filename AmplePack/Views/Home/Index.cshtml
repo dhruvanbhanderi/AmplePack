@@ -734,34 +734,24 @@
             Swal.fire({
                 title: 'Quick Box Price Check',
                 html: `
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="form-group text-left">
-                                <label for="quickLength">Length (in):</label>
-                                <input type="number" class="form-control" id="quickLength" step="0.1" value="10">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group text-left">
-                                <label for="quickWidth">Width (in):</label>
-                                <input type="number" class="form-control" id="quickWidth" step="0.1" value="8">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group text-left">
-                                <label for="quickHeight">Height (in):</label>
-                                <input type="number" class="form-control" id="quickHeight" step="0.1" value="6">
-                            </div>
-                        </div>
+                    <div class="alert alert-info mb-3">
+                        <small><i class="fas fa-info-circle mr-1"></i>Quick estimate using default material values. Use full calculator for accurate pricing.</small>
                     </div>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group text-left">
-                                <label for="quickQuantity">Quantity:</label>
-                                <input type="number" class="form-control" id="quickQuantity" value="1000">
+                                <label for="quickAppsPerSheet">Apps per Sheet:</label>
+                                <input type="number" class="form-control" id="quickAppsPerSheet" min="1" value="12">
+                                <small class="text-muted">Boxes per sheet</small>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
+                            <div class="form-group text-left">
+                                <label for="quickQuantity">Quantity:</label>
+                                <input type="number" class="form-control" id="quickQuantity" min="1" value="1000">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
                             <div class="form-group text-left">
                                 <label for="quickBoardType">Board Type:</label>
                                 <select class="form-control" id="quickBoardType">
@@ -769,6 +759,20 @@
                                     <option value="5 Ply">5 Ply</option>
                                     <option value="7 Ply">7 Ply</option>
                                 </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group text-left">
+                                <label for="quickSheetLength">Sheet Length (in):</label>
+                                <input type="number" class="form-control" id="quickSheetLength" step="0.1" value="42">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group text-left">
+                                <label for="quickSheetWidth">Sheet Width (in):</label>
+                                <input type="number" class="form-control" id="quickSheetWidth" step="0.1" value="30">
                             </div>
                         </div>
                     </div>
@@ -785,25 +789,35 @@
                                     <span id="quickTotalValue" class="h4 text-primary">Rs. 0.00</span>
                                 </div>
                             </div>
-                            <small class="text-muted">* Based on default parameters. For detailed calculation, use the full calculator.</small>
+                            <small class="text-muted">* Based on default material rates. For detailed customization, use the full calculator.</small>
                         </div>
                     </div>
                 `,
-                width: '600px',
+                width: '700px',
                 showCancelButton: true,
                 showConfirmButton: true,
                 confirmButtonText: '<i class="fas fa-calculator me-2"></i>Calculate',
                 cancelButtonText: 'Full Calculator',
                 allowOutsideClick: false,
                 preConfirm: async () => {
-                    const length = parseFloat(document.getElementById('quickLength').value);
-                    const width = parseFloat(document.getElementById('quickWidth').value);
-                    const height = parseFloat(document.getElementById('quickHeight').value);
+                    const appsPerSheet = parseInt(document.getElementById('quickAppsPerSheet').value);
                     const quantity = parseInt(document.getElementById('quickQuantity').value);
                     const boardType = document.getElementById('quickBoardType').value;
+                    const sheetLength = parseFloat(document.getElementById('quickSheetLength').value);
+                    const sheetWidth = parseFloat(document.getElementById('quickSheetWidth').value);
 
-                    if (!length || !width || !height || !quantity) {
-                        Swal.showValidationMessage('Please fill all fields with valid values');
+                    if (!appsPerSheet || appsPerSheet <= 0) {
+                        Swal.showValidationMessage('Please enter valid apps per sheet (1 or more)');
+                        return false;
+                    }
+                    
+                    if (!quantity || quantity <= 0) {
+                        Swal.showValidationMessage('Please enter valid quantity');
+                        return false;
+                    }
+                    
+                    if (!sheetLength || sheetLength <= 0 || !sheetWidth || sheetWidth <= 0) {
+                        Swal.showValidationMessage('Please enter valid sheet dimensions');
                         return false;
                     }
 
@@ -812,33 +826,36 @@
                         Swal.update({
                             html: Swal.getHtmlContainer().innerHTML.replace(
                                 '<div id="quickResult"',
-                                '<div class="text-center"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><br>Calculating...</div><div id="quickResult"'
+                                '<div class="text-center"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><br><p class="mt-2">Calculating...</p></div><div id="quickResult"'
                             )
                         });
 
+                        // ✅ FIXED - Use new Box Calculator parameters (no overhead, wastage, or box dimensions)
                         const response = await fetch('/BoxCalculator/Calculate', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                                Length: length,
-                                Width: width,
-                                Height: height,
+                                AppsPerSheet: appsPerSheet,
                                 BoardType: boardType,
-                                GSM: 150,
                                 Quantity: quantity,
-                                SheetSize1Length: 40,
-                                SheetSize1Width: 30,
-                                SheetSize2Length: 36,
-                                SheetSize2Width: 28,
-                                PaperRatePerKg: 45.00,
-                                PrintingCostPerSheet: 2.50,
-                                DieCuttingCostPerSheet: 1.50,
-                                LaborCostPerBox: 0.50,
-                                OverheadPercentage: 15.0,
+                                SheetLength: sheetLength,
+                                SheetWidth: sheetWidth,
+                                Paper1GSM: 150,
+                                Paper1RatePerKg: 50.00,
+                                Paper2GSM: 125,
+                                Paper2RatePerKg: 45.00,
+                                MediumGSM: 120,
+                                MediumRatePerKg: 42.00,
+                                FluteType: "B",
+                                PrintingCostPerSheet: 0,
+                                DieCuttingCostPerSheet: 0,
+                                LaborCostPerBox: 0,
+                                PinCostPerBox: 0,
+                                LaminationCostPerBox: 0,
+                                TransportCostPerBox: 0,
                                 ProfitMarginPercentage: 20.0,
-                                WastageFactorPercentage: 10.0,
                                 IncludeGST: true,
                                 GSTRate: 18.0
                             })

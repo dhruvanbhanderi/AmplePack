@@ -255,9 +255,14 @@ namespace AmplePack.Services
                 }
 
                 // ? SQLITE FIX: Load data first, then sort in memory to avoid decimal ordering issues
-                var customerData = await query
+                var ordersData = await query
                     .Where(o => o.Customer != null)
-                    .GroupBy(o => new { o.CustomerId, o.Customer!.Name })
+                    .Select(o => new { o.CustomerId, o.Customer!.Name, o.TotalAmount, o.Date })
+                    .ToListAsync();
+
+                // Group and calculate in memory
+                var customerSummaries = ordersData
+                    .GroupBy(o => new { o.CustomerId, o.Name })
                     .Select(g => new CustomerOrderSummary
                     {
                         CustomerId = g.Key.CustomerId,
@@ -266,15 +271,11 @@ namespace AmplePack.Services
                         TotalValue = g.Sum(o => o.TotalAmount),
                         LastOrderDate = g.Max(o => o.Date)
                     })
-                    .ToListAsync();
-
-                // Sort in memory to avoid SQLite decimal ordering limitation
-                var topCustomers = customerData
                     .OrderByDescending(c => c.TotalValue)
                     .Take(10)
                     .ToList();
 
-                return topCustomers;
+                return customerSummaries;
             }
             catch (Exception ex)
             {

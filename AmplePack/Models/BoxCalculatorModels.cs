@@ -4,23 +4,16 @@ namespace AmplePack.Models
 {
     public class BoxCalculatorRequest
     {
-        [Display(Name = "Length (in)")]
-        [Required(ErrorMessage = "Length is required")]
-        [Range(0.1, 1000, ErrorMessage = "Length must be between 0.1 and 1000 inches")]
-        public decimal Length { get; set; }
-
-        [Display(Name = "Width (in)")]
-        [Required(ErrorMessage = "Width is required")]
-        [Range(0.1, 1000, ErrorMessage = "Width must be between 0.1 and 1000 inches")]
-        public decimal Width { get; set; }
-
-        [Display(Name = "Height (in)")]
-        [Required(ErrorMessage = "Height is required")]
-        [Range(0.1, 1000, ErrorMessage = "Height must be between 0.1 and 1000 inches")]
-        public decimal Height { get; set; }
+        // ✅ REMOVED - Box dimensions (Length, Width, Height)
+        // ✅ ADDED - Manual Apps per Sheet Input
+        [Display(Name = "Apps per Sheet")]
+        [Required(ErrorMessage = "Apps per sheet is required")]
+        [Range(1, 1000, ErrorMessage = "Apps must be between 1 and 1000")]
+        public int AppsPerSheet { get; set; } = 1; // ✅ CHANGED - Default 1 (minimum)
 
         [Display(Name = "Board Type")]
         [Required(ErrorMessage = "Board type is required")]
+        [RegularExpression("^(3 Ply|5 Ply|7 Ply)$", ErrorMessage = "Invalid board type. Must be 3 Ply, 5 Ply, or 7 Ply")]
         public string BoardType { get; set; } = "3 Ply";
 
         [Display(Name = "Quantity")]
@@ -74,9 +67,11 @@ namespace AmplePack.Models
 
         // Flute Type - Industry Standard
         [Display(Name = "Flute Type")]
+        [Required(ErrorMessage = "Flute type is required")]
+        [RegularExpression("^(B|C|E|BC|EB)$", ErrorMessage = "Invalid flute type. Must be B, C, E, BC, or EB")]
         public string FluteType { get; set; } = "B";
 
-        // ✅ FIXED - Processing costs - ZERO FIRST APPROACH (User adds as needed)
+        // Processing costs - ZERO FIRST APPROACH (User adds as needed)
         [Display(Name = "Printing Cost (Rs./sheet)")]
         [Range(0, 100, ErrorMessage = "Printing cost must be between 0 and 100")]
         public decimal PrintingCostPerSheet { get; set; } = 0m;
@@ -87,32 +82,28 @@ namespace AmplePack.Models
 
         [Display(Name = "Labor Cost (Rs./box)")]
         [Range(0, 10, ErrorMessage = "Labor cost must be between 0 and 10")]
-        public decimal LaborCostPerBox { get; set; } = 0m; // ✅ FIXED - Was 0.50m
+        public decimal LaborCostPerBox { get; set; } = 0m;
 
         [Display(Name = "Pin Cost (Rs./box)")]
         [Range(0, 5, ErrorMessage = "Pin cost must be between 0 and 5")]
-        public decimal PinCostPerBox { get; set; } = 0m; // ✅ FIXED - Was 0.10m
+        public decimal PinCostPerBox { get; set; } = 0m;
+
+        [Display(Name = "Lamination Cost (Rs./box)")]
+        [Range(0, 20, ErrorMessage = "Lamination cost must be between 0 and 20")]
+        public decimal LaminationCostPerBox { get; set; } = 0m;
 
         [Display(Name = "Transport Cost (Rs./box)")]
         [Range(0, 20, ErrorMessage = "Transport cost must be between 0 and 20")]
         public decimal TransportCostPerBox { get; set; } = 0m;
 
-        // ✅ FIXED - Business parameters - ZERO FIRST APPROACH
-        [Display(Name = "Overhead Percentage (%)")]
-        [Range(0, 50, ErrorMessage = "Overhead percentage must be between 0 and 50")]
-        public decimal OverheadPercentage { get; set; } = 0m;
-
+        // Profit Margin
         [Display(Name = "Profit Margin (%)")]
         [Range(0, 100, ErrorMessage = "Profit margin must be between 0 and 100")]
-        public decimal ProfitMarginPercentage { get; set; } = 0m; // ✅ FIXED - Was 10.0m, now matches Controller
+        public decimal ProfitMarginPercentage { get; set; } = 0m;
 
-        [Display(Name = "Wastage Factor (%)")]
-        [Range(5, 25, ErrorMessage = "Wastage factor must be between 5 and 25")]
-        public decimal WastageFactorPercentage { get; set; } = 5.0m; // ✅ KEPT - Minimum industry standard
-
-        // ✅ FIXED - GST Settings - START WITH NO GST
+        // GST Settings - START WITH NO GST
         [Display(Name = "Include GST")]
-        public bool IncludeGST { get; set; } = false; // ✅ FIXED - Was true, now matches Controller
+        public bool IncludeGST { get; set; } = false;
 
         [Display(Name = "GST Rate (%)")]
         [Range(0, 50, ErrorMessage = "GST rate must be between 0 and 50")]
@@ -121,12 +112,11 @@ namespace AmplePack.Models
 
     public class BoxCalculatorResult
     {
-        // Box specifications
-        public decimal Length { get; set; }
-        public decimal Width { get; set; }
-        public decimal Height { get; set; }
+        // ✅ REMOVED - Box specifications (Length, Width, Height)
+        // ✅ KEPT - Essential identifiers
         public string BoardType { get; set; } = "";
         public int Quantity { get; set; }
+        public int AppsPerSheet { get; set; }
         
         // Single sheet analysis
         public SheetAnalysis SheetAnalysis { get; set; } = new();
@@ -152,19 +142,12 @@ namespace AmplePack.Models
         public decimal SheetWidth { get; set; }
         public decimal SheetArea { get; set; }
         
-        // Apps calculation (number of boxes from one sheet)
-        public int AppsLength { get; set; } // How many boxes fit along length
-        public int AppsWidth { get; set; }  // How many boxes fit along width
-        public int TotalApps { get; set; }  // Total boxes per sheet
+        // ✅ SIMPLIFIED - Apps is now manual input, not calculated
+        public int TotalApps { get; set; }
         
-        // Box layout dimensions
-        public decimal BoxLayoutLength { get; set; } // Length + Height for unfolded box
-        public decimal BoxLayoutWidth { get; set; }  // Width + Height for unfolded box
+        // ✅ REMOVED - Box layout dimensions (no longer needed without auto-calculation)
         
-        // Utilization
-        public decimal UsedArea { get; set; }
-        public decimal WasteArea { get; set; }
-        public decimal UtilizationPercentage { get; set; }
+        // Utilization - ✅ REMOVED (no longer applicable without box dimensions)
         
         // Material costs per sheet
         public decimal Paper1CostPerSheet { get; set; }
@@ -189,18 +172,17 @@ namespace AmplePack.Models
         public decimal Paper2CostPerBox { get; set; }
         public decimal MediumCostPerBox { get; set; }
         public decimal TotalMaterialCostPerBox { get; set; }
-        public decimal WastageCost { get; set; }
         
         // Processing costs
         public decimal PrintingCostPerBox { get; set; }
         public decimal DieCuttingCostPerBox { get; set; }
         public decimal LaborCostPerBox { get; set; }
         public decimal PinCostPerBox { get; set; }
+        public decimal LaminationCostPerBox { get; set; }
         public decimal TransportCostPerBox { get; set; }
         
         // Business costs
         public decimal SubtotalPerBox { get; set; }
-        public decimal OverheadCostPerBox { get; set; }
         public decimal TotalCostPerBox { get; set; }
         public decimal ProfitPerBox { get; set; }
         public decimal SellingPricePerBox { get; set; }
@@ -220,6 +202,26 @@ namespace AmplePack.Models
         public decimal TotalAmount { get; set; }
         public string Category { get; set; } = "";
         public bool IsUserEditable { get; set; }
+    }
+
+    // ✅ ADDED - Calculation Constants for Industry Standards
+    public static class CalculationConstants
+    {
+        // Sheet area conversion
+        public const decimal SquareInchesPerSquareMeter = 1550m; // 1 m² = 1550.0031 sq inches (industry standard)
+        
+        // Material layer multipliers for multi-ply boards
+        public const decimal FivePlyInnerLinerRatio = 0.85m; // Inner liner as % of top liner
+        public const decimal FivePlySecondMediumRatio = 0.9m; // Second medium layer as % of first
+        
+        public const decimal SevenPlyInnerLiner1Ratio = 0.9m; // First inner liner as % of top
+        public const decimal SevenPlyInnerLiner2Ratio = 0.85m; // Second inner liner as % of bottom
+        public const decimal SevenPlySecondMediumRatio = 0.95m; // Second medium layer ratio
+        public const decimal SevenPlyThirdMediumRatio = 0.9m; // Third medium layer ratio
+        
+        // Precision settings
+        public const int PricePrecisionDigits = 4; // Decimal places for price calculations
+        public const int WeightPrecisionDigits = 6; // Decimal places for weight calculations
     }
 
     // ✅ ENHANCED Industry-Standard Board Configurations WITHOUT Duplex

@@ -480,6 +480,47 @@ namespace AmplePack.Services
             return value.ToString() ?? "";
         }
 
+        // Helper method to clean text for reports - removes problematic characters
+        private string CleanText(string? input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return "";
+
+            return input
+                .Replace("?", "")
+                .Replace("\"", "'")
+                .Replace("\r", " ")
+                .Replace("\n", " ")
+                .Trim();
+        }
+
+        // Helper method to get clean product summary from order details
+        private string GetCleanProductSummary(ICollection<OrderDetail>? orderDetails)
+        {
+            if (orderDetails == null || !orderDetails.Any())
+                return "No Items";
+
+            var summary = string.Join(", ", orderDetails
+                .Take(3) // Limit to first 3 items
+                .Select(od => $"{CleanText(od.BoxType)} ({od.Quantity})"));
+
+            if (orderDetails.Count > 3)
+                summary += $" +{orderDetails.Count - 3} more";
+
+            return summary;
+        }
+
+        // Helper method to get clean stock status
+        private string GetCleanStockStatus(decimal availableQuantity, decimal reorderLevel)
+        {
+            if (availableQuantity <= 0)
+                return "Out of Stock";
+            else if (availableQuantity <= reorderLevel)
+                return "Low Stock";
+            else
+                return "In Stock";
+        }
+
         #endregion
     }
 }

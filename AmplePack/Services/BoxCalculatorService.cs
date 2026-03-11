@@ -22,10 +22,9 @@ namespace AmplePack.Services
         {
             try
             {
-                _logger.LogInformation("Starting box rate calculation for {Length}x{Width}x{Height}, BoardType: {BoardType}, Qty: {Quantity}", 
-                    request.Length, request.Width, request.Height, request.BoardType, request.Quantity);
+                _logger.LogInformation("Starting box rate calculation for BoardType: {BoardType}, Apps: {Apps}, Qty: {Quantity}", 
+                    request.BoardType, request.AppsPerSheet, request.Quantity);
 
-                // Validate board configuration
                 if (!BoardTypeConstants.BoardConfigurations.ContainsKey(request.BoardType))
                 {
                     throw new ArgumentException($"Invalid board type: {request.BoardType}");
@@ -33,48 +32,54 @@ namespace AmplePack.Services
 
                 var boardConfig = BoardTypeConstants.BoardConfigurations[request.BoardType];
                 
-                // ✅ CORRECTED - Validate required papers for ALL board types
                 ValidateRequiredPapers(request, boardConfig);
 
                 var result = new BoxCalculatorResult
                 {
-                    Length = request.Length,
-                    Width = request.Width,
-                    Height = request.Height,
                     BoardType = request.BoardType,
-                    Quantity = request.Quantity
+                    Quantity = request.Quantity,
+                    AppsPerSheet = request.AppsPerSheet
                 };
 
-                // Calculate single sheet analysis with industry formulas
+                // ✅ SIMPLIFIED - Calculate single sheet analysis with manual apps
                 result.SheetAnalysis = await CalculateSheetAnalysisAsync(request, boardConfig);
 
-                // Calculate comprehensive cost breakdown
                 result.CostBreakdown = await CalculateCostBreakdownAsync(request, result.SheetAnalysis);
 
-                // Calculate final pricing
                 result.FinalPricePerBox = result.CostBreakdown.SellingPricePerBox;
                 result.FinalPricePerBoxWithGST = request.IncludeGST 
                     ? result.FinalPricePerBox + result.CostBreakdown.GSTAmountPerBox
                     : result.FinalPricePerBox;
 
-                result.TotalOrderValue = result.FinalPricePerBox * request.Quantity;
-                result.TotalOrderValueWithGST = result.FinalPricePerBoxWithGST * request.Quantity;
+                // ✅ FIXED - Overflow protection for large order calculations
+                try
+                {
+                    checked
+                    {
+                        result.TotalOrderValue = result.FinalPricePerBox * request.Quantity;
+                        result.TotalOrderValueWithGST = result.FinalPricePerBoxWithGST * request.Quantity;
+                    }
+                }
+                catch (OverflowException)
+                {
+                    _logger.LogWarning("Overflow detected in order total calculation for Quantity: {Quantity}, Price: {Price}", 
+                        request.Quantity, result.FinalPricePerBoxWithGST);
+                    throw new InvalidOperationException("Order total exceeds maximum calculable value. Please reduce quantity or check pricing.");
+                }
 
-                // Calculate efficiency metrics
-                result.MaterialEfficiency = result.SheetAnalysis.UtilizationPercentage;
-                result.WastagePercentage = 100 - result.MaterialEfficiency;
+                // ✅ SIMPLIFIED - Efficiency metrics removed (no box layout calculation)
+                result.MaterialEfficiency = 100m; // Not applicable with manual apps
+                result.WastagePercentage = 0m; // ✅ CHANGED - No wastage calculated
                 result.ProfitPerBox = result.CostBreakdown.ProfitPerBox;
 
-                _logger.LogInformation("Box rate calculation completed: ₹{FinalPrice} per box, {Apps} apps from sheet {SheetSize}", 
-                    result.FinalPricePerBoxWithGST, result.SheetAnalysis.TotalApps, 
-                    $"{result.SheetAnalysis.SheetLength}\"×{result.SheetAnalysis.SheetWidth}\"");
+                _logger.LogInformation("Box rate calculation completed: ₹{FinalPrice} per box, {Apps} apps per sheet", 
+                    result.FinalPricePerBoxWithGST, result.SheetAnalysis.TotalApps);
 
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error calculating box rate for {Length}x{Width}x{Height}", 
-                    request.Length, request.Width, request.Height);
+                _logger.LogError(ex, "Error calculating box rate for {BoardType}", request.BoardType);
                 throw;
             }
         }
@@ -109,52 +114,14 @@ namespace AmplePack.Services
                 SheetArea = request.SheetLength * request.SheetWidth
             };
 
-            // EXACT INDUSTRY FORMULA IMPLEMENTATION:
-            // Box Layout Dimensions = Box Dimension + (2 × Height) for flaps
-            analysis.BoxLayoutLength = request.Length + (2 * request.Height);
-            analysis.BoxLayoutWidth = request.Width + (2 * request.Height);
+            // ✅ SIMPLIFIED - Use manual apps directly (no calculation needed)
+            analysis.TotalApps = request.AppsPerSheet;
 
-            _logger.LogDebug("Box layout: {Length} + (2×{Height}) = {LayoutLength}, {Width} + (2×{Height}) = {LayoutWidth}",
-                request.Length, request.Height, analysis.BoxLayoutLength, request.Width, analysis.BoxLayoutWidth);
+            _logger.LogDebug("Using manual apps: {TotalApps} per sheet", analysis.TotalApps);
 
-            // Apps Calculation - Industry Standard Formula
-            var appsLength1 = (int)Math.Floor(request.SheetLength / analysis.BoxLayoutLength);
-            var appsWidth1 = (int)Math.Floor(request.SheetWidth / analysis.BoxLayoutWidth);
-            var totalApps1 = appsLength1 * appsWidth1;
+            // ✅ REMOVED - Box layout and utilization calculations (not needed with manual apps)
 
-            // Try rotated orientation (90 degrees) - Industry Practice
-            var appsLength2 = (int)Math.Floor(request.SheetLength / analysis.BoxLayoutWidth);
-            var appsWidth2 = (int)Math.Floor(request.SheetWidth / analysis.BoxLayoutLength);
-            var totalApps2 = appsLength2 * appsWidth2;
-
-            // Select orientation with maximum apps
-            if (totalApps2 > totalApps1)
-            {
-                analysis.AppsLength = appsLength2;
-                analysis.AppsWidth = appsWidth2;
-                analysis.TotalApps = totalApps2;
-                // Swap layout dimensions for rotated display
-                (analysis.BoxLayoutLength, analysis.BoxLayoutWidth) = (analysis.BoxLayoutWidth, analysis.BoxLayoutLength);
-                _logger.LogDebug("Using rotated orientation: {AppsLength} × {AppsWidth} = {TotalApps} apps", 
-                    appsLength2, appsWidth2, totalApps2);
-            }
-            else
-            {
-                analysis.AppsLength = appsLength1;
-                analysis.AppsWidth = appsWidth1;
-                analysis.TotalApps = totalApps1;
-                _logger.LogDebug("Using standard orientation: {AppsLength} × {AppsWidth} = {TotalApps} apps", 
-                    appsLength1, appsWidth1, totalApps1);
-            }
-
-            // Calculate sheet utilization
-            analysis.UsedArea = analysis.TotalApps * (analysis.BoxLayoutLength * analysis.BoxLayoutWidth);
-            analysis.WasteArea = analysis.SheetArea - analysis.UsedArea;
-            analysis.UtilizationPercentage = analysis.SheetArea > 0 
-                ? (analysis.UsedArea / analysis.SheetArea) * 100 
-                : 0;
-
-            // Calculate material costs per sheet - Industry Formula
+            // Calculate material costs per sheet
             await CalculateMaterialCostsPerSheetAsync(request, analysis, boardConfig);
             
             // Processing costs per sheet
@@ -171,11 +138,11 @@ namespace AmplePack.Services
             }
             else
             {
-                throw new InvalidOperationException($"No boxes fit on sheet {request.SheetLength}×{request.SheetWidth} with box layout {analysis.BoxLayoutLength}×{analysis.BoxLayoutWidth}");
+                throw new InvalidOperationException("Apps per sheet must be greater than 0");
             }
 
-            _logger.LogDebug("Sheet Analysis: {TotalApps} apps, {Utilization:F1}% utilization, ₹{CostPerBox:F2} per box",
-                analysis.TotalApps, analysis.UtilizationPercentage, analysis.TotalCostPerBox);
+            _logger.LogDebug("Sheet Analysis: {TotalApps} apps, ₹{CostPerBox:F2} per box",
+                analysis.TotalApps, analysis.TotalCostPerBox);
 
             return analysis;
         }
@@ -186,8 +153,8 @@ namespace AmplePack.Services
             SheetAnalysis analysis, 
             BoardConfiguration boardConfig)
         {
-            // Convert sheet area from square inches to square meters
-            var sheetAreaSquareMeters = analysis.SheetArea / 1550m; // 1 m² = 1550 sq inches
+            // Convert sheet area from square inches to square meters using constant
+            var sheetAreaSquareMeters = analysis.SheetArea / CalculationConstants.SquareInchesPerSquareMeter;
 
             // Apply flute factor to medium GSM
             var fluteFactor = BoardTypeConstants.FluteFactors.GetValueOrDefault(request.FluteType, 1.4m);
@@ -224,12 +191,12 @@ namespace AmplePack.Services
                     {
                         // Double wall structure: Top + Inner + Bottom + 2×Medium layers
                         var topLinerWeight = (request.Paper1GSM * sheetAreaSquareMeters) / 1000m;
-                        var innerLinerWeight = (request.Paper1GSM * 0.85m * sheetAreaSquareMeters) / 1000m; // 85% of top liner
+                        var innerLinerWeight = (request.Paper1GSM * CalculationConstants.FivePlyInnerLinerRatio * sheetAreaSquareMeters) / 1000m;
                         var bottomLinerWeight = (request.Paper2GSM * sheetAreaSquareMeters) / 1000m;
                         
                         // Two medium layers with flute factor
                         var mediumWeight1 = (request.MediumGSM * fluteFactor * sheetAreaSquareMeters) / 1000m;
-                        var mediumWeight2 = (request.MediumGSM * fluteFactor * 0.9m * sheetAreaSquareMeters) / 1000m; // Second layer 90%
+                        var mediumWeight2 = (request.MediumGSM * fluteFactor * CalculationConstants.FivePlySecondMediumRatio * sheetAreaSquareMeters) / 1000m;
 
                         totalPaper1Cost = (topLinerWeight + innerLinerWeight) * request.Paper1RatePerKg;
                         totalPaper2Cost = bottomLinerWeight * request.Paper2RatePerKg;
@@ -245,14 +212,14 @@ namespace AmplePack.Services
                     {
                         // Triple wall structure: Multiple liners + 3×Medium layers
                         var topLinerWeight = (request.Paper1GSM * sheetAreaSquareMeters) / 1000m;
-                        var innerLiner1Weight = (request.Paper1GSM * 0.9m * sheetAreaSquareMeters) / 1000m; // 90% of top
-                        var innerLiner2Weight = (request.Paper2GSM * 0.85m * sheetAreaSquareMeters) / 1000m; // 85% of bottom
+                        var innerLiner1Weight = (request.Paper1GSM * CalculationConstants.SevenPlyInnerLiner1Ratio * sheetAreaSquareMeters) / 1000m;
+                        var innerLiner2Weight = (request.Paper2GSM * CalculationConstants.SevenPlyInnerLiner2Ratio * sheetAreaSquareMeters) / 1000m;
                         var bottomLinerWeight = (request.Paper2GSM * sheetAreaSquareMeters) / 1000m;
 
                         // Three medium layers with progressive flute factors
-                        var mediumWeight1 = (request.MediumGSM * fluteFactor * sheetAreaSquareMeters) / 1000m; // First layer
-                        var mediumWeight2 = (request.MediumGSM * fluteFactor * 0.95m * sheetAreaSquareMeters) / 1000m; // Second layer
-                        var mediumWeight3 = (request.MediumGSM * fluteFactor * 0.9m * sheetAreaSquareMeters) / 1000m; // Third layer
+                        var mediumWeight1 = (request.MediumGSM * fluteFactor * sheetAreaSquareMeters) / 1000m;
+                        var mediumWeight2 = (request.MediumGSM * fluteFactor * CalculationConstants.SevenPlySecondMediumRatio * sheetAreaSquareMeters) / 1000m;
+                        var mediumWeight3 = (request.MediumGSM * fluteFactor * CalculationConstants.SevenPlyThirdMediumRatio * sheetAreaSquareMeters) / 1000m;
 
                         var totalMediumWeight = mediumWeight1 + mediumWeight2 + mediumWeight3;
 
@@ -290,46 +257,72 @@ namespace AmplePack.Services
         {
             var breakdown = new CostBreakdown();
 
-            // Material costs per box (detailed breakdown)
-            breakdown.Paper1CostPerBox = sheetAnalysis.Paper1CostPerSheet / Math.Max(sheetAnalysis.TotalApps, 1);
-            breakdown.Paper2CostPerBox = sheetAnalysis.Paper2CostPerSheet / Math.Max(sheetAnalysis.TotalApps, 1);
-            breakdown.MediumCostPerBox = sheetAnalysis.MediumCostPerSheet / Math.Max(sheetAnalysis.TotalApps, 1);
+            // Material costs per box (detailed breakdown) - ✅ ADDED proper rounding
+            breakdown.Paper1CostPerBox = Math.Round(
+                sheetAnalysis.Paper1CostPerSheet / Math.Max(sheetAnalysis.TotalApps, 1), 
+                CalculationConstants.PricePrecisionDigits, 
+                MidpointRounding.AwayFromZero);
+            breakdown.Paper2CostPerBox = Math.Round(
+                sheetAnalysis.Paper2CostPerSheet / Math.Max(sheetAnalysis.TotalApps, 1), 
+                CalculationConstants.PricePrecisionDigits, 
+                MidpointRounding.AwayFromZero);
+            breakdown.MediumCostPerBox = Math.Round(
+                sheetAnalysis.MediumCostPerSheet / Math.Max(sheetAnalysis.TotalApps, 1), 
+                CalculationConstants.PricePrecisionDigits, 
+                MidpointRounding.AwayFromZero);
             breakdown.TotalMaterialCostPerBox = breakdown.Paper1CostPerBox + breakdown.Paper2CostPerBox + breakdown.MediumCostPerBox;
             
-            // Wastage cost - Apply board-specific wastage factor
-            var boardConfig = BoardTypeConstants.BoardConfigurations[request.BoardType];
-            var effectiveWastage = Math.Max(request.WastageFactorPercentage, boardConfig.WasteFactor);
-            breakdown.WastageCost = breakdown.TotalMaterialCostPerBox * (effectiveWastage / 100);
-            
-            // Processing costs per box
-            breakdown.PrintingCostPerBox = sheetAnalysis.TotalApps > 0 
-                ? request.PrintingCostPerSheet / sheetAnalysis.TotalApps 
-                : request.PrintingCostPerSheet;
-            breakdown.DieCuttingCostPerBox = sheetAnalysis.TotalApps > 0 
-                ? request.DieCuttingCostPerSheet / sheetAnalysis.TotalApps 
-                : request.DieCuttingCostPerSheet;
+            // Processing costs per box - ✅ ADDED proper rounding
+            breakdown.PrintingCostPerBox = Math.Round(
+                sheetAnalysis.TotalApps > 0 
+                    ? request.PrintingCostPerSheet / sheetAnalysis.TotalApps 
+                    : request.PrintingCostPerSheet,
+                CalculationConstants.PricePrecisionDigits,
+                MidpointRounding.AwayFromZero);
+            breakdown.DieCuttingCostPerBox = Math.Round(
+                sheetAnalysis.TotalApps > 0 
+                    ? request.DieCuttingCostPerSheet / sheetAnalysis.TotalApps 
+                    : request.DieCuttingCostPerSheet,
+                CalculationConstants.PricePrecisionDigits,
+                MidpointRounding.AwayFromZero);
             breakdown.LaborCostPerBox = request.LaborCostPerBox;
             breakdown.PinCostPerBox = request.PinCostPerBox;
+            breakdown.LaminationCostPerBox = request.LaminationCostPerBox;
             breakdown.TransportCostPerBox = request.TransportCostPerBox;
 
-            // Calculate subtotal
-            breakdown.SubtotalPerBox = breakdown.TotalMaterialCostPerBox + breakdown.WastageCost + 
-                                     breakdown.PrintingCostPerBox + breakdown.DieCuttingCostPerBox + 
-                                     breakdown.LaborCostPerBox + breakdown.PinCostPerBox + breakdown.TransportCostPerBox;
+            // Calculate subtotal - WITHOUT wastage - ✅ ADDED proper rounding
+            breakdown.SubtotalPerBox = Math.Round(
+                breakdown.TotalMaterialCostPerBox + 
+                breakdown.PrintingCostPerBox + breakdown.DieCuttingCostPerBox + 
+                breakdown.LaborCostPerBox + breakdown.PinCostPerBox + 
+                breakdown.LaminationCostPerBox + breakdown.TransportCostPerBox,
+                CalculationConstants.PricePrecisionDigits,
+                MidpointRounding.AwayFromZero);
 
-            // Add overhead
-            breakdown.OverheadCostPerBox = breakdown.SubtotalPerBox * (request.OverheadPercentage / 100);
-            breakdown.TotalCostPerBox = breakdown.SubtotalPerBox + breakdown.OverheadCostPerBox;
+            // ✅ REMOVED - Overhead calculation
+            breakdown.TotalCostPerBox = breakdown.SubtotalPerBox; // No overhead added
 
-            // Add profit margin
-            breakdown.ProfitPerBox = breakdown.TotalCostPerBox * (request.ProfitMarginPercentage / 100);
-            breakdown.SellingPricePerBox = breakdown.TotalCostPerBox + breakdown.ProfitPerBox;
+            // Add profit margin (on total cost) - ✅ ADDED proper rounding
+            breakdown.ProfitPerBox = Math.Round(
+                breakdown.TotalCostPerBox * (request.ProfitMarginPercentage / 100),
+                CalculationConstants.PricePrecisionDigits,
+                MidpointRounding.AwayFromZero);
+            breakdown.SellingPricePerBox = Math.Round(
+                breakdown.TotalCostPerBox + breakdown.ProfitPerBox,
+                CalculationConstants.PricePrecisionDigits,
+                MidpointRounding.AwayFromZero);
 
-            // Add GST if applicable
+            // Add GST if applicable - ✅ ADDED proper rounding
             if (request.IncludeGST)
             {
-                breakdown.GSTAmountPerBox = breakdown.SellingPricePerBox * (request.GSTRate / 100);
-                breakdown.FinalPricePerBox = breakdown.SellingPricePerBox + breakdown.GSTAmountPerBox;
+                breakdown.GSTAmountPerBox = Math.Round(
+                    breakdown.SellingPricePerBox * (request.GSTRate / 100),
+                    CalculationConstants.PricePrecisionDigits,
+                    MidpointRounding.AwayFromZero);
+                breakdown.FinalPricePerBox = Math.Round(
+                    breakdown.SellingPricePerBox + breakdown.GSTAmountPerBox,
+                    CalculationConstants.PricePrecisionDigits,
+                    MidpointRounding.AwayFromZero);
             }
             else
             {
@@ -340,7 +333,7 @@ namespace AmplePack.Services
             // Create detailed cost items for transparency
             breakdown.CostItems = new List<CostItem>();
 
-            // Add material breakdown - ALL components now shown
+            // Add material breakdown
             breakdown.CostItems.Add(new CostItem
             {
                 Description = $"Top Liner ({request.Paper1GSM} GSM)",
@@ -370,14 +363,6 @@ namespace AmplePack.Services
 
             breakdown.CostItems.AddRange(new[]
             {
-                new CostItem
-                {
-                    Description = $"Wastage ({effectiveWastage:F1}%)",
-                    AmountPerBox = breakdown.WastageCost,
-                    TotalAmount = breakdown.WastageCost * request.Quantity,
-                    Category = "Material",
-                    IsUserEditable = true
-                },
                 new CostItem
                 {
                     Description = "Printing Cost",
@@ -412,18 +397,18 @@ namespace AmplePack.Services
                 },
                 new CostItem
                 {
-                    Description = "Transport Cost",
-                    AmountPerBox = breakdown.TransportCostPerBox,
-                    TotalAmount = breakdown.TransportCostPerBox * request.Quantity,
+                    Description = "Lamination Cost",
+                    AmountPerBox = breakdown.LaminationCostPerBox,
+                    TotalAmount = breakdown.LaminationCostPerBox * request.Quantity,
                     Category = "Processing",
                     IsUserEditable = true
                 },
                 new CostItem
                 {
-                    Description = $"Overhead ({request.OverheadPercentage:F1}%)",
-                    AmountPerBox = breakdown.OverheadCostPerBox,
-                    TotalAmount = breakdown.OverheadCostPerBox * request.Quantity,
-                    Category = "Business",
+                    Description = "Transport Cost",
+                    AmountPerBox = breakdown.TransportCostPerBox,
+                    TotalAmount = breakdown.TransportCostPerBox * request.Quantity,
+                    Category = "Processing",
                     IsUserEditable = true
                 },
                 new CostItem
@@ -462,10 +447,10 @@ namespace AmplePack.Services
                 new CostItem { Description = "Die Cutting Cost (Rs./sheet)", AmountPerBox = 0m, IsUserEditable = true, Category = "Processing" }, // ✅ FIXED - Zero first
                 new CostItem { Description = "Labor Cost (Rs./box)", AmountPerBox = 0m, IsUserEditable = true, Category = "Processing" }, // ✅ FIXED - Zero first
                 new CostItem { Description = "Pin Cost (Rs./box)", AmountPerBox = 0m, IsUserEditable = true, Category = "Processing" }, // ✅ FIXED - Zero first
+                new CostItem { Description = "Lamination Cost (Rs./box)", AmountPerBox = 0m, IsUserEditable = true, Category = "Processing" },
                 new CostItem { Description = "Transport Cost (Rs./box)", AmountPerBox = 0m, IsUserEditable = true, Category = "Processing" }, // ✅ FIXED - Zero first
-                new CostItem { Description = "Overhead Percentage (%)", AmountPerBox = 0m, IsUserEditable = true, Category = "Business" }, // ✅ FIXED - Zero first
-                new CostItem { Description = "Profit Margin (%)", AmountPerBox = 0m, IsUserEditable = true, Category = "Business" }, // ✅ FIXED - Zero first
-                new CostItem { Description = "Wastage Factor (%)", AmountPerBox = 5.0m, IsUserEditable = true, Category = "Material" } // ✅ KEPT - Minimum industry standard
+                // ✅ REMOVED - Overhead and Wastage items
+                new CostItem { Description = "Profit Margin (%)", AmountPerBox = 0m, IsUserEditable = true, Category = "Business" }
             };
         }
 
@@ -473,6 +458,7 @@ namespace AmplePack.Services
         {
             _logger.LogInformation("Cost item {ItemId} updated to {NewValue}", itemId, newValue);
             // In production, this would update database/cache
+            await Task.CompletedTask;
         }
     }
 }
